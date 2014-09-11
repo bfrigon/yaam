@@ -2,3 +2,5 @@
 *.ods#
 .directory
 .kate-swp
+
+cache
