@@ -1,0 +1,4 @@
+# Ignore documents cache
+*.ods#
+.directory
+.kate-swp
