@@ -1,99 +1,104 @@
-{{****************************************************************************}}
-{{* Voicemail plugin template                                                *}}
-{{* Author   : Benoit Frigon                                                 *}}
-{{* Last mod : 7 oct 2012                                                    *}}
-{{****************************************************************************}}
+<?php
+/****************************************************************************
+ * Voicemail plugin template                                                *
+ * Author   : Benoit Frigon                                                 *
+ * Last mod : 7 oct 2012                                                    *
+ ***************************************************************************/
+?>
 <form action="" method="get">
-	<input type="hidden" name="path" value="{{$tab_path}}" />
-	<input type="hidden" name="folder" value="{{$current_folder}}" />
+	<input type="hidden" name="path" value="[[$tab_path]]" />
+	<input type="hidden" name="folder" value="[[$current_folder]]" />
+	<toolbar id="filters">
+		<item type="label">Folder :</item>
+		<item type="list" icon="move" data-type="dict" data-source="folders">
+			<caption>[[$current_folder_caption]]</caption>
+			<row><item type="button" href="?path=[[$tab_id]]&file=[[value|#0]]">[[value|#1]]</item></row>
+		</item>
+        	<!--li class="disabled"><a href="#">*No folders*</a></li-->
 
-	<div class="box toolbar">
-		<ul class="toolbar">
-			<li class="text">Folder :</li>
-			<li class="dropdown" style="width: 160px;"><a tabindex="1" href="#">{{$current_folder_caption}}</a>
-				<img class="close-dropdown" src="images/blank.png" alt="" />
-				<ul>
-					{{foreach|$folders}}
-						<li><a tabindex="1" href="?path={{$tab_path}}&folder={{column|0}}">{{column|1}}</a></li>
-					{{else}}
-						<li class="disabled"><a href="#">*No folders*</a></li>
-					{{/foreach}}
-				</ul>
-			</li>
-			<li class="separator"></li>
-			<li class="dropdown"><a href="#"><img src="images/blank.png" class="icon16-unchecked" /></a>
-				<img class="close-dropdown" src="images/blank.png" alt="" />
-				<ul>
-					<li><a tabindex="1" href="?path={{$tab_path}}&action=select_all&folder={{$current_folder}}&page={{$page}}">All</a></li>
-					<li><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{$page}}">None</a></li>
-				</ul>
-			</li>
-			<li id="vm-msg-btn-delete"><button type="submit" name="action" value="delete" title="Delete selected item(s)"><!--delete--><img src="images/blank.png" class="icon16-delete" />Delete</button></li>
-			<li id="vm-msg-btn-refresh"><a class="refresh" tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{$page}}"><img src="images/blank.png" class="icon16-reload" />Refresh</a></li>
-			<li id="vm-msg-btn-move" class="dropdown"><a tabindex="1" href="#"><img src="images/blank.png" class="icon16-move" />Move to</a>
-				<img class="close-dropdown" src="images/blank.png" alt="" />
-				<ul>
-					{{foreach|$folders}}
-						<li><button type="submit" name="action" value="move+{{column|0}}"><!--move+{{column|0}}-->{{column|1}}</button></li>
-					{{else}}
-						<li class="disabled"><a tabindex="1" href="#">*No folders*</a></li>
-					{{/foreach}}
-				</ul>
-			</li>
-		
-			<li class="separator"></li>
-			<li class="button {{is|"$page==1"||disabled}}" title="First page"><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page=1"><img src="images/blank.png" class="icon16-first" /></a></li>
-			<li class="button {{is|"$page==1"||disabled}}" title="Previous page"><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{$prev_page}}"><img src="images/blank.png" class="icon16-prev" /></a></li>
-			<li class="dropdown" style=""><a tabindex="1" title="Page {{$page}} of {{$last_page}}" href="#">Page {{$page}}</a>
-				<img class="close-dropdown" src="images/blank.png" alt="" />
-				<ul>
-				{{foreach|$pages}}
-					<li><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{row}}">Page {{row}}</a></li>
-				{{/foreach}}
-				</ul>
-			</li>
-			<li class="button {{is|"$page==$last_page"||disabled}}" title="Next page"><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{$next_page}}"><img src="images/blank.png" class="icon16-next" /></a></li>
-			<li class="button {{is|"$page==$last_page"||disabled}}" title="Last page"><a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&page={{$last_page}}"><img src="images/blank.png" class="icon16-last" /></a></li>		
-		</ul>
-		<div class="clear"></div>
-	</div>
+		<item type="separator"></item>
 
-	<table id="vm-msg-list" class="grid">
-		<caption>{{$current_voicemail}} - {{$current_folder_caption}} ({{$num_messages}})</caption>
-		<thead><tr>
-			<th class="column-icon"><span class="checkbox"></span></th>
-			<th style="width: 180px">Received on</th>
-			<th style="width: 160px">From</th>
-			<th style="width: 220px">Name</th>
-			<th style="width: 80px">Duration</th>
-			<th style="width: 100px">Size</th>
-			<th class="column-actions">&nbsp;</th>
-		</tr></thead>
-		{{foreach|$messages}}
-			<tr class="{{altern|msg_row|alt}} highlight" initial-data='{{row|json}}'>
-				<td class="column-icon"><input type="checkbox" name="id[]" value="{{column|0}}" {{is|$action=="select_all"|checked}} /></td>
-				<td class="clickable"><a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|1}}</a></td>
-				<td class="clickable"><a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|3}}</a></td>
-				<td class="clickable"><a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|2}}</a></td>
-				<td class="clickable"><a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|4}}</a></td>
-				<td class="clickable"><a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|5}}</a></td>
-				<td class="column-actions">
-					<a class="vm-msg-open" tabindex="1" href="{{column|6}}"><img src="images/blank.png" class="icon16-vol-up" /></a>
-					<a tabindex="1" href="?path={{$tab_path}}&folder={{$current_folder}}&action=delete&id={{column|0}}"><img src="images/blank.png" class="icon16-delete" /></a>
-				</td>
-			</tr>
-		{{remaining|$msg_per_page}}
-			<tr class="{{altern|msg_row|alt}}">
-				<td class="column-icon">&nbsp;</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td>&nbsp;</td>
-				<td class="column-actions">&nbsp;</td>
-			</tr>
-		{{/foreach}}
-	</table>        
+		<item type="delete"></item>
+		<item type="refresh"></item>
+		<item type="move-to"></item>
+
+		<item type="separator"></item>
+
+                <!-- Navigation buttons -->
+                <item type="button" action="first-page" icon="first" title="Goto fist page"/>
+                <item type="button" action="prev-page" icon="prev" title="Goto previous page"/>
+                <item type="page-list" prefix="Page " range="5" />
+                <item type="button" action="next-page" icon="next" title="Goto next page"/>
+                <item type="button" action="last-page" icon="last" title="Goto last page"/>
+        </toolbar>
+
+	<datagrid data-type="odbc" data-source="results" min-row="25">
+<caption>
+	[[$current_voicemail]] - [[$current_folder_caption]] ([[$num_messages]])
+</caption>
+                <header>
+                        <column style="width: 16px" type="checkbox"></column>
+                        <column style="width: 180px">Received on</column>
+                        <column style="width: 160px">From</column>
+                        <column style="width: 220px">Name</column>
+                        <column style="width: 80px">Duration</column>
+                        <column style="width: 100px">Size</column>
+                        <column>&nbsp;</column>
+                </header>
+
+                <row>
+                        <column type="icon"><icon icon="[[type]]" /></column>
+                        <column>[[calldate]]</column>
+                        <column>[[src]]</column>
+                        <column>[[name]]</column>
+                        <column>[[duration]]</column>
+                        <column>[[size]]</column>
+			<column>&nbsp;</column>
+                </row>
+
+<!--tr
+    class="{{altern|msg_row|alt}} highlight" 
+    initial-data='{{row|json}}'
+>
+    <td class="column-icon">
+        <input
+            type="checkbox" 
+            name="id[]"
+            value="{{column|0}}"
+            {{is|$action=="select_all"|checked}} />
+    </td>
+    <td class="clickable">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|1}}</a>
+    </td>
+    <td class="clickable">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|3}}</a>
+    </td>
+    <td class="clickable">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|2}}</a>
+    </td>
+    <td class="clickable">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|4}}</a>
+    </td>
+    <td class="clickable">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">{{column|5}}</a>
+    </td>
+    <td class="column-actions">
+        <a class="vm-msg-open" tabindex="1" href="{{column|6}}">
+            <img src="images/blank.png" class="icon16-vol-up" />
+        </a>
+        <a
+            tabindex="1"
+            href="?
+                path={{$tab_path}}&
+                folder={{$current_folder}}&
+                action=delete&
+                id={{column|0}}">
+            <img src="images/blank.png" class="icon16-delete" />
+        </a>
+    </td>
+</tr-->
+                <if-empty>** No calls **</if-empty>
+	</datagrid>
 </form>
 
 <div id="vm-popup" class="box dialog popup">

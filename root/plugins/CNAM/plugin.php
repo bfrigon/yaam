@@ -13,7 +13,7 @@ class PluginCNAM extends Plugin
 
 	function on_load() 
 	{
-		$this->register_tab($this->draw, 'tools', 'CNAM directory', 'admin');
+		$this->register_tab($this->draw, 'cnam', 'tools', 'CNAM directory', 'admin');
 	}
 	
 	/************************************************************************************************

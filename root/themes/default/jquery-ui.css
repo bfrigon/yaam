@@ -54,3 +54,77 @@
 .ui-front {
 	z-index: 100;
 }
+
+#calroot {
+	border: 1px solid;
+}
+
+#calhead {
+	background-color: #E6AE6C;
+	text-align: center;
+	height: 15px;
+	line-height: 15px;
+}
+
+#calbody {
+	clear: both;
+}
+
+#caldays {
+	background-color: #E6AE6C;
+	font-weight: bold;
+}
+
+#caldays span {
+	display: inline-block;
+	text-align: center;
+	width: 25px;
+	height: 15px;
+	line-height: 15px;
+}
+
+#calweeks .calweek a {
+	background-color: #FFF5E6;
+	display: inline-block;
+	text-align: center;
+	width: 25px;
+	height: 15px;
+	line-height: 15px;
+	color: #000;
+	text-decoration: none;
+}
+
+#calweeks .calweek a:hover {
+	background-color: #CCC;
+}
+
+#calweeks .calweek .calsunday {
+	background-color: #E6DCCF;
+}
+
+#calweeks .calweek .caloff {
+	color: #666;
+}
+
+#calweeks .calweek .calfocus {
+	font-weight: bold;
+}
+
+#calprev:before {
+	float: left;
+	cursor: pointer;
+	width: 25px;
+	content: "<<";
+}
+
+#caltitle {
+	float: left;
+	width: 120px;
+}
+
+#calnext:after {
+	float: right;
+	cursor: pointer;
+	width: 25px;
+	content: ">>";
+}

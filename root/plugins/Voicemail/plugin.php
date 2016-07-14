@@ -39,7 +39,7 @@ class PluginVoicemail extends Plugin
 		global $CONFIG;
 
 		/* Create tabs for this plugin */
-		$this->create_tab(null, 'vm', 'Voicemail', 'user');
+		$this->register_tab('draw', 'vm', null, 'Voicemail', 'user');
 
 		if (isset($CONFIG['voicemail_root']))
 			$this->vm_root = $CONFIG['voicemail_root'];
@@ -153,6 +153,7 @@ class PluginVoicemail extends Plugin
 			$current_folder_caption = '';			
 			
 			$msg_root_dir = $this->vm_user_path . '/*';
+
 			
 			foreach(glob($msg_root_dir, GLOB_ONLYDIR) as $dir) {
 				$name = basename($dir);
@@ -166,13 +167,12 @@ class PluginVoicemail extends Plugin
 						$caption = 'Trash';
 						break;
 				}
-	
+	                        
 				if ($current_folder == $name)
 					$current_folder_caption = $caption;
 					
 				$folders[] = array($name, $caption);
 			}
-
 
 			$msg_dir = $this->vm_user_path . '/' . $current_folder;
 			$current_voicemail = $_SESSION['vbox'];

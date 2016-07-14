@@ -131,6 +131,18 @@ class TemplateEngine
 		$compile_time = microtime(true) - $compile_start;
 		printf('Compile time: %0.4f s', $compile_time);
 		
+		fwrite($handle, "
+			<script type='text/javascript'>
+			// <![CDATA[
+			
+			$('.dateinput').dateinput({
+				format: 'dd/mm/yyyy'
+			});
+
+			// ]]>
+			</script>
+		");
+
 		fclose($handle);
 	}
 
@@ -447,6 +459,31 @@ class TemplateEngine
 				
 					fwrite($handle, ' /></li>');
 					break;
+		
+				// -----------------------------------------------
+				//  date box
+				// -----------------------------------------------
+				case 'datebox':
+					$name = $node_item->getAttribute('name');
+					$id = $node_item->getAttribute('id');
+					
+					fwrite($handle, '<li><input type="text" name="' . $name . '" class="dateinput"');
+					
+					if (!empty($id))
+						fwrite($handle, ' id="' . $id . '"');
+					
+					if ($node_item->hasAttribute('value')) {
+						$value = $node_item->getAttribute('value');
+						fwrite($handle, ' value="' . $this->convert_shortcode($value) . '"');
+					} else {
+						fwrite($handle, ' value="<?php echo isset($_REQUEST[\'' . $name . '\']) ? $_REQUEST[\'' . $name . '\'] : \'\'; ?>"');
+					}
+				
+					if ($node_item->hasAttribute('width'))
+						fwrite($handle, 'style="width: ' . $node_item->getAttribute('width') . ';"');
+				
+					fwrite($handle, ' /></li>');
+					break;
 
 				// -----------------------------------------------
 				//  separator
@@ -474,12 +511,22 @@ class TemplateEngine
 					$prefix = $node_item->getAttribute('prefix');
 					$suffix = $node_item->getAttribute('suffix');
 			
+					$keep_search = '';
+
+					if (isset($_GET['d'])) {
+						$keep_search .= '&d='.urlencode($_GET['d']);
+					}
+
+					if (isset($_GET['s'])) {
+						$keep_search .= '&s='.urlencode($_GET['s']);
+					}
+
 					fwrite($handle, '<li class="dropdown">');
 					fwrite($handle, '<a tabindex="1" href="#">' . $prefix . '<?php echo $current_page; ?>' . $suffix . '</a>');
 					fwrite($handle, '<img class="close-dropdown" src="images/blank.png" alt="" /><ul>');
 				
 					fwrite($handle, '<?php for(' . $var_counter . '=max(1, $current_page - ' . $range . '); ' . $var_counter . '<=min($current_page + ' . $range . ', $total_pages); ' . $var_counter . '++) { ?>');
-					fwrite($handle, '<li><a tabindex="1" href="?path=' . $this->tab_path . '&page=<?php echo ' . $var_counter . '; ?>">');
+					fwrite($handle, '<li><a tabindex="1" href="?path=' . $this->tab_path . $keep_search . '&page=<?php echo ' . $var_counter . '; ?>">');
 					fwrite($handle, $prefix . '<?php echo ' . $var_counter . '; ?>' . $suffix);
 					fwrite($handle, '</a></li>');
 					fwrite($handle, '<?php } ?>');
@@ -817,9 +864,9 @@ class TemplateEngine
 	 */		
 	private function process_tag_call($node, $handle, $data_type=null, $data_source=null)
 	{
-		$name = $node->getAttribute('name');
+		$name   = $node->getAttribute('name');
 		$return = $node->getAttribute('return');
-		$params =  $this->convert_shortcode($node->getAttribute('params'), $data_type, $data_source, false);
+		$params = $this->convert_shortcode($node->getAttribute('params'), $data_type, $data_source, false);
 		
 		/* Required attribute */
 		if (empty($name))
@@ -828,7 +875,7 @@ class TemplateEngine
 		fwrite($handle, "\r\n");
 			
 		if (!empty($return)) {
-			$return =  preg_split('/[\s,]+/', $return);
+			$return = preg_split('/[\s,]+/', $return);
 			
 			if (count($return) > 1)
 				$return = '@list($' . implode(', $', $return) . ')';
@@ -855,9 +902,8 @@ class TemplateEngine
 	private function convert_shortcode($text, $data_type=null, $data_source=null, $insert_pi=true)
 	{
 		$offset = 0;
-		
 		while(($offset = strpos($text, '[[', $offset)) !== false) {
-		
+
 			if (($end = strpos($text, ']]', $offset)) === false)
 				break;
 			
@@ -865,12 +911,12 @@ class TemplateEngine
 			
 			$output = '';
 			foreach($tokens as $token) {
-				if (empty($output)) {
+				if ((substr($token, 0, 2) != 'if') && empty($output)) {
 					
 					if ($token[0] == '$') {
 						$output = $token;
 					} else {
-					
+				
 						switch ($data_type) {
 							case null:
 								$output = '$' . $token;
@@ -881,9 +927,13 @@ class TemplateEngine
 								break;
 					
 							case 'dict':
-								$output = strtolower($token) == 'key' ? $data_source[1] : $data_source[2];
+								switch (strtolower($token)) {
+									case 'key':   $output = $data_source[1]; break;
+									case 'value': $output = $data_source[2]; break;
+									default:      $output = $token;          break;
+								}
 								break;
-								
+
 							default:
 								$output = $data_source;
 								break;
@@ -893,48 +943,100 @@ class TemplateEngine
 				
 					$params = explode(':', $token);
 					
-					switch ($params[0]) {
-						case 'lower':
-							$output = 'strtolower(' . $output . ')';
-							break;
-					
-						case 'upper':
-							$output = 'strtoupper(' . $output . ')';
-							break;
+					if (!empty($output) && ($params[0][0] == '#')) {
+                                                $p = substr($params[0], 1);
+
+						if (!is_numeric($p)) {
+							if ($p[0] != '$') {
+								$p = '\''.$p.'\'';
+
+							} else if ($data_type == 'odbc') {
+							        $p = 'odbc_result($' . $data_source . ', \'' . substr($p, 1) . '\')'; 
 						
-						case 'ucfirst':
-							$output = 'ucfirst(' . $output . ')';
-							break;
-							
-						case 'ucwords':
-							$output = 'ucwords(' . $output . ')';
-							break;
-							
-						case 'format_phone':
-							$output = 'format_phone_number(' . $output;
+							} else if ($data_type == 'dict') {
+								switch (strtolower($p)) {
+									case 'key':   $output = $data_source[1]; break;
+									case 'value': $output = $data_source[2]; break;
+									default:      $output = $p;              break;
+								}
+							}
+						}
+					        
+						$output .= '['.$p.']';						
+
+					} else {
+
+						switch ($params[0]) {
+							case 'if':
+								$output = '(('.$params[1].') ? ('.$params[2].') : ('.$params[3].'))';
+								break;
+							case 'lower':
+								$output = 'strtolower(' . $output . ')';
+								break;
 						
-							if (isset($params[1]) && strtolower($params[1]) == 'false')
-								$output .= ', false';
+							case 'upper':
+								$output = 'strtoupper(' . $output . ')';
+								break;
+							
+							case 'ucfirst':
+								$output = 'ucfirst(' . $output . ')';
+								break;
 								
-							$output .= ')';
+							case 'ucwords':
+								$output = 'ucwords(' . $output . ')';
+								break;
 							
-							break;
+							case 'var_dump':
+								$output = 'var_dump('. $output . ')';
+								break;
 
-						case 'format_time_seconds':
-							$output = 'format_time_seconds(' . $output . ')';
-							break;
+							case 'explode':
+								$sep = ' ';
 
-						case 'money_format':
-						case 'format_money':
-							$output = 'money_format(\'' . $this->currency_format . '\', ' . $output . ')';
-							break;
+								if (!empty($params[1])) {
+									$sep = $params[1];
+								}
+
+								$output = 'explode("'.addslashes($sep).'", '.$output.')';
+								break;
+		
+							case 'format_phone':
+								$output = 'format_phone_number(' . $output;
+							
+								if (isset($params[1]) && strtolower($params[1]) == 'false')
+									$output .= ', false';
+									
+								$output .= ')';
+								
+								break;
+
+							case 'format_time_seconds':
+								$output = 'format_time_seconds(' . $output . ')';
+								break;
+
+							case 'money_format':
+							case 'format_money':
+								$output = 'money_format(\'' . $this->currency_format . '\', ' . $output . ')';
+								break;
+
+							case 'dumpfile':
+								$output = 'dumpfile('. $output . ')';
+								break;
+							case 'dumpgzfile':
+								$output = 'dumpgzfile('. $output . ')';
+								break;
+							case 'get_group':
+								$output = 'get_group('. $output . ')';
+								break;
+						}
+
 					}
 				}
 			}
 			
 			if (empty($output))
 				continue;
-			
+
 			if ($insert_pi)
 				$output = '<?php echo ' . $output . ' ?>';
 			

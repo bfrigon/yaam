@@ -1,8 +1,5 @@
 <?php
 
-
-
-
 /*
 function init()
 {
@@ -54,8 +51,5 @@ function init()
 	}
 }
 */
-
-
-
 
 ?>

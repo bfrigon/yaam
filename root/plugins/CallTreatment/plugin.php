@@ -13,7 +13,7 @@ class PluginCallTreatment extends Plugin
 
 	function on_load() 
 	{
-		$this->create_tab('tools', 'ct', 'Call Treatment', 'admin');
+		$this->register_tab($this->draw, 'ct', 'tools', 'Call Treatment', 'admin');
 	}
 	
 	/************************************************************************************************

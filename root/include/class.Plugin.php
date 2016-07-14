@@ -98,7 +98,7 @@ class Plugin
 
 
 	/*--------------------------------------------------------------------------
-	 * create_tab() : Create a new tab
+	 * register_tab() : Create a new tab
 	 *
 	 * Arguments : 
 	 *  - $parent      : Parent tab
@@ -111,6 +111,10 @@ class Plugin
 	 */
 	function register_tab($callback, $id, $parent, $caption, $permissions, $order = 100)
 	{
+		if (($permissions == 'admin') && ($_SESSION['pgroups'] != 'admin')) {
+			return;
+		}
+
 		if ($parent != NULL) {
 			if (!isset($this->_tabs[$parent]))
 				throw new Exception('Parent tab does not exist');

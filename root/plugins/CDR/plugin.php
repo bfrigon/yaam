@@ -30,26 +30,45 @@ class PluginCDR extends Plugin
 		$max_results = max((isset($_GET['max']) ? intval($_GET['max']) : intval($_SESSION['cdr_rpp'])), 1);
 		$row_start = ($current_page - 1) * $max_results;
 		
-		if (isset($_GET['s'])) {
-			$search = '%' . $_GET['s'] . '%';
+		$where  = '(dst != "s")';
+		$values = array();
 		
-			$r_total = $DB->exec_query("SELECT COUNT(*),SUM(cost),SUM(duration),SUM(billsec)
-										FROM cdr WHERE dst!='s' AND (dst like ? OR src like ? OR clid like ?)", 
-									   array($search, $search, $search));
-									   
-			$results = $DB->exec_query("SELECT * FROM cdr 
-										WHERE dst !='s' AND (dst like ? OR src like ? OR clid like ?)
-										ORDER BY calldate DESC LIMIT $row_start,$max_results", 
-									   array($search, $search, $search));
 
-		
-		} else {
-			$r_total = $DB->exec_query("SELECT COUNT(*),SUM(cost),SUM(duration),SUM(billsec) FROM cdr WHERE dst!='s'", 
-									   array());
-									   
-			$results = $DB->exec_query("SELECT * FROM cdr WHERE dst !='s' ORDER BY calldate DESC LIMIT $row_start,$max_results", 
-									   array());
+		if (isset($_GET['d'])) {
+			$where   .= ' AND (calldate LIKE ?)';
+			$values[] = implode('-', array_reverse(explode('/', $_GET['d']))).'%';
 		}
+
+		if (isset($_GET['s'])) {
+			$where   .= ' AND (';
+
+			$where   .= '(dst like ?)';
+			$values[] = '%' . $_GET['s'] . '%';
+
+			$where   .= ' OR (src like ?)';
+			$values[] = '%' . $_GET['s'] . '%';
+
+			$where   .= ' OR (clid like ?)';
+			$values[] = '%' . $_GET['s'] . '%';
+		
+			$where   .= ')';
+		}
+
+		$r_total = $DB->exec_query('
+			SELECT COUNT(*), SUM(cost), SUM(duration), SUM(billsec)
+			FROM cdr 
+			WHERE '.$where,
+		        $values
+		);
+									   
+		$results = $DB->exec_query('
+			SELECT *
+			FROM cdr 
+			WHERE '.$where.'
+			ORDER BY calldate DESC
+			LIMIT '.$row_start.','.$max_results, 
+			$values
+		);
 		
 		$total_calls = odbc_result($r_total, 1);
 		$total_duration = odbc_result($r_total, 3);
@@ -58,6 +77,14 @@ class PluginCDR extends Plugin
 		
 		/* Set pager variables for the template */
 		$total_pages = max(ceil($total_calls / $max_results), 1);
+
+		$res    = $DB->exec_query('SELECT * FROM groups');
+		$groups = array();
+
+		while (odbc_fetch_row($res)) {
+			$groups[odbc_result($res, 'group')] = odbc_result($res, 'fullname');
+		}
+		odbc_free_result($res);
 
 		/* Apply the template */	
 		require($template->load('template.tpl'));
@@ -130,7 +157,7 @@ class PluginCDR extends Plugin
 														$fields);
 						}
 						
-						$this->redirect($referer);
+						$this->redirect("index.php#CDR.tools.cdr_routes");
 						break;
 				
 				

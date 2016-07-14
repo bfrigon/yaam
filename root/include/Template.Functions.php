@@ -109,6 +109,35 @@ function format_time_seconds($seconds)
 	return sprintf("%d:%02d.%02d", $hour, $min, $seconds);				
 }
 
+/*--------------------------------------------------------------------------
+ * dumpfile() : Print the content of a file.
+ *
+ * Arguments : 
+ * 	- $filename : File to dump.
+ *
+ * Returns   : Nothing
+ */
+function dumpfile($filename)
+{
+	if ($hfile = @fopen($filename, 'r')) {
+		$i = 100;
+
+		while (!feof($hfile)) {
+			$buffer = fgets($hfile, 4096);
+			echo htmlentities($buffer), '<br />';
+
+			if ($i < 0) {
+				break;
+			}
+
+			$i++;
+		}
+
+		fclose($hfile);
+	} else {
+		echo 'Permission denied.';
+	}
+}	
 
 /*--------------------------------------------------------------------------
  * dumpgzfile() : Print the content of a gzipped file.
