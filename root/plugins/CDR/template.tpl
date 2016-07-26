@@ -9,6 +9,10 @@
 
 <form action="" method="get">
 	<toolbar id="filters">
+		<item type="label">Date :</item>
+		<item type="datebox" name="d" width="75px" title="Search date"/>
+		<item type="separator"></item>
+	
 		<item type="label">Find :</item>
 		<item type="textbox" name="s" width="170px" title="Search query"></item>
 	
