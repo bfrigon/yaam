@@ -159,8 +159,24 @@ function dumpgzfile($filename)
 	gzclose($hfile);
 }	
 
+function find_group($user_id)
+{
+	global $DB;
 
+	$res = $DB->exec_query('
+		SELECT g.*
+		FROM users u
+			JOIN groups g ON (u.pgroups = g.group)
+		WHERE user = ?
+		LIMIT 1
+	', array($user_id));
 
-
+	if (odbc_fetch_row($res)) {
+		return array(
+			'group'    => odbc_result($res, 'group'),
+			'fullname' => odbc_result($res, 'fullname'),
+		);
+	}
+}
 
 ?>

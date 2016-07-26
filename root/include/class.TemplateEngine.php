@@ -1025,8 +1025,9 @@ class TemplateEngine
 							case 'dumpgzfile':
 								$output = 'dumpgzfile('. $output . ')';
 								break;
-							case 'get_group':
-								$output = 'get_group('. $output . ')';
+
+							case 'find_group':
+								$output = 'find_group('. $output . ')';
 								break;
 						}
 
