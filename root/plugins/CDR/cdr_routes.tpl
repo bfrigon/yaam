@@ -44,8 +44,8 @@
 			<column>[[priority]]</column>
 			<column>[[cost|format_money]]/min.</column>
 			<column type="actions">
-				<a tabindex="1" href="?path=CDR.tools.cdr_routes&action=edit&id={{column|id}}"><img alt="Edit" class="icon16 icon16-edit" src="images/blank.png" /></a>
-				<a tabindex="1" href="?path=CDR.tools.cdr_routes&action=delete&id[]={{column|id}}"><img alt="Delete" class="icon16 icon16-delete" src="images/blank.png" /></a>
+				<a tabindex="1" href="?path=CDR.tools.cdr_routes&action=edit&id=[[id]]"><img alt="Edit" class="icon16 icon16-edit" src="images/blank.png" /></a>
+				<a tabindex="1" href="?path=CDR.tools.cdr_routes&action=delete&id[]=[[id]]"><img alt="Delete" class="icon16 icon16-delete" src="images/blank.png" /></a>
 			</column>
 		</row>
 	</datagrid>

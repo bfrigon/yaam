@@ -55,8 +55,6 @@ try
 }
 
 
-
-
 /*------------------------------------------------------------------------------------------------*/
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -74,7 +72,7 @@ try
 	<script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript" ></script>
 </head>
 
-<boby>
+<body>
 	<a name="top"></a>
 
 	<div id="main">

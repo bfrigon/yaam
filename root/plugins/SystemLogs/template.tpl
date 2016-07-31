@@ -11,7 +11,7 @@
 	<item type="label">Log file :</item>
 	<item type="list" icon="move" data-type="dict" data-source="log_list">
 		<caption>[[$log_basename]]</caption>
-		<row><item type="button" href="?path=SystemLogs.logs.[[$tab_id]]&file=[[value]]">[[value]]</item></row>
+		<row><item type="button" href="?path=[[$tab_id]]&file=[[value]]">[[value]]</item></row>
 	</item>
 	<item type="separator" />
 	
@@ -20,7 +20,7 @@
 
 <div class="box scroll" id="log_container">
 	<div id="log_content">
-		{{dumpgzfile|$log_filename}}
+		[[$log_filename | dumpfile]]
 	</div>
 </div>
 

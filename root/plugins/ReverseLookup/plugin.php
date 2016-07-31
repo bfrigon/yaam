@@ -13,7 +13,7 @@ class PluginReverseLookup extends Plugin
 
 	function on_load() 
 	{
-		$this->create_tab('tools', 'rlookup', 'Reverse lookup', 'user');
+		$this->register_tab($this->draw, 'rlookup', 'tools', 'Reverse lookup', 'user');
 	}
 	
 	

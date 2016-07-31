@@ -16,13 +16,10 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 // 
 //******************************************************************************
- 
 require("include/common.php");
 
 $error_msg = "";
-
 try {
-
 	/* Destroy current session if logout is requested */
 	if (isset($_REQUEST['logout'])) {
 		session_start();
@@ -46,7 +43,6 @@ try {
 		header('Location: setup.php');	
 		exit();
 	}
-
 
 	$f_user = (isset($_REQUEST['user']) ? $_REQUEST['user'] : "");
 	$f_pass = (isset($_REQUEST['pass']) ? $_REQUEST['pass'] : "");
@@ -99,7 +95,6 @@ try {
 	}
 
 } catch (Exception $e) {
-		
 		$error_msg = $e->getmessage();
 }	
 
@@ -127,9 +122,9 @@ try {
 	
 </head>
 
-<boby>
+<body>
 	<div style="margin: 20px auto; text-align: center">
-		<img src="images/ast_logo.png" alt="Asterisk?path=SystemLogs.logs.ast&file=messages.4#StatusPanel.status"/>
+		<img src="images/ast_logo.png" alt="Asterisk?path=SystemLogs.logs.ast&amp;file=messages.4#StatusPanel.status"/>
 		<p>Y.A.A.M (v<?=YAAM_VERSION?>)</p>
 	</div>
 

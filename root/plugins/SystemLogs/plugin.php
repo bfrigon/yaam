@@ -20,23 +20,22 @@ class PluginSystemLogs extends Plugin
 	
 	function print_logs($template, $tab_path, $action, $uri_query)
 	{
-	
 		$log_basename = preg_replace("_.*/_", "", isset($_REQUEST['file']) ? $_REQUEST['file'] : '');
 
-		switch ($tab_id) {
-			case 'sys':
+		switch ($tab_path) {
+			case 'SystemLogs.logs.sys':
 				$log_filename = '/var/log/syslog';
 				break;
 		
-			case 'kern':
+			case 'SystemLogs.logs.kern':
 				$log_filename = '/var/log/kern.log';
 				break;
 		
-			case 'dmesg':
+			case 'SystemLogs.logs.dmesg':
 				$log_filename = '/var/log/dmesg';
 				break;
 		
-			case 'auth':
+			case 'SystemLogs.logs.auth':
 				$log_filename = '/var/log/auth.log';
 				break;
 
@@ -55,7 +54,6 @@ class PluginSystemLogs extends Plugin
 
 		$log_filename .= str_replace(basename($log_filename), '', $log_basename);
 			
-
 		require($template->load('template.tpl'));
 		$this->include_js_script('ui.js');
 	}

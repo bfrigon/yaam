@@ -28,7 +28,7 @@ class OdbcDatabase
 	{
 		if (!($this->_conn = @odbc_pconnect($dsn, $user, $pwd))) 
 			throw new OdbcException($conn, "Can't connect to the database");
-	
+
 		/* If a persistent connection is found, check if the link is still valid (avoid error 08S01) */
 		if (!(@odbc_exec($this->_conn, "SELECT 1;"))) {
 			odbc_close($this->_conn);
