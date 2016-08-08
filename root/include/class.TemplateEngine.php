@@ -1,1066 +1,1172 @@
 <?php
 //******************************************************************************
 // class.TemplateEngine.php - Template engine
-// 
-// Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
-// Version   : 0.2
-// Author    : Benoit Frigon
-// Last mod. : 9 sept. 2013
-// 
-// Copyright (c) 2011 - 2012 Benoit Frigon <bfrigon@gmail.com>
-// www.bfrigon.com
-// All Rights Reserved.
 //
-// This software is released under the terms of the GNU Lesser General Public 
-// License v2.1. 
+// Project : Asterisk Y.A.A.M (Yet another asterisk manager)
+// Author  : Benoit Frigon <benoit@frigon.info>
+//
+// Contributors
+// ------------
+//  Rafael G. Dantas <rafagd@gmail.com>
+//
+// Copyright (c) Benoit Frigon
+// www.bfrigon.com
+//
+// This software is released under the terms of the GNU Lesser General Public
+// License v2.1.
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
-// 
+//
 //******************************************************************************
-
 class TemplateEngine
 {
-	private $template_dir = 'templates';		/* Default template directory */
-	private $cache_dir = 'cache';		/* Default cache directory */
-	
-	private $tab_path = '';
-	private $tab_id = '';
-	private $plugin_name = '';
-	
-	public $currency_format = '%i $';
-
-	
-
-	/*--------------------------------------------------------------------------
-	 * __construct()
-	 *
-	 * Arguments : 
-	 * 	- $template_dir : Template directory
-	 * 	- $cache_dir    : Compiled template directory
-	 *
-	 * Return    : None
-	 */
-	function __construct($tab_path, $template_dir=null, $cache_dir=null) {
-		
-		$this->template_dir = ($template_dir != null) ? $template_dir : dirname(__FILE__) . '/../templates';
-		$this->cache_dir = ($cache_dir != null) ? $cache_dir : dirname(__FILE__) . '/../cache';
-		
-		
-		$path_item = explode('.', $tab_path, 3);
-
-		
-
-		if (count($path_item) > 1) {
-			$this->plugin_name = $path_item[0];
-			$this->tab_id = $path_item[1];
-		}
-		
-		if (count($path_item) > 2)
-			$this->tab_id .= '_' . $path_item[2];
-		
-		$this->tab_path = $tab_path;
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * load() : Load the precompiled template or compile it if non-existant.
-	 *
-	 * Arguments : 
-	 * 	- $template_name : Template file to load (relative to the template directory)
-	 *
-	 * Returns   : Filename of the compiled template
-	 */
-	function load($template_name, $use_global=false)
-	{
-	
-		if ($use_global)
-			$template_file = DOCUMENT_ROOT . '/templates/' . $template_name;
-		else	
-			$template_file = $this->template_dir . '/' . $template_name;
-
-			
-		$cache_file = $this->cache_dir . '/' . md5($template_file . $this->tab_path) . '.php';
-
-		if (($template_mtime = @filemtime($template_file)) === False)
-			throw new Exception('Can\'t load the template file (' . $template_file . ')');
-			
-		$template_mtime = time();
-	
-		if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
-			return $cache_file;
-	
-		/* (re)-compile the template */
-		$this->compile($template_file, $cache_file);
-		
-		return $cache_file;
-	}	
-
-
-
-	/*--------------------------------------------------------------------------
-	 * compile(): Template compiler
-	 *
-	 * Arguments : 
-	 * 	- $template_name : Template file to load (relative to the template directory)
-	 *
-	 * Returns   : Filename of the compiled template
-	 */
-	private function compile($template_file, $cache_file)
-	{
-	
-		$compile_start = microtime(true);	
-		
-		$this->unique_base = hash('crc32b', $template_file);		
-
-		/* Open template file */
-		$dom_input = new DOMDocument();
-		@$dom_input->loadHTMLFile($template_file);
-		if (!$dom_input)
-			throw new Exception('Template file not found (' . $template_file . ')');	
-			
-		/* Open cache file */
-		$handle = @fopen($cache_file, 'w');
-		if (!$handle)
-			throw new Exception('Cannot compile template! <br/>The cache directory does not exists or does not have write permissions.');
-
-		$html = $dom_input->getElementsByTagName('html')->item(0);
-		$body = $html->getElementsByTagName('body')->item(0);
-		
-		$this->process_node($handle, $body, false, true);
-		
-		$compile_time = microtime(true) - $compile_start;
-		printf('Compile time: %0.4f s', $compile_time);
-		
-		fwrite($handle, "
-			<script type='text/javascript'>
-			// <![CDATA[
-			
-			$('.dateinput').dateinput({
-				format: 'dd/mm/yyyy'
-			});
-
-			// ]]>
-			</script>
-		");
-
-		fclose($handle);
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * process_node() : 
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */
-	private function process_node($handle, $node, $outer=true, $recursive=true, $data_type=null, $data_source=null)
-	{
-	
-		if ($outer) {
-			$output = '<' . $node->nodeName;
-						
-			if ($node->hasAttributes()) {
-				foreach ($node->attributes as $attrib)
-					$output .= ' ' . $attrib->nodeName . '="' . $attrib->value . '"';
-			}
-							
-			$output = $this->convert_shortcode($output, $data_type, $data_source);
-		}
-		
-		if ($node->hasChildNodes()) {
-		
-			if ($outer)
-				fwrite($handle, $output . '>');
-		
-			$child = $node->firstChild;
-			do {
-				if ($recursive) {
-					
-					switch ($child->nodeType) {
-						case XML_ELEMENT_NODE:
-				
-							switch ($child->nodeName) {
-								case 'form':
-									/* insert the current tab path in an hidden input */
-									$element = $child->ownerDocument->createElement('input');
-									$element->setAttribute('type', 'hidden');
-									$element->setAttribute('name', 'path');
-									$element->setAttribute('value', $this->tab_path);
-									$child->appendChild($element);
-
-									$element = $child->ownerDocument->createElement('input');
-									$element->setAttribute('type', 'hidden');
-									$element->setAttribute('name', 'action');
-									$element->setAttribute('value', '<?php echo isset($action) ? $action : \'\' ?>');
-									$child->appendChild($element);
-
-									
-									$this->process_node($handle, $child, true, true, $data_type, $data_source);
-									break;
-									
-								case 'icon':
-									$this->process_tag_icon($child, $handle, $data_type, $data_source);
-									break;
-									
-								case 'toolbar':
-									$this->process_tag_toolbar($child, $handle);
-									break;
-				
-								case 'grid':
-								case 'datagrid':
-									$this->process_tag_grid($child, $handle);
-									break;
-				
-								case 'var':
-								case 'variable':
-									$this->process_tag_variable($child, $handle, $data_type, $data_source);
-									break;
-					
-								case 'noparse':
-									$html = $node->ownerDocument->saveXML($child);
-									fwrite($handle, $html);
-									break;
-					
-								case 'include':
-									$this->process_tag_include($child, $handle);
-									break;
-									
-								case 'call':
-									$this->process_tag_call($child, $handle, $data_type, $data_source);
-									break;
-						
-								default:
-									$this->process_node($handle, $child, true, true, $data_type, $data_source);
-									break;
-							}
-							break;
-							
-						case XML_PI_NODE:
-						case XML_COMMENT_NODE:
-							$html = $node->ownerDocument->saveXML($child);
-							fwrite($handle, $html);
-							break;
-							
-						case XML_TEXT_NODE:
-							$html = $this->convert_shortcode($node->ownerDocument->saveXML($child), $data_type, $data_source);
-							fwrite($handle, $html);
-							break;						
-					}					
-				} else {
-				
-					
-					$html = $this->convert_shortcode($child->ownerDocument->saveXML($child), $data_type, $data_source);
-					fwrite($handle, $html);
-				}
-		
-			} while(($child = $child->nextSibling) != null);
-			
-			if ($outer)
-				fwrite($handle, '</' . $node->nodeName . '>');
-
-		} elseif ($outer) {
-			fwrite($handle, $output . ' />');
-		}
-	}
-
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_icon()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_tag_icon($node_tag, $handle, $data_type=null, $data_source=null)
-	{
-		$icon = $this->convert_shortcode($node_tag->getAttribute('icon'), $data_type, $data_source);
-		$action = $this->convert_shortcode($node_tag->getAttribute('action'), $data_type, $data_source);
-		$title = $this->convert_shortcode($node_tag->getAttribute('title'), $data_type, $data_source);
-		$caption = $this->convert_shortcode($node_tag->textContent, $data_type, $data_source);
-		$href = $this->convert_shortcode($node_tag->getAttribute('href'), $data_type, $data_source);;
-		$id = $node_tag->getAttribute('id');
-		
-		$btn_class = (!empty($icon) && empty($caption)) ? 'icon-only' : '';
-			
-		if (!empty($action) && empty($href)) {
-			$href = '?path=' . $this->tab_path . '<?php echo !empty($uri) ? \'&\' . $uri : \'\' ?>';
-
-			switch ($action) {
-				case 'refresh':
-					$href .= '&force=1<?php echo isset($current_page) ? \'&page=\' . $current_page : \'\' ?>';
-					break;
-			
-				case 'clear':
-					$href = '?path=' . $this->tab_path;
-					break;
-			
-				case 'first-page':
-					$btn_class .= ' <?php echo ($current_page <= 1) ? \'disabled\' : \'\' ?>';
-					$href .= '&page=1';
-					break;
-		
-				case 'prev-page':
-					$btn_class .= ' <?php echo ($current_page <= 1) ? \'disabled\' : \'\' ?>';
-					$href .= '&page=<?php echo max($current_page - 1, 1); ?>';
-					break;
-		
-				case 'next-page':
-					$btn_class .= ' <?php echo ($current_page >= $total_pages) ? \'disabled\' : \'\' ?>';
-					$href .= '&page=<?php echo min($current_page + 1, $total_pages); ?>';
-					break;
-		
-				case 'last-page':
-					$btn_class .= ' <?php echo ($current_page >= $total_pages) ? \'disabled\' : \'\' ?>';
-					$href .= '&page=<?php echo $total_pages; ?>';
-					break;
-
-				default:
-					$href .= '&action=' . $action;
-					break;
-			}
-			
-			$params = $this->convert_shortcode($node_tag->getAttribute('params'), $data_type, $data_source);
-			if (!empty($params))
-				$href .= '&' . $params;
-		}
-		
-		if (!empty($href))
-			fwrite($handle, "<a id=\"$id\"href=\"$href\" class=\"$btn_class\" tabindex=\"1\" title=\"$title\">");
-	
-		if (!empty($icon)) {
-	
-			$icon_class = $node_tag->getAttribute('icon-class');
-			if (empty($icon_class))
-				$icon_class = 'icon16';
-	
-			fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
-		}
-	
-		fwrite($handle, $caption);
-		
-		if (!empty($href))
-			fwrite($handle, '</a>');
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_toolbar()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_tag_toolbar($node_input, $handle)
-	{
-		$id = $node_input->getAttribute('id');
-		if (empty($id))
-			$id = $this->tab_id . '_toolbar';
-			
-		$class = 'box toolbar';
-
-		fwrite($handle, "<div class=\"$class\" id=\"$id\"><ul>");	
-		
-		$this->process_list_items($node_input, $handle);
-		
-		fwrite($handle, '</ul><div class="clear"></div>');
-		fwrite($handle, '</div>');
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * process_list_items
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_list_items($node_list, $handle, $data_type=null, $data_source=null)
-	{
-		
-		foreach ($node_list->childNodes as $node_item) {
-			
-			if ($node_item->nodeName != 'item')
-				continue;
-				
-	
-			$item_type = $node_item->getAttribute('type');
-			switch ($item_type) {
-		
-				// -----------------------------------------------
-				//  Buttons
-				// -----------------------------------------------
-				case 'button':
-					$li_class = ($node_item->hasAttribute('disabled')) ? 'disabled' : '';
-				
-					fwrite($handle, "<li class=\"$li_class\">");
-					
-					$this->process_tag_icon($node_item, $handle, $data_type, $data_source);
-					
-					fwrite($handle, '</li>');
-					break;
-				
-				case 'submit':
-					$icon = $node_item->getAttribute('icon');
-					$action = $this->convert_shortcode($node_item->getAttribute('action'), $data_type, $data_source);
-					$title = $this->convert_shortcode($node_item->getAttribute('title'), $data_type, $data_source);
-					$caption = $this->convert_shortcode($node_item->textContent, $data_type, $data_source);
-					$id = $node_item->getAttribute('id');
-				
-					$btn_class = (!empty($icon) && empty($caption)) ? 'icon-only' : '';
-					$li_class = ($node_item->hasAttribute('disabled')) ? 'disabled' : '';
-					
-					
-					fwrite($handle, '<li class="' . $li_class . '"><button id="' . $id . '" class="' . $btn_class . '" type="submit" name="action" value="' . $action . '" title="' . $title . '">');
-					fwrite($handle, '<!--' . $action . '-->');	// IE submit bug fix
-				
-					if (!empty($icon)) {
-				
-						$icon_class = $node_item->getAttribute('icon-class');
-						if (empty($icon_class))
-							$icon_class = 'icon16';
-				
-						fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
-					}
-				
-					fwrite($handle, $caption);
-					fwrite($handle, '</button></li>');
-				
-					break;
-		
-				// -----------------------------------------------
-				//  text box
-				// -----------------------------------------------
-				case 'textbox':
-					$name = $node_item->getAttribute('name');
-					$id = $node_item->getAttribute('id');
-					
-					fwrite($handle, '<li><input type="text" name="' . $name . '"');
-					
-					if (!empty($id))
-						fwrite($handle, ' id="' . $id . '"');
-					
-					if ($node_item->hasAttribute('value')) {
-						$value = $node_item->getAttribute('value');
-						fwrite($handle, ' value="' . $this->convert_shortcode($value) . '"');
-					} else {
-						fwrite($handle, ' value="<?php echo isset($_REQUEST[\'' . $name . '\']) ? $_REQUEST[\'' . $name . '\'] : \'\'; ?>"');
-					}
-				
-					if ($node_item->hasAttribute('width'))
-						fwrite($handle, 'style="width: ' . $node_item->getAttribute('width') . ';"');
-				
-					fwrite($handle, ' /></li>');
-					break;
-		
-				// -----------------------------------------------
-				//  date box
-				// -----------------------------------------------
-				case 'datebox':
-					$name = $node_item->getAttribute('name');
-					$id = $node_item->getAttribute('id');
-					
-					fwrite($handle, '<li><input type="text" name="' . $name . '" class="dateinput"');
-					
-					if (!empty($id))
-						fwrite($handle, ' id="' . $id . '"');
-					
-					if ($node_item->hasAttribute('value')) {
-						$value = $node_item->getAttribute('value');
-						fwrite($handle, ' value="' . $this->convert_shortcode($value) . '"');
-					} else {
-						fwrite($handle, ' value="<?php echo isset($_REQUEST[\'' . $name . '\']) ? $_REQUEST[\'' . $name . '\'] : \'\'; ?>"');
-					}
-				
-					if ($node_item->hasAttribute('width'))
-						fwrite($handle, 'style="width: ' . $node_item->getAttribute('width') . ';"');
-				
-					fwrite($handle, ' /></li>');
-					break;
-
-				// -----------------------------------------------
-				//  separator
-				// -----------------------------------------------
-				case 'separator':
-					fwrite($handle, '<li class="separator"></li>');
-					break;
-
-				// -----------------------------------------------
-				//  label
-				// -----------------------------------------------
-				case 'label':
-					fwrite($handle, '<li class="text">');
-					$this->process_node($handle, $node_item, false, true);
-					fwrite($handle, '</li>');
-					break;
-			
-				// -----------------------------------------------
-				//  Dropdown page list
-				// -----------------------------------------------
-				case 'page-list':
-					$var_counter = $this->get_unique_varname();
-				
-					$range = max(intval($node_item->getAttribute('range')), 1);
-					$prefix = $node_item->getAttribute('prefix');
-					$suffix = $node_item->getAttribute('suffix');
-			
-					$keep_search = '';
-
-					if (isset($_GET['d'])) {
-						$keep_search .= '&d='.urlencode($_GET['d']);
-					}
-
-					if (isset($_GET['s'])) {
-						$keep_search .= '&s='.urlencode($_GET['s']);
-					}
-
-					fwrite($handle, '<li class="dropdown">');
-					fwrite($handle, '<a tabindex="1" href="#">' . $prefix . '<?php echo $current_page; ?>' . $suffix . '</a>');
-					fwrite($handle, '<img class="close-dropdown" src="images/blank.png" alt="" /><ul>');
-				
-					fwrite($handle, '<?php for(' . $var_counter . '=max(1, $current_page - ' . $range . '); ' . $var_counter . '<=min($current_page + ' . $range . ', $total_pages); ' . $var_counter . '++) { ?>');
-					fwrite($handle, '<li><a tabindex="1" href="?path=' . $this->tab_path . $keep_search . '&page=<?php echo ' . $var_counter . '; ?>">');
-					fwrite($handle, $prefix . '<?php echo ' . $var_counter . '; ?>' . $suffix);
-					fwrite($handle, '</a></li>');
-					fwrite($handle, '<?php } ?>');
-				
-					fwrite($handle, '</ul></li>');
-				
-					break;
-			
-			
-				// -----------------------------------------------
-				//  Dropdown list
-				// -----------------------------------------------
-				case 'list':
-					$node_caption = $node_item->getElementsByTagName('caption')->item(0);
-					$icon = $node_item->getAttribute('icon');
-					$caption =!empty($node_caption) ? $node_caption->textContent : '';
-					
-					$a_class = (!empty($icon) && empty($caption)) ? 'icon-only' : '';
-
-			
-					fwrite($handle, '<li class="dropdown" ');
-					
-					if ($node_item->hasAttribute('width'))
-						fwrite($handle, 'style="width: ' . $node_item->getAttribute('width') . ';"');
-					
-					fwrite($handle, '><a href="#" tabindex="1" class="' . $a_class . '">');
-
-					if (!empty($icon)) {
-				
-						$icon_class = $node_item->getAttribute('icon-class');
-						if (empty($icon_class))
-							$icon_class = 'icon16';
-				
-						fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
-					}
-				
-					fwrite($handle, $this->convert_shortcode($caption));
-					fwrite($handle, '</a><img class="close-dropdown" src="images/blank.png" alt="" />');
-				
-					fwrite($handle, '<ul>');
-					
-					
-					$node_row = $node_item->getElementsByTagName('row')->item(0);
-					$node_empty = $node_item->getElementsByTagName('if-empty')->item(0);
-					$data_source = $node_item->getAttribute('data-source');
-					$data_type = $node_item->getAttribute('data-type');
-					
-					if (!empty($node_row) && !empty($data_source)) {
-					
-						if (!empty($node_empty)) {
-							fwrite($handle, '<?php if (empty($' . $data_source . ')): ?>');
-							$this->process_list_items($node_empty, $handle);
-							fwrite($handle, '<?php else: ?>');
-						}
-					
-						switch ($data_type) {
-
-							/* hashtable array */
-							case 'dict':
-								$var_value = $this->get_unique_varname();
-								$var_key = $this->get_unique_varname();
-							
-								fwrite($handle, '<?php foreach($' . $data_source . ' as ' . $var_key . ' => ' . $var_value . '): ?>');
-								
-								$this->process_list_items($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
-								break;
-							
-							/* ODBC query result */
-							case 'odbc':
-								
-							
-								break;
-							
-							/* Ordinary array */
-							default:
-								$var_value = $this->get_unique_varname();
-								fwrite($handle, '<?php foreach($' . $data_source . ' as ' . $var_value . '): ?>');
-								
-								$this->process_list_items($node_row, $handle, $data_type, array($data_source, $var_value));
-								break;
-						}	
-						
-						fwrite($handle, '<?php endforeach; ?>');
-						
-						
-						if (!empty($node_empty))
-							fwrite($handle, '<?php endif; ?>');
-						
-					} else if (empty($node_row)) {
-						
-						$this->process_list_items($node_item, $handle);
-					}
-				
-					fwrite($handle, "</ul></li>\r\n");
-					break;
-			}
-		}
-		
-		fwrite($handle, "\r\n");		
-	}
-	
-
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_grid()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_tag_grid($node, $handle)
-	{
-		/* Get child nodes */
-		$node_row = $node->getElementsByTagName('row')->item(0);
-		$node_header = $node->getElementsByTagName('header')->item(0);
-		$node_empty = $node->getElementsByTagName('if-empty')->item(0);
-		
-		/* Required child */
-		if (empty($node_row))
-			return;
-		
-		/* Get tag attributes */
-		$data_source = $node->getAttribute('data-source');
-		$data_type = $node->getAttribute('data-type');
-		$min_rows = $node->getAttribute('min-rows');
-		
-		/* Required attributes */
-		if (empty($data_source) || empty($data_type))
-			return;
-		
-		
-		fwrite($handle, '<table id="" class="grid">');
-		
-		$var_count = $this->get_unique_varname();
-		fwrite($handle, '<?php ' . $var_count . '=0 ?>');
-		
-		/* Generate grid header if present */
-		if (!empty($node_header)) {
-			fwrite($handle, '<tr>');
-			
-			foreach ($node_header->getElementsByTagName('column') as $node_column) {
-				$style = $node_column->getAttribute('style');
-				$type = $node_column->getAttribute('type');
-			
-				fwrite($handle, '<th style="' . $style . '" class="column-' . $type . '">');
-				
-				$this->process_node($handle, $node_column, false, false, $data_type, $data_source);
-
-				fwrite($handle, '</th>');
-			}
-		
-			fwrite($handle, '</tr>');
-		}
-		
-		
-		
-		switch ($data_type) {
-			case 'odbc':
-				fwrite($handle, '<?php while (@odbc_fetch_row($' . $data_source . ')): ?>');
-				break;
-		
-			case 'dict':
-				break;
-				
-			default:
-		}
-		
-		
-		fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
-
-		$columns = $node_row->getElementsByTagName('column');
-		$num_columns = $columns->length;
-		
-		foreach ($columns as $node_column) {
-			fwrite($handle, '<td');
-			
-			$type = $node_column->getAttribute('type');
-			if (!empty($type))
-				fwrite($handle, ' class="column-' . $type . '"');
-		
-			$style = $node_column->getAttribute('style');
-			if (!empty($style))
-				fwrite($handle, ' style="' . $style . '"');
-				
-			fwrite($handle, '>');
-			
-			$this->process_node($handle, $node_column, false, true, $data_type, $data_source);
-			fwrite($handle, '</td>');
-			
-		} while(($node_column = $node_column->nextSibling) != NULL);
-	
-		fwrite($handle, '</tr>');
-		
-		switch ($data_type) {
-			case 'odbc':
-				fwrite($handle, '<?php ' . $var_count . '++; endwhile; ?>');
-				
-				if (!empty($node_empty)) {
-					fwrite($handle, '<?php if (' . $var_count . '==0):?>');
-					fwrite($handle, '<tr class="<?php echo !(' . $var_count . ' & 1) ? \'\':\'alt\' ?>">');
-					fwrite($handle, '<td colspan="'. $num_columns . '">');
-					
-					$this->process_node($handle, $node_empty, false, false);
-					
-					fwrite($handle, '</td></tr><?php ' . $var_count . '++; endif; ?>');
-				}
-				
-				break;
-		}
-		
-		
-		if ($min_rows) {
-			fwrite($handle, '<?php while(' . $var_count . ' < ' . $min_rows . '): ?>');
-			fwrite($handle, '<tr class="<?php echo !(' . $var_count . ' & 1) ? \'\':\'alt\' ?>">');
-			fwrite($handle, str_repeat('<td>&nbsp;</td>', $num_columns));
-			fwrite($handle, '</tr><?php ' . $var_count . '++; endwhile; ?>');
-		}
-		
-		fwrite($handle, '</table>');
-	}
-	/*
-<form id="cnam_frm_filters" action="" method="get">
-	<input type="hidden" name="path" value="{{$tab_path}}" />
-
-	<table id="cnam" class="grid">
-		<tr>
-			<th class="column-icon">&nbsp;</th>
-			<th style="width: 170px" >Number</th>
-			<th style="width: 200px">Caller ID (CNAM)</th>
-			<th style="width: 230px">Full name</th>
-			<th class="column-actions"></th>
-		</tr>
-		{{resultset|$results}}
-			<tr class="{{altern|cnam|alt}} highlight">
-				<td class="column-icon"><input type="checkbox" name="id[]" value="{{column|id}}" {{is|"$action==select_all"|checked}} /></td>
-				<td class="clickable"><a tabindex="1" href="?path=CNAM.tools.cnam&action=edit&id={{column|id}}">{{column|number|format_phone}}</a></td>
-				<td class="clickable"><a tabindex="1" href="?path=CNAM.tools.cnam&action=edit&id={{column|id}}">{{column|cidname}}</a></td>
-				<td class="clickable"><a tabindex="1" href="?path=CNAM.tools.cnam&action=edit&id={{column|id}}">{{column|fullname}}</a></td>
-				<td class="column-actions">
-					<a tabindex="1" href="?path=CNAM.tools.cnam&action=edit&id={{column|id}}"><img alt="Edit" class="icon16 icon16-edit" src="images/blank.png" /></a>
-					<a tabindex="1" href="?path=CNAM.tools.cnam&action=delete&id[]={{column|id}}"><img alt="Delete" class="icon16 icon16-delete" src="images/blank.png" /></a>
-				</td>
-			</tr>
-		{{/resultset}}
-	</table>
-</form>
-*/
-
-
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_variable()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_tag_variable($node, $handle)
-	{
-		$node_empty = $node->getElementsByTagName('if-empty')->item(0);
-
-		$if_empty = $node->getAttribute('if-empty');
-		$format = $node->getAttribute('format');
-		$vars = explode(',', $node->getAttribute('name'));
-
-		if (!empty($format))
-			$instr = '<?php printf(\'' . $format . '\',';
-		else
-			$instr = '<?php echo ';
-		
-		foreach ($vars as $key => $var) {
-			
-			$var = trim($var);
-			if (empty($var)) {
-				unset($vars[$key]);
-				continue;
-			}
-			
-			$vars[$key] = '$' . $var;
-		}
-
-		if (empty($vars))
-			return;
-		
-		if (!empty($node_empty) || !empty($if_empty)) {
-			fwrite($handle, '<?php if(empty(' . implode(') || empty(', $vars) . ')): ?>');
-			
-			if (!empty($node_empty))
-				$this->process_node($handle, $node_empty, false, false);
-			else
-				fwrite($handle, $if_empty);
-
-			fwrite($handle, '<?php else: ?>');
-		}
-		
-		fwrite($handle, $instr . implode(',', $vars));
-		
-		if (!empty($format))
-			fwrite($handle, ') ?>');
-		else
-			fwrite($handle, ' ?>');
-		
-		if (!empty($node_empty) || !empty($if_empty))
-			fwrite($handle, '<?php endif; ?>');
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_include()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */	
-	private function process_tag_include($node, $handle)
-	{
-		
-		
-			
-	}
-	
-	
-	
-	/*--------------------------------------------------------------------------
-	 * process_tag_callback()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */		
-	private function process_tag_call($node, $handle, $data_type=null, $data_source=null)
-	{
-		$name   = $node->getAttribute('name');
-		$return = $node->getAttribute('return');
-		$params = $this->convert_shortcode($node->getAttribute('params'), $data_type, $data_source, false);
-		
-		/* Required attribute */
-		if (empty($name))
-			return;
-			
-		fwrite($handle, "\r\n");
-			
-		if (!empty($return)) {
-			$return = preg_split('/[\s,]+/', $return);
-			
-			if (count($return) > 1)
-				$return = '@list($' . implode(', $', $return) . ')';
-			else
-				$return = '$' . $return;
-
-		
-			fwrite($handle, '<?php ' . $return . ' = ');
-		}		
-
-		fwrite($handle, '$this->' . $name . '(' . $params . '); ?>');
-	}
-	
-	
-
-	/*--------------------------------------------------------------------------
-	 * process_tag_grid()
-	 *
-	 * Arguments : 
-	 * 	- 
-	 *
-	 * Returns   : None
-	 */		
-	private function convert_shortcode($text, $data_type=null, $data_source=null, $insert_pi=true)
-	{
-		$offset = 0;
-		while(($offset = strpos($text, '[[', $offset)) !== false) {
-
-			if (($end = strpos($text, ']]', $offset)) === false)
-				break;
-			
-			$tokens =  preg_split('/[\s|]+/', trim(substr($text, $offset + 2, $end - $offset - 2)));
-			
-			$output = '';
-			foreach($tokens as $token) {
-				if ((substr($token, 0, 2) != 'if') && empty($output)) {
-					
-					if ($token[0] == '$') {
-						$output = $token;
-					} else {
-				
-						switch ($data_type) {
-							case null:
-								$output = '$' . $token;
-								break;
-						
-							case 'odbc':
-								$output = 'odbc_result($' . $data_source . ', \'' . $token . '\')';
-								break;
-					
-							case 'dict':
-								switch (strtolower($token)) {
-									case 'key':   $output = $data_source[1]; break;
-									case 'value': $output = $data_source[2]; break;
-									default:      $output = $token;          break;
-								}
-								break;
-
-							default:
-								$output = $data_source;
-								break;
-						}
-					}
-				} else {
-				
-					$params = explode(':', $token);
-					
-					if (!empty($output) && ($params[0][0] == '#')) {
-                                                $p = substr($params[0], 1);
-
-						if (!is_numeric($p)) {
-							if ($p[0] != '$') {
-								$p = '\''.$p.'\'';
-
-							} else if ($data_type == 'odbc') {
-							        $p = 'odbc_result($' . $data_source . ', \'' . substr($p, 1) . '\')'; 
-						
-							} else if ($data_type == 'dict') {
-								switch (strtolower($p)) {
-									case 'key':   $output = $data_source[1]; break;
-									case 'value': $output = $data_source[2]; break;
-									default:      $output = $p;              break;
-								}
-							}
-						}
-					        
-						$output .= '['.$p.']';						
-
-					} else {
-
-						switch ($params[0]) {
-							case 'if':
-								$output = '(('.$params[1].') ? ('.$params[2].') : ('.$params[3].'))';
-								break;
-							case 'lower':
-								$output = 'strtolower(' . $output . ')';
-								break;
-						
-							case 'upper':
-								$output = 'strtoupper(' . $output . ')';
-								break;
-							
-							case 'ucfirst':
-								$output = 'ucfirst(' . $output . ')';
-								break;
-								
-							case 'ucwords':
-								$output = 'ucwords(' . $output . ')';
-								break;
-							
-							case 'var_dump':
-								$output = 'var_dump('. $output . ')';
-								break;
-
-							case 'explode':
-								$sep = ' ';
-
-								if (!empty($params[1])) {
-									$sep = $params[1];
-								}
-
-								$output = 'explode("'.addslashes($sep).'", '.$output.')';
-								break;
-		
-							case 'format_phone':
-								$output = 'format_phone_number(' . $output;
-							
-								if (isset($params[1]) && strtolower($params[1]) == 'false')
-									$output .= ', false';
-									
-								$output .= ')';
-								
-								break;
-
-							case 'format_time_seconds':
-								$output = 'format_time_seconds(' . $output . ')';
-								break;
-
-							case 'money_format':
-							case 'format_money':
-								$output = 'money_format(\'' . $this->currency_format . '\', ' . $output . ')';
-								break;
-
-							case 'dumpfile':
-								$output = 'dumpfile('. $output . ')';
-								break;
-							case 'dumpgzfile':
-								$output = 'dumpgzfile('. $output . ')';
-								break;
-
-							case 'find_group':
-								$output = 'find_group('. $output . ')';
-								break;
-						}
-
-					}
-				}
-			}
-			
-			if (empty($output))
-				continue;
-
-			if ($insert_pi)
-				$output = '<?php echo ' . $output . ' ?>';
-			
-			$text = substr_replace($text, $output, $offset, $end - $offset + 2);
-			$offset = $offset + strlen($output);
-		}
-			
-		return $text;
-	}
-
-
-
-	/*--------------------------------------------------------------------------
-	 * get_unique_varname
-	 *
-	 * Arguments : 
-	 * 	None
-	 *
-	 * Returns   : Unique variable name.
-	 */
-	private function get_unique_varname()
-	{
-		return '$v' . $this->unique_base . $this->unique_id++;
-	}
+    private $_template_dir;
+    private $_cache_dir;
+    private $_plugin;
+
+    public $currency_format = "%i $";
+
+
+    /*--------------------------------------------------------------------------
+     * __construct()
+     *
+     * Arguments :
+     * ---------
+     *  - plugin : The plugin class the template engine is initialized for. The
+     *             engine is going to load the template from the plugin directory.
+     *             If sets to 'null', the engine is going to use the global template
+     *             directory instead.
+     *
+     * Return : None
+     */
+    function __construct($plugin=null) {
+        $this->_plugin = $plugin;
+
+        if (is_null($plugin))
+            $this->_template_dir = dirname(__FILE__) . "/../templates";
+        else
+            $this->_template_dir = $plugin->PLUGIN_DIR;
+
+        $this->_cache_dir = dirname(__FILE__) . "/../cache";
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * load() : Load the precompiled template or compile it if non-existant.
+     *
+     * Arguments
+     * ---------
+     *  - template_name : Template file to load (relative to the template directory)
+     *  - use_global : Force loading from global template directory.
+     *
+     * Returns   : Filename of the compiled template
+     */
+    function load($template_name, $use_global=false)
+    {
+
+        if ($use_global)
+            $template_file = DOCUMENT_ROOT . "/templates/$template_name";
+        else
+            $template_file = $this->_template_dir . "/$template_name";
+
+
+        $cache_file = $this->_cache_dir . "/" . md5($template_file) . ".php";
+
+        if (($template_mtime = @filemtime($template_file)) === False)
+            throw new Exception("Can't load the template file ($template_file)");
+
+        /* TEST : Force re-compile the template */
+        //$template_mtime = time();
+
+        if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
+            return $cache_file;
+
+        /* (re)-compile the template */
+        $this->compile($template_file, $cache_file);
+
+        return $cache_file;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * compile(): Compile the template
+     *
+     * Arguments
+     * ---------
+     *  - template_file : Source template file(relative to the template directory)
+     *  - cache_file    : Compiled template file
+     *
+     * Returns   : Filename of the compiled template
+     */
+    private function compile($template_file, $cache_file)
+    {
+
+        $compile_start = microtime(true);
+
+        $this->unique_base = hash("crc32b", $template_file);
+
+        /* Open template file */
+        $dom_input = new DOMDocument();
+        if (!(@$dom_input->loadHTMLFile($template_file)))
+            throw new Exception("Template file not found ($template_file)");
+
+        /* Open cache file */
+        $handle = @fopen($cache_file, "w");
+        if (!$handle)
+            throw new Exception("Cannot compile template! <br/>
+                The cache directory does not exists or does not have write permissions.");
+
+        $this->process_node($handle, $dom_input, false, true);
+
+        $compile_time = microtime(true) - $compile_start;
+        printf("Compile time: %0.4f s", $compile_time);
+
+        fclose($handle);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * get_attribute_shortcode() : Convert shortcode contained in a node attribute
+     *
+     * Arguments
+     * ---------
+     *  - node        : The node to get the attribute from.
+     *  - name        : Attribute name
+     *  - default     : Default value if attribute does not exists.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object
+     *  - wrap        : Wrap the return value within php tags. <?php echo ... ?>
+     *
+     * Returns   : The attribute value
+     */
+    private function get_attribute_shortcode($node, $name, $default="", $data_type=null, $data_source=null, $wrap=true)
+    {
+
+        if (!($node->hasAttribute($name)))
+            return $default;
+
+        $value = trim($node->getAttribute($name));
+
+        return $this->convert_shortcode($value, $data_type, $data_source, $wrap);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * get_attribute_boolean() : Get the boolean value from a node attribute.
+     *
+     * Arguments
+     * ---------
+     *  - node        : The node to get the attribute from.
+     *  - name        : Attribute name
+     *
+     * Returns   : The attribute value
+     */
+    private function get_attribute_boolean($node, $name)
+    {
+        if (!($node->hasAttribute($name)))
+            return false;
+
+        $value = strtolower(trim($node->getAttribute($name)));
+
+        switch ($value) {
+            case "true":
+            case "1":
+            case "":
+                return true;
+
+            default:
+                return false;
+
+        }
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * func_build_tab_url() : Generates the code to call the plugin function
+     *                        "build_tab_url" to the template output. This
+     *                        function creates an url based on the content
+     *                        of $_GET and the given parameters.
+     *
+     * Arguments
+     * ---------
+     *  - params      : Parameters to include in the url.
+     *  - keep_uri    : If true, the content of "$_GET" will be merged.
+     *  - no_referrer : If true, discards the referrer from $_GET
+     *
+     * Returns : The generated code required to call the "build_tab_url" function.
+     */
+    private function func_build_tab_url($params, $keep_uri, $no_referrer=false)
+    {
+        $output = "<?php echo \$this->build_tab_url(";
+
+        if (is_null($params)) {
+            $output .= "null, ";
+
+        } else {
+
+            $output .= "array(";
+
+            foreach($params as $name => $value)
+                $output .= "\"$name\" => $value, ";
+
+            $output .= "), ";
+        }
+
+        $output .= ($keep_uri ? "true" : "false") . ", ";
+        $output .= ($no_referrer ? "true" : "false") . ") ?>";
+        return $output;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_node() : Compile a node from the template file
+     *
+     * Arguments
+     * ---------
+     *  - handle      : File handle to the template output.
+     *  - node        : Node to process.
+     *  - outer       : Include the node in the output. If false, only process child nodes.
+     *  - recursive   : Process all child nodes recursivly.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_node($handle, $node, $outer=true, $recursive=true, $data_type=null, $data_source=null)
+    {
+
+        if ($outer)
+            $this->dump_node($handle, $node, false, false, true, $data_type, $data_source);
+
+        if ($node->hasChildNodes()) {
+
+            $child = $node->firstChild;
+            do {
+                if ($recursive) {
+
+                    switch ($child->nodeType) {
+                        case XML_ELEMENT_NODE:
+
+                            switch ($child->nodeName) {
+                                case "form":
+
+                                    if (empty($child->getAttribute("action")))
+                                        $child->setAttribute("action", "<?php echo \$this->get_tab_url(false) ?>");
+
+                                    $this->process_node($handle, $child, true, true, $data_type, $data_source);
+                                    break;
+
+                                case "icon":
+                                    $this->process_tag_icon($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "toolbar":
+                                    $this->process_tag_toolbar($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "field":
+                                    $this->process_tag_field($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "grid":
+                                case "datagrid":
+                                    $this->process_tag_grid($child, $handle);
+                                    break;
+
+                                case "var":
+                                case "variable":
+                                    $this->process_tag_variable($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "noparse":
+                                    $html = $node->ownerDocument->saveXML($child);
+                                    fwrite($handle, $html);
+                                    break;
+
+                                case "call":
+                                case "callback":
+                                    $this->process_tag_callback($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                default:
+                                    $this->process_node($handle, $child, true, true, $data_type, $data_source);
+                                    break;
+                            }
+                            break;
+
+                        case XML_PI_NODE:
+                        case XML_COMMENT_NODE:
+                            fwrite($handle, $child->ownerDocument->saveHTML($child));
+                            break;
+
+                        case XML_TEXT_NODE:
+                            $html = $this->convert_shortcode($child->ownerDocument->saveHTML($child), $data_type, $data_source);
+                            fwrite($handle, $html);
+                            break;
+
+                        case XML_DOCUMENT_TYPE_NODE:
+                            fwrite($handle, $child->ownerDocument->saveXML($child));
+                            break;
+                    }
+                } else {
+
+
+                    $html = $this->convert_shortcode($child->ownerDocument->saveXML($child), $data_type, $data_source);
+                    fwrite($handle, $html);
+                }
+
+            } while(($child = $child->nextSibling) != null);
+        }
+
+        if ($outer)
+            fwrite($handle, "</{$node->nodeName}>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_icon() : Process the template tag "icon".
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_icon($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+        $icon = $this->get_attribute_shortcode($node_tag, "icon", "", $data_type, $data_source);
+        $action = $this->get_attribute_shortcode($node_tag, "action", "", $data_type, $data_source);
+        $title = $this->get_attribute_shortcode($node_tag, "title", "", $data_type, $data_source);
+        $params = $this->get_attribute_shortcode($node_tag, "params", "", $data_type, $data_source, false);
+        $href = $this->get_attribute_shortcode($node_tag, "href", "", $data_type, $data_source);
+        $id = $node_tag->getAttribute("id");
+        $caption = $this->convert_shortcode($node_tag->textContent, $data_type, $data_source);
+
+        $keep_uri = $this->get_attribute_boolean($node_tag, "keep-uri", false);
+        $no_referrer = $this->get_attribute_boolean($node_tag, "no-referrer", false);
+
+        $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
+
+        if (empty($href)) {
+
+            $url_params = array();
+            if (!empty($params))
+                parse_str($params, $url_params);
+
+            if ($action == "") {
+                $href = $this->func_build_tab_url($url_params, $keep_uri);
+
+            } else {
+                switch ($action) {
+                    case "refresh":
+                        $url_params["force"] = "1";
+                        $href = $this->func_build_tab_url($url_params, true);
+                        break;
+
+                    case "clear":
+                        $href = $this->func_build_tab_url($url_params, false);
+                        break;
+
+                    case "cancel":
+                        $href = "<?php echo \$this->get_tab_referrer() ?>";
+                        break;
+
+                    case "first-page":
+                        $url_params["page"] = "1";
+                        $href = $this->func_build_tab_url($url_params, true);
+
+                        $btn_class .= " <?php echo (\$current_page <= 1) ? 'disabled' : '' ?>";
+                        break;
+
+                    case "prev-page":
+                        $url_params["page"] = "max(\$current_page - 1, 1)";
+                        $href = $this->func_build_tab_url($url_params, true);
+
+                        $btn_class .= " <?php echo (\$current_page <= 1) ? 'disabled' : '' ?>";
+                        break;
+
+                    case "next-page":
+                        $url_params["page"] = "min(\$current_page + 1, \$total_pages)";
+                        $href = $this->func_build_tab_url($url_params, true);
+
+                        $btn_class .= " <?php echo (\$current_page >= \$total_pages) ? 'disabled' : '' ?>";
+                        break;
+
+                    case "last-page":
+                        $url_params["page"] = "\$total_pages";
+                        $href = $this->func_build_tab_url($url_params, true);
+
+                        $btn_class .= " <?php echo (\$current_page >= \$total_pages) ? 'disabled' : '' ?>";
+                        break;
+
+                    case "select-none":
+                    case "select-all":
+                        $url_params["action"] = "'$action'";
+
+                        $href = $this->func_build_tab_url($url_params, true);
+                        break;
+
+                    default:
+                        $url_params["action"] = "'$action'";
+                        $url_params["referrer"] = "\$this->get_tab_url(true)";
+
+                        $href = $this->func_build_tab_url($url_params, $keep_uri, $no_referrer);
+                        break;
+                }
+            }
+       }
+
+        if (!empty($href))
+            fwrite($handle, "<a id=\"$id\" href=\"$href\" class=\"$btn_class\" tabindex=\"1\" title=\"$title\" >");
+
+        if (!empty($icon)) {
+
+            $icon_class = $node_tag->getAttribute("icon-class");
+            if (empty($icon_class))
+                $icon_class = "icon16";
+
+            fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
+        }
+
+        fwrite($handle, $caption);
+
+        if (!empty($href))
+            fwrite($handle, "</a>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_field() : Process the template tag "field"
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_field($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+
+        $name = $node_tag->getAttribute("name");
+        $type = $node_tag->getAttribute("type");
+        $id = $node_tag->getAttribute("id");
+        $caption = $this->get_attribute_shortcode($node_tag, "caption", "", $data_type, $data_source);
+        $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source);
+
+
+
+        fwrite($handle, "<label for=\"$name\">$caption :</label>");
+
+
+        switch ($type) {
+
+            case "view":
+                fwrite($handle, "<input type=\"text\" id=\"$id\" name=\"$name\" value=\"$value\" readonly />");
+                break;
+
+            case "textbox":
+                fwrite($handle, "<input type=\"text\" id=\"$id\" name=\"$name\" value=\"$value\" />");
+                break;
+
+            case "password";
+                fwrite($handle, "<input type=\"password\" id=\"$id\" name=\"$name\" value=\"$value\" />");
+                break;
+        }
+
+        $node_help = $node_tag->getElementsByTagName("help")->item(0);
+
+        if (!empty($node_help)) {
+
+            fwrite($handle, "<a href=\"#\" class=\"tooltip\">Help");
+            fwrite($handle, "<span><img class=\"callout\" src=\"images\blank.png\" />");
+            fwrite($handle, $node_help->textContent);
+            fwrite($handle, "</span></a>");
+        }
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_toolbar() : Process the template tag "toolbar"
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_toolbar($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+        $id = $node_tag->getAttribute("id");
+        if (empty($id))
+            $id = "{$this->tab_id}_toolbar";
+
+        $class = $node_tag->getAttribute("class");
+        if (empty($class))
+            $class = "box";
+
+
+
+        fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><ul>");
+
+        $this->process_toolbar_items($node_tag, $handle, $data_type, $data_source);
+
+        fwrite($handle, "</ul></div>");
+        fwrite($handle, "<div class=\"clear\"></div>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_toolbar_items() : Process nodes "item" in "toolbar" tag.
+     *
+     * Arguments
+     * ---------
+     *  - node_list   : The node containing "item" tags.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_toolbar_items($node_list, $handle, $data_type=null, $data_source=null)
+    {
+
+        foreach ($node_list->childNodes as $node_item) {
+
+            /* Ignore other tags */
+            if ($node_item->nodeName != "item")
+                continue;
+
+
+            $item_type = $node_item->getAttribute("type");
+            switch ($item_type) {
+
+                // -----------------------------------------------
+                //  Buttons
+                // -----------------------------------------------
+                case "button":
+                    $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
+
+                    fwrite($handle, "<li class=\"$li_class\">");
+
+                    $this->process_tag_icon($node_item, $handle, $data_type, $data_source);
+
+                    fwrite($handle, "</li>\r\n");
+                    break;
+
+                // -----------------------------------------------
+                //  Submit button
+                // -----------------------------------------------
+                case "submit":
+                    $icon = $node_item->getAttribute("icon");
+                    $id = $node_item->getAttribute("id");
+                    $action = $this->get_attribute_shortcode($node_item, "action", "", $data_type, $data_source);
+                    $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
+                    $caption = $this->convert_shortcode($node_item->textContent, $data_type, $data_source);
+
+                    $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
+                    $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
+
+
+                    fwrite($handle, "<li class=\"$li_class\">\r\n");
+                    fwrite($handle, "<button class=\"$btn_class\" type=\"submit\"");
+
+                    if (!empty($id))
+                        fwrite($handle, " id=\"$id\"");
+
+                    if (!empty($action))
+                        fwrite($handle, " name=\"action\" value=\"$action\"");
+                    else
+                        fwrite($handle, " name=\"submit\" value=\"submit\"");
+
+                    if (!empty($title))
+                        fwrite($handle, " title=\"$title\"");
+
+                    fwrite($handle, ">\r\n");
+
+
+                    if (!empty($icon)) {
+
+                        $icon_class = $node_item->getAttribute("icon-class");
+                        if (empty($icon_class))
+                            $icon_class = "icon16";
+
+                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />\r\n");
+                    }
+
+                    fwrite($handle, $caption);
+                    fwrite($handle, "</button></li>\r\n");
+
+                    break;
+
+                // -----------------------------------------------
+                //  text box
+                // -----------------------------------------------
+                case "textbox":
+                case "datebox":
+                    $name = $node_item->getAttribute("name");
+                    $id = $node_item->getAttribute("id");
+
+                    fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
+
+                    if ($item_type == "datebox")
+                        fwrite($handle, " class=\"dateinput\"");
+
+                    if (!empty($id))
+                        fwrite($handle, " id=\"$id\"");
+
+                    if ($node_item->hasAttribute("value")) {
+                        $value = $this->get_attribute_shortcode($node_item, "value", "", $data_type, $data_source);
+                        fwrite($handle, " value=\"$value\"");
+
+                    } else {
+                        fwrite($handle, " value=\"<?php echo isset(\$_REQUEST['$name']) ? \$_REQUEST['$name'] : ''; ?>\"");
+                    }
+
+                    if ($node_item->hasAttribute("width"))
+                        fwrite($handle, " style=\"width: " . $node_item->getAttribute("width") . ";\"");
+
+                    fwrite($handle, " /></li>\r\n");
+                    break;
+
+                // -----------------------------------------------
+                //  separator
+                // -----------------------------------------------
+                case "separator":
+                    fwrite($handle, "<li class=\"separator\"></li>");
+                    break;
+
+                // -----------------------------------------------
+                //  label
+                // -----------------------------------------------
+                case "label":
+                    fwrite($handle, "<li class=\"text\">");
+                    $this->process_node($handle, $node_item, false, true);
+
+                    fwrite($handle, "</li>");
+                    break;
+
+                // -----------------------------------------------
+                //  Dropdown page list
+                // -----------------------------------------------
+                case "page-list":
+                    $var_counter = $this->get_unique_varname();
+
+                    $range = max(intval($node_item->getAttribute("range")), 1);
+                    $prefix = $node_item->getAttribute("prefix");
+                    $suffix = $node_item->getAttribute("suffix");
+
+                    $params = array("page" => "$var_counter");
+                    $href = $this->func_build_tab_url($params, true);
+
+                    fwrite($handle, "<li class=\"dropdown\">\r\n");
+                    fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\r\n");
+                    fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\r\n");
+
+                    fwrite($handle, "<ul>\r\n");
+                    fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\r\n");
+                    fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\r\n");
+                    fwrite($handle, "<?php } ?>\r\n");
+                    fwrite($handle, "</ul></li>\r\n");
+                    break;
+
+                // -----------------------------------------------
+                //  Dropdown list
+                // -----------------------------------------------
+                case "list":
+                    $node_caption = $node_item->getElementsByTagName("caption")->item(0);
+                    $icon = $node_item->getAttribute("icon");
+                    $caption =!empty($node_caption) ? $node_caption->textContent : "";
+
+                    $a_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
+
+
+                    fwrite($handle, "<li class=\"dropdown\" ");
+
+                    if ($node_item->hasAttribute("width"))
+                        fwrite($handle, "style=\"width: " . $node_item->getAttribute('width') . ";\"");
+
+                    fwrite($handle, ">\r\n<a href=\"#\" tabindex=\"1\" class=\"$a_class\">");
+
+                    if (!empty($icon)) {
+
+                        $icon_class = $node_item->getAttribute("icon-class");
+                        if (empty($icon_class))
+                            $icon_class = "icon16";
+
+                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
+                    }
+
+                    fwrite($handle, $this->convert_shortcode($caption));
+                    fwrite($handle, "</a>\r\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\r\n");
+
+                    fwrite($handle, "<ul>\r\n");
+
+
+                    $node_row = $node_item->getElementsByTagName("row")->item(0);
+                    $node_ifempty = $node_item->getElementsByTagName("if-empty")->item(0);
+                    $data_source = $node_item->getAttribute("data-source");
+                    $data_type = $node_item->getAttribute("data-type");
+
+                    if (!empty($node_row) && !empty($data_source)) {
+
+                        if (!empty($node_ifempty)) {
+                            fwrite($handle, "<?php if (empty(\$$data_source)): ?>");
+                            $this->process_toolbar_items($node_ifempty, $handle);
+                            fwrite($handle, "<?php else: ?>");
+                        }
+
+                        switch ($data_type) {
+
+                            /* hashtable array */
+                            case "dict":
+                                $var_value = $this->get_unique_varname();
+                                $var_key = $this->get_unique_varname();
+
+                                fwrite($handle, "<?php foreach(\$$data_source as $var_key => $var_value): ?>");
+
+                                $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
+
+                                fwrite($handle, "<?php endforeach; ?>");
+                                break;
+
+                            /* ODBC query result */
+                            case "odbc":
+
+
+                                break;
+
+                            /* Ordinary array */
+                            default:
+                                $var_value = $this->get_unique_varname();
+                                fwrite($handle, "<?php foreach(\$$data_source as $var_value): ?>");
+
+                                $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_value));
+
+                                fwrite($handle, "<?php endforeach; ?>");
+                                break;
+                        }
+
+                        if (!empty($node_empty))
+                            fwrite($handle, "<?php endif; ?>");
+
+                    } else if (empty($node_row)) {
+
+                        $this->process_toolbar_items($node_item, $handle);
+                    }
+
+                    fwrite($handle, "</ul></li>\r\n");
+                    break;
+            }
+        }
+
+        fwrite($handle, "\r\n");
+    }
+
+
+   /*--------------------------------------------------------------------------
+     * process_tag_grid() : Process the template tag "datagrid"
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *
+     * Returns : None
+     */
+    private function process_tag_grid($node_tag, $handle)
+    {
+        /* Get child nodes */
+        $node_row = $node_tag->getElementsByTagName("row")->item(0);
+        $node_header = $node_tag->getElementsByTagName("header")->item(0);
+        $node_empty = $node_tag->getElementsByTagName("if-empty")->item(0);
+
+        /* Required child */
+        if (empty($node_row))
+            return;
+
+        /* Get tag attributes */
+        $data_source = $node_tag->getAttribute("data-source");
+        $data_type = $node_tag->getAttribute("data-type");
+        $min_rows = $node_tag->getAttribute("min-rows");
+
+        /* Required attributes */
+        if (empty($data_source) || empty($data_type))
+            return;
+
+
+        fwrite($handle, "<table id=\"\" class=\"grid\">");
+
+        $var_count = $this->get_unique_varname();
+        fwrite($handle, "<?php $var_count=0 ?>");
+
+        /* Generate grid header if present */
+        if (!empty($node_header)) {
+            fwrite($handle, "<tr>");
+
+            foreach ($node_header->getElementsByTagName("column") as $node_column) {
+                $style = $node_column->getAttribute("style");
+                $type = $node_column->getAttribute("type");
+
+                fwrite($handle, "<th style=\"$style\" class=\"column-$type\">");
+
+                $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
+
+                fwrite($handle, "</th>");
+            }
+
+            fwrite($handle, "</tr>");
+        }
+
+        /* Insert rows iteration code */
+        switch ($data_type) {
+            case "odbc":
+                fwrite($handle, "<?php while (@odbc_fetch_row($$data_source)): ?>");
+                break;
+
+            case "dict":
+                break;
+
+            default:
+        }
+
+        /* Insert grid rows */
+        fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
+
+        $columns = $node_row->getElementsByTagName("column");
+        $num_columns = $columns->length;
+
+
+        foreach ($columns as $node_column) {
+            fwrite($handle, "<td");
+
+            $type = $node_column->getAttribute("type");
+            if (!empty($type))
+                fwrite($handle, " class=\"column-$type\"");
+
+            $style = $node_column->getAttribute("style");
+            if (!empty($style))
+                fwrite($handle, " style=\"$style\"");
+
+            fwrite($handle, ">");
+
+            $this->process_node($handle, $node_column, false, true, $data_type, $data_source);
+            fwrite($handle, "</td>");
+
+        } while(($node_column = $node_column->nextSibling) != null);
+
+        fwrite($handle, "</tr>");
+
+        switch ($data_type) {
+            case "odbc":
+                fwrite($handle, "<?php $var_count++; endwhile; ?>");
+
+                break;
+        }
+
+        if (!empty($node_empty)) {
+            fwrite($handle, "<?php if ($var_count==0):?>");
+            fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<td colspan=\"$num_columns\">");
+
+            $this->process_node($handle, $node_empty, false, false);
+
+            fwrite($handle, "</td></tr><?php $var_count++; endif; ?>");
+        }
+
+        if ($min_rows) {
+            fwrite($handle, "<?php while($var_count < $min_rows): ?>");
+            fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, str_repeat("<td>&nbsp;</td>", $num_columns));
+            fwrite($handle, "</tr><?php $var_count++; endwhile; ?>");
+        }
+
+        fwrite($handle, "</table>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_variable() : Process template tag "variable"
+     *
+     * Arguments
+     * ---------
+     *  - node_tag : The node to process.
+     *  - handle   : File handle to the template output.
+     *
+     * Returns : None
+     */
+    private function process_tag_variable($node_tag, $handle)
+    {
+        $node_empty = $node_tag->getElementsByTagName("if-empty")->item(0);
+
+        $if_empty = $node_tag->getAttribute("if-empty");
+        $format = $node_tag->getAttribute("format");
+        $vars = explode(',', $node_tag->getAttribute("name"));
+
+        if (!empty($format))
+            $instr = "<?php printf('$format',";
+        else
+            $instr = "<?php echo ";
+
+        foreach ($vars as $key => $var) {
+
+            $var = trim($var);
+            if (empty($var)) {
+                unset($vars[$key]);
+                continue;
+            }
+
+            $vars[$key] = "\$$var";
+        }
+
+        if (empty($vars))
+            return;
+
+        if (!empty($node_empty) || !empty($if_empty)) {
+            fwrite($handle, "<?php if(empty(" . implode(") || empty(", $vars) . ")): ?>");
+
+            if (!empty($node_empty))
+                $this->process_node($handle, $node_empty, false, false);
+            else
+                fwrite($handle, $if_empty);
+
+            fwrite($handle, "<?php else: ?>");
+        }
+
+        fwrite($handle, $instr . implode(',', $vars));
+
+        if (!empty($format))
+            fwrite($handle, ") ?>");
+        else
+            fwrite($handle, " ?>");
+
+        if (!empty($node_empty) || !empty($if_empty))
+            fwrite($handle, "<?php endif; ?>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_callback() : Process template "callback" tag. It insert the code
+     *                          to the output required to call a function inside
+     *                          the plugin.
+     *
+     * Arguments
+     * ---------
+     *  - node_tag : The tag to process.
+     *  - handle   : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_callback($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+        $name   = $node_tag->getAttribute("name");
+        $return = $node_tag->getAttribute("return");
+        $params = $this->get_attribute_shortcode($node_tag, "params", "", $data_type, $data_source, false);
+
+        /* Required attribute */
+        if (empty($name))
+            return;
+
+        fwrite($handle, "\r\n");
+
+        if (!empty($return)) {
+            $return = preg_split("/[\s,]+/", $return);
+
+            if (count($return) > 1)
+                $return = "@list(\$" . implode(", \$", $return) . ")";
+            else
+                $return = "\$$return";
+
+
+            fwrite($handle, "<?php $return = ");
+        }
+
+        fwrite($handle, "\$this->$name($params); ?>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * convert_shortcode() : Convert the shortcode syntax contained in a string.
+     *
+     * Arguments
+     * ---------
+     *  - text        : The text containing the shortcodes.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *  - wrap        : Wrap each shortcode element within php tags. <?php echo ... ?>
+     *
+     * Returns : The converted text.
+     */
+    private function convert_shortcode($text, $data_type=null, $data_source=null, $wrap=true)
+    {
+        $offset = 0;
+        while(($offset = strpos($text, "[[", $offset)) !== false) {
+
+            if (($end = strpos($text, "]]", $offset)) === false)
+                break;
+
+            /* Split the tokens */
+            $tokens =  preg_split("/[\s|]+/", trim(substr($text, $offset + 2, $end - $offset - 2)));
+
+            $output = '';
+            foreach($tokens as $token) {
+
+                /* The first token is the variable name, following tokens contains modifier
+                   functions, except for "if".  */
+                if ((substr($token, 0, 2) != "if") && empty($output)) {
+
+                    if ($token[0] == "$") {
+
+                        if (strpos($text, "@") !== false) {
+                            $token = explode("@", $token);
+
+                            $output = "{$token[0]}[" . implode("][", array_slice($token, 1)) . "]";
+
+                        } else {
+                            $output = $token;
+                        }
+
+                    } else {
+
+                        switch ($data_type) {
+                            /* Single variable */
+                            case null:
+                                $output = "\$$token";
+                                break;
+
+                            /* ODBC resultset */
+                            case "odbc":
+                                $output = "odbc_result(\$$data_source, '$token')";
+                                break;
+
+                            /* Dictionary array */
+                            case "dict":
+                                switch (strtolower($token)) {
+                                    case "key":
+                                        $output = $data_source[1];
+                                        break;
+
+                                    case "value":
+                                        $output = $data_source[2];
+                                        break;
+
+                                    default:
+                                        $output = "\$$token";
+                                        break;
+                                }
+                                break;
+
+                            /* Ordinary array */
+                            default:
+                                $output = $data_source;
+                                break;
+                        }
+                    }
+                } else {
+
+                    $params = explode(":", $token);
+
+                    switch ($params[0]) {
+                        case 'if':
+                            $output = "(({$params[1]}) ? {$params[2]} : {$params[3]})";
+                            break;
+
+                        case "lower":
+                            $output = "strtolower($output)";
+                            break;
+
+                        case "upper":
+                            $output = "strtoupper($output)";
+                            break;
+
+                        case "ucfirst":
+                            $output = "ucfirst($output)";
+                            break;
+
+                        case "ucwords":
+                            $output = "ucwords($output)";
+                            break;
+
+                        case "var_dump":
+                            $output = "var_dump($output)";
+                            break;
+
+                        case "explode":
+                            $sep = " ";
+
+                            if (!empty($params[1])) {
+                                $sep = $params[1];
+                            }
+
+                            $output = "explode('" . addslashes($sep) . "', $output)";
+                            break;
+
+                        case "format_phone":
+                            $output = "format_phone_number($output";
+
+                            if (isset($params[1]) && strtolower($params[1]) == "false")
+                                $output .= ", false";
+
+                            $output .= ")";
+
+                            break;
+
+                        case "format_time_seconds":
+                        case "format_seconds":
+                            $output = "format_time_seconds($output)";
+                            break;
+
+                        case "money_format":
+                        case "format_money":
+                            $output = "money_format('" . $this->currency_format . "', $output)";
+                            break;
+
+                        case "dumpfile":
+                            $output = "dumpfile($output)";
+                            break;
+
+                        case "dumpgzfile":
+                            $output = "dumpgzfile($output)";
+                            break;
+                   }
+                }
+            }
+
+            if (empty($output))
+                continue;
+
+            if ($wrap)
+                $output = "<?php echo $output ?>";
+
+            $text = substr_replace($text, $output, $offset, $end - $offset + 2);
+            $offset = $offset + strlen($output);
+        }
+
+        return $text;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * get_unique_varname() : Generate an unique variable name to be used in
+     *                        the template output.
+     *
+     * Arguments
+     * ---------
+     *  None
+     *
+     * Returns   : Unique variable name.
+     */
+    private function get_unique_varname()
+    {
+        return "\$v" . $this->unique_base . $this->unique_id++;
+    }
 }
-?>
