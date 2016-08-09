@@ -39,7 +39,7 @@ class Plugin
         $this->_tabs = &$tabs;
 
         $this->NAME = $name;
-        $this->PLUGIN_DIR = DOCUMENT_ROOT . '/plugins/' . $name;
+        $this->PLUGIN_DIR = DOCUMENT_ROOT . "/plugins/$name";
 
         $tab_url = $_GET;
         unset($tab_url["js"], $tab_url["output"]);
@@ -70,7 +70,7 @@ class Plugin
      * ---------
      *  - url : url to redirect to.
      *
-     * Returns   : Nothing
+     * Returns : Nothing
      */
     function redirect($url)
     {
@@ -92,9 +92,9 @@ class Plugin
      * ---------
      *  - exclude_referrer : Remove the "referrer" parameter from the url.
      *
-     * Returns   : The current tab url.
+     * Returns : The current tab url.
      */
-     function get_tab_url($exclude_referrer=true)
+    function get_tab_url($exclude_referrer=true)
     {
         $url = $this->_tab_url;
 
@@ -112,9 +112,9 @@ class Plugin
      * ---------
      *  None
      *
-     * Returns   : The referrer url.
+     * Returns : The referrer url.
      */
-     function get_tab_referrer()
+    function get_tab_referrer()
     {
         if (isset($_GET["referrer"])) {
             return $_GET["referrer"];
@@ -141,9 +141,9 @@ class Plugin
      *  - keep_uri    : If false, only the parameters in $params will be used.
      *  - no_referrer : If true, removes the "referrer" parameter from the url.
      *
-     * Returns   : The assembled url.
+     * Returns : The assembled url.
      */
-     function build_tab_url($params, $keep_uri=true, $no_referrer=false)
+    function build_tab_url($params, $keep_uri=true, $no_referrer=false)
     {
         if ($keep_uri) {
             $uri = $_GET;
@@ -173,9 +173,9 @@ class Plugin
      */
     function include_js_script($name)
     {
-        echo '<script>';
-        readfile($this->PLUGIN_DIR . '/' . $name);
-        echo '</script>';
+        echo "<script>";
+        readfile($this->PLUGIN_DIR . "/$name");
+        echo "</script>";
     }
 
 
@@ -191,7 +191,7 @@ class Plugin
      *  - permissions : Required permission to open the tab
      *  - order       : Tab priority (lower first)
      *
-     * Returns   : Nothing
+     * Returns : Nothing
      */
     function register_tab($callback, $id, $parent, $caption, $req_perms, $order = 100)
     {
@@ -200,24 +200,24 @@ class Plugin
 
         if ($parent != NULL) {
             if (!isset($this->_tabs[$parent]))
-                throw new Exception('Parent tab does not exist');
+                throw new Exception("Parent tab does not exist");
 
             $tab = &$this->_tabs[$parent];
 
-            if (!isset($tab['childs']))
-                $tab['childs'] = array();
+            if (!isset($tab["childs"]))
+                $tab["childs"] = array();
 
-            $tab = &$tab['childs'][$id];
+            $tab = &$tab["childs"][$id];
 
         } else {
             $tab = &$this->_tabs[$id];
         }
 
-        $tab['id'] = $id;
-        $tab['callback'] = $callback;
-        $tab['plugin'] = $this->NAME;
-        $tab['perm'] = $permissions;
-        $tab['caption'] = $caption;
-        $tab['order'] = $order;
+        $tab["id"] = $id;
+        $tab["callback"] = $callback;
+        $tab["plugin"] = $this->NAME;
+        $tab["perm"] = $permissions;
+        $tab["caption"] = $caption;
+        $tab["order"] = $order;
     }
 }

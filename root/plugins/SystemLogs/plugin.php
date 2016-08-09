@@ -83,13 +83,13 @@ class PluginSystemLogs extends Plugin
         }
 
         $log_list = array();
-        foreach (glob($log_filename . '*') as $path)
+        foreach (glob($log_filename . "*") as $path)
             $log_list[] = basename($path);
 
         if (empty($log_basename))
             $log_basename = basename($log_filename);
 
-        $log_filename .= str_replace(basename($log_filename), '', $log_basename);
+        $log_filename .= str_replace(basename($log_filename), "", $log_basename);
 
         require($template->load("template.tpl"));
 

@@ -29,11 +29,11 @@ try
     $CONFIG = load_global_config();
 
     /* Connect to the database */
-    $DB = new ODBCDatabase($CONFIG['db_dsn'], $CONFIG['db_user'], $CONFIG['db_pass']);
+    $DB = new ODBCDatabase($CONFIG["db_dsn"], $CONFIG["db_user"], $CONFIG["db_pass"]);
 
     /* Load plugins */
     $PLUGINS = new PluginManager();
-    $plugin_list = explode(';', $CONFIG['plugins']);
+    $plugin_list = explode(";", $CONFIG["plugins"]);
 
     foreach($plugin_list as $name)
         $PLUGINS->load($name);
@@ -46,7 +46,7 @@ try
     $err_message = $e->getmessage();
 
     $template = new TemplateEngine(null);
-    require($template->load('fatal_error.tpl', true));
+    require($template->load("fatal_error.tpl", true));
 
     die();
 }
@@ -76,49 +76,46 @@ try
         <ul id="tabs">
             <?php
 
-                $selected_path = !empty($_GET['path']) ? $_GET['path'] : 'StatusPanel.status';
-                list($selected_plugin, $selected_tab, $selected_page) = explode('.', $selected_path . '..' );
+                $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "StatusPanel.status";
+                list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
 
                 $selected_tab_haschilds = false;
 
                 foreach ($PLUGINS->_tabs as $parent_id => $parent_tab) {
-                    $parent_path = $parent_tab['plugin'] . '.' . $parent_id;
+                    $parent_path = $parent_tab["plugin"] . '.' . $parent_id;
 
-                    $link_class = ($selected_tab == $parent_id && !isset($_SESSION['js'])) ? 'selected' : '';
+                    $link_class = ($selected_tab == $parent_id && !isset($_SESSION["js"])) ? "selected" : "";
 
-                    echo '<li id="tab_', $parent_id ,'" class="', $link_class, '"><a href="?path=',
-                          $parent_path, '">', $parent_tab['caption'], '</a>';
+                    echo "<li id=\"tab_$parent_id\" class=\"$link_class\"><a href=\"?path=$parent_path\">";
+                    echo $parent_tab["caption"], "</a>";
 
-                    if (isset($parent_tab['childs'])) {
+                    if (isset($parent_tab["childs"])) {
 
                         if ($selected_tab == $parent_id) {
                             $selected_tab_haschilds = true;
 
                             if (empty($selected_page)) {
-                                $selected_page = array_shift(array_keys($parent_tab['childs']));
-                                $selected_path = sprintf('%s.%s.%s', $selected_plugin, $selected_tab, $selected_page);
+                                $selected_page = array_shift(array_keys($parent_tab["childs"]));
+                                $selected_path = sprintf("%s.%s.%s", $selected_plugin, $selected_tab, $selected_page);
                             }
                         }
 
-                        echo '<ul>';
+                        echo "<ul>";
 
-                        foreach ($parent_tab['childs'] as $sub_id => $sub_tab) {
-                            $sub_path = $sub_tab['plugin'] . '.' . $parent_id . '.' .$sub_id;
+                        foreach ($parent_tab["childs"] as $sub_id => $sub_tab) {
+                            $sub_path = $sub_tab["plugin"] . ".$parent_id.$sub_id";
 
-                            $link_class = ($selected_path == $sub_path ) ? 'selected' : '';
+                            $link_class = ($selected_path == $sub_path ) ? "selected" : "";
 
-                            echo '<li id="page_', $sub_id, '" class="', $link_class, '"><a href="?path=',
-                                  $sub_path, '">', $sub_tab['caption'], '</a></li>';
+                            echo "<li id=\"page_$sub_id\" class=\"$link_class\"><a href=\"?path=$sub_path\">";
+                            echo $sub_tab["caption"], "</a></li>";
                         }
 
-                        echo '</ul>';
+                        echo "</ul>";
                     }
 
-                    echo '</li>';
+                    echo "</li>";
                 }
-
-
-
             ?>
         </ul>
 
@@ -132,12 +129,12 @@ try
 
         <?php
             if (!isset($_SESSION['js'])) {
-                echo '<div class="page ', ($selected_tab_haschilds ? 'has-childs' : '') , '" id="tab_', $selected_tab , '">';
+                echo "<div class=\"page ", ($selected_tab_haschilds ? "has-childs" : "") , "\" id=\"tab_$selected_tab\">";
 
                 try {
                     $PLUGINS->show_tab_content($selected_path);
 
-                    $exec_time = sprintf('%0.4f s', (microtime(true) - $DEBUG_TIME_START));
+                    $exec_time = sprintf("%0.4f s", (microtime(true) - $DEBUG_TIME_START));
 
                 } catch (Exception $e) {
 
@@ -145,16 +142,16 @@ try
                     print_message($error, true);
                 }
 
-                echo '</div>';
+                echo "</div>";
             }
 
-            unset($_SESSION['js']);
+            unset($_SESSION["js"]);
         ?>
 
     </div>
     <div class="footer">
         Y.A.A.M (v<?=YAAM_VERSION?>)
-        <p class="copyright">Execution time : <span id="exec_time"><?=isset($exec_time)? $exec_time : "";?></span></p>
+        <p class="copyright">Execution time : <span id="exec_time"><?php echo isset($exec_time) ? $exec_time : ""; ?></span></p>
     </div>
 </body>
 </html>

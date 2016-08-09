@@ -20,6 +20,8 @@ class OdbcDatabase
     public $_pwd;
     public $_conn;
 
+    public $lastResults = null;
+
 
     /*--------------------------------------------------------------------------
      * OdbcDatabase() : Initialize a new instance of OdbcDatabase.
@@ -30,7 +32,7 @@ class OdbcDatabase
      *  - user : Database username.
      *  - pwd  : Password
      *
-     * Returns : Formated value
+     * Returns : Nothing
      */
     function OdbcDatabase($dsn, $user, $pwd)
     {
@@ -60,13 +62,13 @@ class OdbcDatabase
      */
     function exec_query($query, $params = array())
     {
-        if (!($res = @odbc_prepare($this->_conn, $query)))
+        if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
             throw new OdbcException($this->_conn);
 
-        if (!@odbc_execute($res, $params))
+        if (!@odbc_execute($this->lastResults, $params))
             throw new OdbcException($this->_conn);
 
-        return $res;
+        return $this->lastResults;
     }
 
 
@@ -85,12 +87,12 @@ class OdbcDatabase
      */
     function exec_query_simple($query, $column, $params = array())
     {
-        $res = $this->exec_query($query, $params);
+        $this->lastResults = $this->exec_query($query, $params);
 
-        if (!(@odbc_fetch_row($res)))
+        if (!(@odbc_fetch_row($this->lastResults)))
             return NULL;
 
-        return odbc_result($res, $column);
+        return odbc_result($this->lastResults, $column);
 
     }
 
@@ -106,7 +108,7 @@ class OdbcDatabase
      *  - limit   : Maximum number of rows to return.
      *  - offset  : First row to return.
      *
-     * Returns :
+     * Returns : ODBC result identifier.
      */
     function exec_select_query($table, $columns="*", $filters=null, $limit=null, $offset=0)
     {
@@ -114,51 +116,197 @@ class OdbcDatabase
         $query = "SELECT $columns FROM $table";
         $data = array();
 
-        /* Include WHERE statement to the query based on filter */
-        if (is_array($filters)) {
+        /* Add filters to the query. */
+        if (!is_null($filters))
+            $this->query_add_filters($query, $data, $filters);
 
-            $where = "";
-            $query .= " WHERE";
-
-            foreach($filters as $filter_columns => $filter) {
-
-                /* Split the conditional and argument */
-                if (is_array($filter)) {
-                    list($cond, $arg) = $filter;
-                    $cond = strtoupper($cond);
-
-                /* If conditional is not specified, defaults to "OR" */
-                } else {
-                    $cond = "OR";
-                    $arg = $filter;
-                }
-
-                $filter_columns = explode(",", $filter_columns);
-
-                if (!empty($where))
-                    $where .= " $cond ";
-
-                if ($arg[0] == "%")
-                    $where .= " ((" . implode(" LIKE ?) $cond (", $filter_columns) . " LIKE ?))";
-                else
-                    $where .= " ((" . implode(" = ?) $cond (", $filter_columns) . " = ?))";
-
-                /* Add the argument to the data array for odbc_prepare */
-                $data = array_merge($data, array_fill(0, count($filter_columns), $arg));
-           }
-
-           $query .= $where;
-        }
-
+        /* Add limit and offset options to the query */
         if (!is_null($limit))
             $query .= " LIMIT $offset, $limit";
 
-        if (!($res = @odbc_prepare($this->_conn, $query)))
+        /* Prepare and execute the query */
+        if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
             throw new OdbcException($this->_conn);
 
-        if (!@odbc_execute($res, $data))
+        if (!@odbc_execute($this->lastResults, $data))
             throw new OdbcException($this->_conn);
 
-        return $res;
+        return $this->lastResults;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * exec_update_query() : Prepare and execute an UPDATE query.
+     *
+     * Arguments
+     * ---------
+     *  - table   : Table in the database to update to.
+     *  - data    : An array containing the column name and value to set.
+     *  - filters : An array containing the arguments to add to
+     *              the WHERE clause.
+     *  - limit   : Maximum number of rows to return.
+     *
+     * Returns : TRUE if successful.
+     */
+    function exec_update_query($table, $data, $filters, $limit=null)
+    {
+        $query = "UPDATE $table SET ";
+
+
+        $separator = "";
+        foreach($data as $key => $value) {
+           $query .= "$separator$key = ?";
+           $separator = ", ";
+        }
+
+        /* Add filters to the query. */
+        $this->query_add_filters($query, $data, $filters);
+
+        /* Add limit option to the query */
+        if (!is_null($limit))
+            $query .= " LIMIT $limit";
+
+        /* Prepare and execute the query */
+        if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
+            throw new OdbcException($this->_conn);
+
+        if (!($success = @odbc_execute($this->lastResults, $data)))
+            throw new OdbcException($this->_conn);
+
+        return $success;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * exec_delete_query() : Prepare and execute a DELETE query.
+     *
+     * Arguments
+     * ---------
+     *  - table   : Table in the database to delete from.
+     *  - filters : An array containing the arguments to add to
+     *              the WHERE clause.
+     *  - limit   : Maximum number of rows to return.
+     *
+     * Returns : TRUE if successful.
+     */
+    function exec_delete_query($table, $filters, $limit=1)
+    {
+        $query = "DELETE FROM $table";
+        $data = array();
+
+        /* Add filters to the query */
+        $this->query_add_filters($query, $data, $filters);
+
+        /* Add limit option to the query */
+        if (!is_null($limit))
+            $query .= " LIMIT $limit";
+
+         /* Prepare and execute the query */
+        if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
+            throw new OdbcException($this->_conn);
+
+        if (!($success = @odbc_execute($this->lastResults, $data)))
+            throw new OdbcException($this->_conn);
+
+        return $success;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * exec_insert_query() : Prepare and execute an UPDATE query.
+     *
+     * Arguments
+     * ---------
+     *  - table   : Table in the database to insert into.
+     *  - data    : An array containing the column name and value to set.
+     *
+     * Returns : TRUE if successful.
+     */
+    function exec_insert_query($table, $data)
+    {
+        $query = "INSERT INTO $table (";
+
+
+        $separator = "";
+        foreach ($data as $key => $value) {
+            $query .= "$separator$key";
+            $separator = ", ";
+        }
+
+        $query .= ") VALUES (" . implode(", ", array_fill(0, count($data), "?")) . ")";
+
+         /* Prepare and execute the query */
+        if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
+            throw new OdbcException($this->_conn);
+
+        if (!($success = @odbc_execute($this->lastResults, $data)))
+            throw new OdbcException($this->_conn);
+
+        return $sucess;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * query_add_filters() : Inserts a WHERE clause to the query.
+     *
+     * Arguments
+     * ---------
+     *  - query   : The query to add filters to.
+     *  - data    :
+     *  - filters : An array containing the conditions.
+     *
+     *              array(("key" => ["value, ..." | array("operator", "value)])
+     *
+     *              ("key" => "value", "key2" => "value2") :
+     *                  WHERE ((key=?) OR (key2=?))
+     *
+     *              ("key,key2,key3" => "%value%") :
+     *                  WHERE ((key like ? OR key2 like ? OR key3 like ?))
+     *
+     *              ("key,key2) => array("AND", "value") :
+     *                  WHERE ((key=? AND key2=?))
+     *
+     *              ("key,key2" => "value1", "key3" => array("AND", "value2"))
+     *                  WHERE ((key=? OR key2=?) AND key3=?)
+     *
+     * Returns : Nothing
+     */
+    private function query_add_filters(&$query, &$data, $filters)
+    {
+
+        if (!is_array($filters))
+            return;
+
+        $where = "";
+        $query .= " WHERE";
+
+        foreach($filters as $filter_columns => $filter) {
+
+            /* Split the conditional and argument */
+            if (is_array($filter)) {
+                list($cond, $arg) = $filter;
+                $cond = strtoupper(trim($cond));
+
+            /* If conditional is not specified, defaults to "OR" */
+            } else {
+                $cond = "OR";
+                $arg = trim($filter);
+            }
+
+            $filter_columns = explode(",", $filter_columns);
+
+            if (!empty($where))
+                $where .= " $cond ";
+
+            if ($arg[0] == "%")
+                $where .= " ((" . implode(" LIKE ?) $cond (", $filter_columns) . " LIKE ?))";
+            else
+                $where .= " ((" . implode(" = ?) $cond (", $filter_columns) . " = ?))";
+
+            /* Add the argument to the data array for odbc_prepare */
+            $data = array_merge($data, array_fill(0, count($filter_columns), $arg));
+        }
+
+        $query .= $where;
     }
 }

@@ -115,7 +115,7 @@ function format_time_seconds($seconds)
  * ---------
  *  - $filename : File to dump.
  *
- * Returns   : Nothing
+ * Returns : Nothing
  */
 function dumpfile($filename)
 {
@@ -147,7 +147,7 @@ function dumpfile($filename)
  * ---------
  *  - filename : File to dump.
  *
- * Returns   : Nothing
+ * Returns : Nothing
  */
 function dumpgzfile($filename)
 {
@@ -172,7 +172,7 @@ function dumpgzfile($filename)
  *  - percentage : Percentage value
  *  - critical   : Show the value as critical.
  *
- * Returns   : Nothing
+ * Returns : Nothing
  */
 function print_progressbar($caption, $value, $percentage=-1, $critical=false)
 {

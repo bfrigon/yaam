@@ -162,24 +162,7 @@ class PluginUsers extends Plugin
                     throw new Exception("The password must have at least 6 characters");
 
                 /* If all fields are valid, Insert the new user profile in the database. */
-                $res = $DB->exec_query(
-                    "
-                        INSERT INTO users(
-                            user,
-                            fullname,
-                            extension,
-                            user_chan,
-                            pwhash,
-                            pgroups,
-                            ui_theme,
-                            vbox
-                        ) VALUES (
-                            ?, ?, ?,
-                            ?, ?, ?,
-                            ?, ?
-                        )
-                    ", $user_data
-                );
+                $DB->exec_insert_query("users", $user_data);
 
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
@@ -210,7 +193,10 @@ class PluginUsers extends Plugin
 
         try {
 
-            /* If data has been submited, validate it and update the database */
+            $user_id = $_GET["id"];
+            $filters = array("user" => $user_id);
+
+            /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {
 
                 $user_data = array(
@@ -218,36 +204,21 @@ class PluginUsers extends Plugin
                     "extension" => $_POST["extension"],
                     "user_chan" => $_POST["user_chan"],
                     "pgroups"   => $_POST["pgroups"],
-                    "password"  => $_POST["password"],
-                    "pwhash"    => hash(sha256, $_POST["password"]),
                     "ui_theme"  => $_POST["ui_theme"],
                     "vbox"      => $_POST["vbox"],
-                    "user"      => $_POST["user"],
                 );
-
 
                 /* Validate fields */
-                if ((!empty($_POST["password"]) && strlen($_POST["password"]) < 6))
-                    throw new Exception("The password must have at least 6 characters");
+                if (!empty($_POST["password"])) {
 
+                    if (strlen($_POST["password"]) < 6)
+                        throw new Exception("The password must have at least 6 characters");
 
-                /* If fields are valid, update the user profile in the database. */
-                $res = $DB->exec_query(
-                    "
-                        UPDATE users
-                        SET
-                            fullname = ?,
-                            extension = ?,
-                            user_chan = ?,
-                            pgroups = ?,
-                            pwhash = IF(? = \"\", pwhash, ?),
-                            ui_theme = ?,
-                            vbox = ?
-                        WHERE user = ?
-                        LIMIT 1
-                    ",
-                    $user_data
-                );
+                    $user_data["pwhash"] = hash(sha256, $_POST["password"]);
+                }
+
+                /* If all fields are valid, update the user profile in the database. */
+                $DB->exec_update_query("users", $user_data, $filters, 1);
 
                 /* Redirect to the previous location */
                 $this->redirect($this->get_tab_referrer());
@@ -255,27 +226,11 @@ class PluginUsers extends Plugin
 
             /* If not, read the user profile from the database */
             } else {
-                $res = $DB->exec_query(
-                    "
-                        SELECT *
-                        FROM users
-                        WHERE user = ?
-                        LIMIT 1
-                    ",
-                    array($_GET['id'])
-                );
+                $res = $DB->exec_select_query("users", "*", $filters, 1);
 
-                $user_data = array(
-                    "user"      => odbc_result($res, "user"),
-                    "fullname"  => odbc_result($res, "fullname"),
-                    "extension" => odbc_result($res, "extension"),
-                    "passwd"    => "",
-                    "pgroups"   => odbc_result($res, "pgroups"),
-                    "ui_theme"  => odbc_result($res, "ui_theme"),
-                    "user_chan" => odbc_result($res, "user_chan"),
-                    "vbox"      => odbc_result($res, "vbox"),
-                );
+                $user_data = odbc_fetch_array($res);
            }
+
         } catch (Exception $e) {
 
             print_message($e->getmessage(), true);
@@ -298,19 +253,14 @@ class PluginUsers extends Plugin
     {
         global $DB;
 
-        $id = $_GET["id"];
+        $user_id = $_GET["id"];
+        $filters = array("user" => $user_id);
 
+        if (isset($_GET["confirm"])) {
 
-        if ($_GET["confirm"]) {
-            $res = $DB->exec_query(
-                "
-                    DELETE FROM users
-                    WHERE user = ?
-                    LIMIT 1
-                ",
-                array($id)
-            );
+            $DB->exec_delete_query("users", $filters);
 
+            /* Redirect to the previous location */
             $this->redirect($this->get_tab_referrer());
             return;
 

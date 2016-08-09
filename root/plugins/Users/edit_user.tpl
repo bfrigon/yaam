@@ -2,7 +2,7 @@
     <h1>Edit user profile</h1>
     <form id="frm_edit_user" action="" method="post">
 
-        <field name="user" type="view" caption="Username" value="[[$user_data@user]]" />
+        <field name="user" type="view" caption="Username" value="[[$user_id]]" />
         <field name="fullname" type="textbox" caption="Full name" value="[[$user_data@fullname]]" />
         <field name="pgroups" type="textbox" caption="Permissions" value="[[$user_data@pgroups]]" />
         <field name="ui_theme" type="textbox" caption="UI theme" value="[[$user_data@ui_theme]]" />

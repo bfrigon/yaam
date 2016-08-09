@@ -33,22 +33,22 @@ class PluginManager
         if ($this->plugin_loaded($plugin_name))
             return $this->_plugins[$plugin_name];
 
-        $plugin_dir = DOCUMENT_ROOT . '/plugins/' . $plugin_name;
-        $plugin_def = $plugin_dir . '/plugin.php';
+        $plugin_dir = DOCUMENT_ROOT . "/plugins/$plugin_name";
+        $plugin_def = $plugin_dir . "/plugin.php";
 
         if (!$this->plugin_exists($plugin_name))
-            throw new Exception('Plugin "' . $plugin_name . '" does not exist.');
+            throw new Exception("Plugin '$plugin_name' does not exist.");
 
         require($plugin_def);
 
-        $plugin_class = 'Plugin' . $plugin_name;
+        $plugin_class = "Plugin$plugin_name";
         $plugin = new $plugin_class($plugin_name, $this->_tabs);
 
         $this->_plugins[$plugin_name] = $plugin;
 
         foreach($plugin->_dependencies as $dep) {
             if ($dep == $plugin_name)
-                throw new Exception('Circular plugin dependency');
+                throw new Exception("Circular plugin dependency");
 
             if (!$this->plugin_loaded($dep))
                 $this->load($dep);
@@ -67,12 +67,12 @@ class PluginManager
      * ---------
      *  - name : plugin name to check.
      *
-     * Returns : True if plugin exists, false otherwise.
+     * Returns : TRUE if plugin exists, false otherwise.
      */
     function plugin_exists($name)
     {
-        $plugin_dir = DOCUMENT_ROOT . '/plugins/' . $name;
-        $plugin_def = $plugin_dir . '/plugin.php';
+        $plugin_dir = DOCUMENT_ROOT . "/plugins/$name";
+        $plugin_def = $plugin_dir . "/plugin.php";
 
         return (@filemtime($plugin_def) !== false);
     }
@@ -85,7 +85,7 @@ class PluginManager
      * ---------
      *  - name : plugin name.
      *
-     * Returns : True if plugin was loaded, false otherwise
+     * Returns : TRUE if plugin was loaded, false otherwise
      */
     function plugin_loaded($name)
     {
@@ -104,7 +104,7 @@ class PluginManager
      */
     function sort_tabs()
     {
-        uasort($this->_tabs, array('PluginManager', 'cmp_tab'));
+        uasort($this->_tabs, array("PluginManager", "cmp_tab"));
     }
 
 
@@ -120,7 +120,7 @@ class PluginManager
      */
     private static function cmp_tab($a, $b)
     {
-        return ($a['order'] < $b['order']) ? -1 : 1;
+        return ($a["order"] < $b["order"]) ? -1 : 1;
     }
 
 
@@ -137,12 +137,12 @@ class PluginManager
     function show_tab_content($path)
     {
         $path = preg_replace("_.*(/|\\\\)_", "", $path);
-        $path_item = explode('.', $path, 3);
+        $path_item = explode(".", $path, 3);
 
         /* Load the plugin that correspond to the requested path */
         $plugin = $this->load($path_item[0]);
 
-        $plugin->REQUEST_JS_ENABLED = isset($_REQUEST['js']);
+        $plugin->REQUEST_JS_ENABLED = isset($_REQUEST["js"]);
 
 
         if (!isset($path_item[1]))
@@ -151,7 +151,7 @@ class PluginManager
         $tab = &$plugin->_tabs[$path_item[1]];
 
         if (isset($path_item[2]))
-            $tab = &$tab['childs'][$path_item[2]];
+            $tab = &$tab["childs"][$path_item[2]];
 
         if (!isset($tab))
             throw new Exception("Page not found ($path)");

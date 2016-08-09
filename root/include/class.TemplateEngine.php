@@ -36,7 +36,7 @@ class TemplateEngine
      *             If sets to 'null', the engine is going to use the global template
      *             directory instead.
      *
-     * Return : None
+     * Returns : None
      */
     function __construct($plugin=null) {
         $this->_plugin = $plugin;
@@ -58,7 +58,7 @@ class TemplateEngine
      *  - template_name : Template file to load (relative to the template directory)
      *  - use_global : Force loading from global template directory.
      *
-     * Returns   : Filename of the compiled template
+     * Returns : Filename of the compiled template
      */
     function load($template_name, $use_global=false)
     {
@@ -75,7 +75,7 @@ class TemplateEngine
             throw new Exception("Can't load the template file ($template_file)");
 
         /* TEST : Force re-compile the template */
-        //$template_mtime = time();
+        $template_mtime = time();
 
         if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
             return $cache_file;
@@ -95,7 +95,7 @@ class TemplateEngine
      *  - template_file : Source template file(relative to the template directory)
      *  - cache_file    : Compiled template file
      *
-     * Returns   : Filename of the compiled template
+     * Returns : Filename of the compiled template
      */
     private function compile($template_file, $cache_file)
     {
@@ -136,7 +136,7 @@ class TemplateEngine
      *  - data_source : Current data source object
      *  - wrap        : Wrap the return value within php tags. <?php echo ... ?>
      *
-     * Returns   : The attribute value
+     * Returns : The attribute value
      */
     private function get_attribute_shortcode($node, $name, $default="", $data_type=null, $data_source=null, $wrap=true)
     {
@@ -158,7 +158,7 @@ class TemplateEngine
      *  - node        : The node to get the attribute from.
      *  - name        : Attribute name
      *
-     * Returns   : The attribute value
+     * Returns : The attribute value
      */
     private function get_attribute_boolean($node, $name)
     {
@@ -234,8 +234,20 @@ class TemplateEngine
     private function process_node($handle, $node, $outer=true, $recursive=true, $data_type=null, $data_source=null)
     {
 
-        if ($outer)
-            $this->dump_node($handle, $node, false, false, true, $data_type, $data_source);
+        if ($outer) {
+            fwrite($handle, "<" . $node->nodeName);
+
+            if ($node->hasAttributes()) {
+                foreach ($node->attributes as $attrib) {
+
+                    $value = $this->convert_shortcode($attrib->value, $data_type, $data_source);
+
+                    fwrite($handle, " {$attrib->nodeName}=\"$value\"");
+                }
+            }
+
+            fwrite($handle, ">");
+        }
 
         if ($node->hasChildNodes()) {
 
