@@ -128,8 +128,8 @@ class OdbcDatabase
         if (!($this->lastResults = @odbc_prepare($this->_conn, $query)))
             throw new OdbcException($this->_conn);
 
-        if (!@odbc_execute($this->lastResults, $data))
-            throw new OdbcException($this->_conn);
+        if (!odbc_execute($this->lastResults, $data))
+            throw new OdbcException($this->_conn, "ODBC query execute failed!");
 
         return $this->lastResults;
     }
@@ -255,58 +255,79 @@ class OdbcDatabase
      *  - data    :
      *  - filters : An array containing the conditions.
      *
-     *              array(("key" => ["value, ..." | array("operator", "value)])
+     *              array(array("column", "operator", "value", ["logic"]))
      *
-     *              ("key" => "value", "key2" => "value2") :
-     *                  WHERE ((key=?) OR (key2=?))
+     *              array(array("col1,col2", "LIKE" "value") :
+     *                  WHERE ((col1 LIKE value) OR (col2 LIKE value))
      *
-     *              ("key,key2,key3" => "%value%") :
-     *                  WHERE ((key like ? OR key2 like ? OR key3 like ?))
+     *              array(array("col1,col2", "=", "value")) :
+     *                  WHERE ((col1 = ?) OR (col2 = ?))
      *
-     *              ("key,key2) => array("AND", "value") :
-     *                  WHERE ((key=? AND key2=?))
-     *
-     *              ("key,key2" => "value1", "key3" => array("AND", "value2"))
-     *                  WHERE ((key=? OR key2=?) AND key3=?)
+     *              array(array("col1,col2", "=", "value"), array("col3", "value", ">=", "AND")) :
+     *                  WHERE ((col1 = ? OR col2 = ?) AND (col3 >= ?))
      *
      * Returns : Nothing
      */
     private function query_add_filters(&$query, &$data, $filters)
     {
 
-        if (!is_array($filters))
+        if (is_null($filters))
             return;
 
+        if (!is_array($filters))
+            throw new Exception(__FUNCTION__ . "() : Wrong argument type. 'filters' expects an array.");
+
         $where = "";
-        $query .= " WHERE";
+        foreach($filters as $filter) {
 
-        foreach($filters as $filter_columns => $filter) {
+            if (!is_array($filter))
+                throw new Exception(__FUNCTION__ . "() : Wrong argument type. 'filter' expects an array.");
 
-            /* Split the conditional and argument */
-            if (is_array($filter)) {
-                list($cond, $arg) = $filter;
-                $cond = strtoupper(trim($cond));
+            array_pad($filter, 3, "");
+            list($clause, $arguments, $logic) = $filter;
 
-            /* If conditional is not specified, defaults to "OR" */
-            } else {
-                $cond = "OR";
-                $arg = trim($filter);
-            }
-
-            $filter_columns = explode(",", $filter_columns);
+            if (empty($logic))
+                $logic = "OR";
 
             if (!empty($where))
-                $where .= " $cond ";
+                $where .= " $logic ";
 
-            if ($arg[0] == "%")
-                $where .= " ((" . implode(" LIKE ?) $cond (", $filter_columns) . " LIKE ?))";
-            else
-                $where .= " ((" . implode(" = ?) $cond (", $filter_columns) . " = ?))";
+            if (!is_array($arguments))
+                $arguments = array($arguments);
 
-            /* Add the argument to the data array for odbc_prepare */
-            $data = array_merge($data, array_fill(0, count($filter_columns), $arg));
+
+            /* If clause is a string, it represents a single column */
+            if (is_string($clause)) {
+                $where .= "($clause)";
+                $data = array_merge($data, $arguments);
+
+            /* If clause is an array, replicate the clause for each columns.
+               (col1=? or col2=? or ...) */
+            } elseif (is_array($clause)) {
+
+                array_pad($filter, 3, "");
+                list($columns, $clause_op, $logic) = $clause;
+
+                if (empty($logic))
+                    $logic = "OR";
+
+
+                $columns = explode(',', $columns);
+
+                $where .= "((" . implode(" $clause_op) $logic (", $columns) . " $clause_op))";
+
+                foreach($columns as $column)
+                    $data = array_merge($data, $arguments);
+
+            /* Invalid clause */
+            } else {
+                throw new Exception(__FUNCTION__ . "() : Wrong argument type. 'clause' expects an array or string");
+            }
         }
 
-        $query .= $where;
-    }
+        if (empty($where))
+            return;
+
+        $query .= " WHERE $where";
+   }
 }

@@ -21,6 +21,10 @@ define('SERVER_SCRIPT_DIR', dirname($_SERVER['SCRIPT_NAME']));
 define('YAAM_VERSION', '0.2.1');
 
 
+define('DATE_FORMAT_MYSQL', 0);
+define('DATE_FORMAT_DATEPICKER', 1);
+
+
 require(DOCUMENT_ROOT . '/include/class.OdbcException.php');
 require(DOCUMENT_ROOT . '/include/class.HTTPException.php');
 require(DOCUMENT_ROOT . '/include/class.OdbcDatabase.php');
@@ -142,4 +146,28 @@ function print_message($message, $error = false)
 
     echo $message;
     echo '</div>';
+}
+
+
+function get_config_dateformat($type=null)
+{
+    $format = $_SESSION["date_format"];
+
+    switch ($format) {
+        /* Day/Month/Year */
+        case "DD/MM/YYYY":
+            switch ($type) {
+                case DATE_FORMAT_MYSQL: return "%d/%m/%Y";
+                case DATE_FORMAT_DATEPICKER: return "D/M/YYYY";
+                default: return $format;
+            }
+
+        /* Month/Day/Year */
+        default:
+            switch ($type) {
+                case DATE_FORMAT_MYSQL: return "%m/%d/%Y";
+                case DATE_FORMAT_DATEPICKER: return "M/D/YYYY";
+                default: return $format;
+            }
+    }
 }

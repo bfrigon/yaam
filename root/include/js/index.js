@@ -2,13 +2,10 @@
 // index.js - index.php javascript
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
-// Version   : 0.1
-// Author    : Benoit Frigon
-// Last mod. : 22 sept. 2012
+// Author    : Benoit Frigon <benoit@frigon.info>
 //
-// Copyright (c) 2011 - 2012 Benoit Frigon <bfrigon@gmail.com>
+// Copyright (c) 2011 - 2012 Benoit Frigon
 // www.bfrigon.com
-// All Rights Reserved.
 //
 // This software is released under the terms of the GNU Lesser General Public
 // License v2.1.
@@ -284,10 +281,6 @@ $(document).ready(function() {
         $(this).find('ul').css('display', '');
     });
 
-    $('.dateinput').dateinput({
-        format: 'dd/mm/yyyy'
-    });
-
 
     // ----------------------------------------------
     // Event: anchors click
@@ -320,9 +313,6 @@ $(document).ready(function() {
     });
 
 
-
-
-
     // ----------------------------------------------
     // Event: submit buttons click
     // ----------------------------------------------
@@ -331,22 +321,23 @@ $(document).ready(function() {
 
         objForm = $(this).closest('form');
 
-        var url = convert_tab_url(objForm.attr('action'));
         data = objForm.serialize();
 
         if (this.name.length > 0)
             data += '&' + this.name + '=' + this.value;
 
         if (objForm.attr("method").toLowerCase() == 'post') {
+
+            var url = convert_tab_url(objForm.attr('action'));
             set_tab_url(url, data, true);
 
         } else {
+
             window.location = convert_tab_url('?' + data);
         }
     });
 
-
-    $(window).hashchange();
+    set_tab_url(current_tab_url(), null, false);
 
     reset_idletimer();
 })
@@ -355,7 +346,8 @@ $(document).ready(function() {
 // ----------------------------------------------
 // Event: Window location changed (hash)
 // ----------------------------------------------
-$(window).hashchange( function() {
+$(window).on('hashchange', function() {
+
     set_tab_url(current_tab_url(), null, false);
 });
 

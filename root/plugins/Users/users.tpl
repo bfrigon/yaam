@@ -13,8 +13,8 @@
             <item type="button" action="select-none">None</item>
         </item>
 
-        <item type="button" action="add" icon="add" title="Add a new user">New</item>
-        <item type="button" action="delete" icon="delete" title="Delete selected user(s)">Delete</item>
+        <item type="button" action="add" icon="useradd" title="Add a new user">New</item>
+        <item type="button" action="delete" icon="userdelete" title="Delete selected user(s)">Delete</item>
 
         <item type="separator"></item>
 
@@ -26,7 +26,7 @@
         <item type="button" action="last-page" icon="last" title="Goto last page" />
     </toolbar>
 
-    <datagrid id="users" data-type="odbc" data-source="results">
+    <datagrid class="expand" id="users" data-type="odbc" data-source="results">
         <header>
             <column style="width: 16px" type="checkbox"></column>
             <column style="width: 100px">Username</column>

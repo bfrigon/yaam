@@ -61,9 +61,8 @@ try
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
     <link id="css_theme" rel="stylesheet" type="text/css" href="themes/<?=$_SESSION['ui_theme']?>/theme.css" />
-    <link id="css_theme_ui" href="themes/<?=$_SESSION['ui_theme']?>/jquery-ui.css" rel="stylesheet">
 
-    <script type="text/javascript" src="include/js/jquery_components.js"></script>
+    <script type="text/javascript" src="include/js/jquery-env.min.js"></script>
     <script type="text/javascript" src="include/js/index.js"></script>
     <script type="text/javascript" src="include/js/jquery-custom-ui-dialog.js"></script>
     <script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript" ></script>
@@ -73,51 +72,53 @@ try
     <a name="top"></a>
 
     <div id="main">
-        <ul id="tabs">
-            <?php
+        <div class="header">
+            <ul class="top-nav" id="tabs">
+                <?php
 
-                $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "StatusPanel.status";
-                list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
+                    $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "StatusPanel.status";
+                    list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
 
-                $selected_tab_haschilds = false;
+                    $selected_tab_haschilds = false;
 
-                foreach ($PLUGINS->_tabs as $parent_id => $parent_tab) {
-                    $parent_path = $parent_tab["plugin"] . '.' . $parent_id;
+                    foreach ($PLUGINS->_tabs as $parent_id => $parent_tab) {
+                        $parent_path = $parent_tab["plugin"] . '.' . $parent_id;
 
-                    $link_class = ($selected_tab == $parent_id && !isset($_SESSION["js"])) ? "selected" : "";
+                        $link_class = ($selected_tab == $parent_id && !isset($_SESSION["js"])) ? "selected" : "";
 
-                    echo "<li id=\"tab_$parent_id\" class=\"$link_class\"><a href=\"?path=$parent_path\">";
-                    echo $parent_tab["caption"], "</a>";
+                        echo "<li id=\"tab_$parent_id\" class=\"$link_class\"><a href=\"?path=$parent_path\">";
+                        echo $parent_tab["caption"], "</a>";
 
-                    if (isset($parent_tab["childs"])) {
+                        if (isset($parent_tab["childs"])) {
 
-                        if ($selected_tab == $parent_id) {
-                            $selected_tab_haschilds = true;
+                            if ($selected_tab == $parent_id) {
+                                $selected_tab_haschilds = true;
 
-                            if (empty($selected_page)) {
-                                $selected_page = array_shift(array_keys($parent_tab["childs"]));
-                                $selected_path = sprintf("%s.%s.%s", $selected_plugin, $selected_tab, $selected_page);
+                                if (empty($selected_page)) {
+                                    $selected_page = array_shift(array_keys($parent_tab["childs"]));
+                                    $selected_path = sprintf("%s.%s.%s", $selected_plugin, $selected_tab, $selected_page);
+                                }
                             }
+
+                            echo "<ul class=\"left-nav\">";
+
+                            foreach ($parent_tab["childs"] as $sub_id => $sub_tab) {
+                                $sub_path = $sub_tab["plugin"] . ".$parent_id.$sub_id";
+
+                                $link_class = ($selected_path == $sub_path ) ? "selected" : "";
+
+                                echo "<li id=\"page_$sub_id\" class=\"$link_class\"><a href=\"?path=$sub_path\">";
+                                echo $sub_tab["caption"], "</a></li>";
+                            }
+
+                            echo "</ul>";
                         }
 
-                        echo "<ul>";
-
-                        foreach ($parent_tab["childs"] as $sub_id => $sub_tab) {
-                            $sub_path = $sub_tab["plugin"] . ".$parent_id.$sub_id";
-
-                            $link_class = ($selected_path == $sub_path ) ? "selected" : "";
-
-                            echo "<li id=\"page_$sub_id\" class=\"$link_class\"><a href=\"?path=$sub_path\">";
-                            echo $sub_tab["caption"], "</a></li>";
-                        }
-
-                        echo "</ul>";
+                        echo "</li>";
                     }
-
-                    echo "</li>";
-                }
-            ?>
-        </ul>
+                ?>
+            </ul>
+        </div>
 
         <div id="userinfo">
             Logged as: <?=$_SESSION['user']?>&nbsp;

@@ -174,7 +174,7 @@ class Plugin
     function include_js_script($name)
     {
         echo "<script>";
-        readfile($this->PLUGIN_DIR . "/$name");
+        require($this->PLUGIN_DIR . "/$name");
         echo "</script>";
     }
 

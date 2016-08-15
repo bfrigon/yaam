@@ -261,8 +261,21 @@ class TemplateEngine
                             switch ($child->nodeName) {
                                 case "form":
 
-                                    if (empty($child->getAttribute("action")))
-                                        $child->setAttribute("action", "<?php echo \$this->get_tab_url(false) ?>");
+                                    $method = strtolower($child->getAttribute("method"));
+
+                                    /* Sets form action to the current tab url */
+                                    if ($method == "post") {
+                                        if (empty($child->getAttribute("action")))
+                                            $child->setAttribute("action", "<?php echo \$this->get_tab_url(false) ?>");
+                                    } else {
+
+                                        $element = $child->ownerDocument->createElement("input");
+                                        $element->setAttribute("type", "hidden");
+                                        $element->setAttribute("name", "path");
+                                        $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
+
+                                        $child->appendChild($element);
+                                    }
 
                                     $this->process_node($handle, $child, true, true, $data_type, $data_source);
                                     break;
@@ -530,8 +543,8 @@ class TemplateEngine
 
         $this->process_toolbar_items($node_tag, $handle, $data_type, $data_source);
 
-        fwrite($handle, "</ul></div>");
-        fwrite($handle, "<div class=\"clear\"></div>");
+        fwrite($handle, "</ul><div class=\"clear\"></div>");
+        fwrite($handle, "</div><div class=\"clear\"></div>");
     }
 
 
@@ -551,6 +564,25 @@ class TemplateEngine
     {
 
         foreach ($node_list->childNodes as $node_item) {
+
+
+            if ($node_item->nodeName == "group") {
+
+                $id = $node_item->getAttribute("id");
+
+                fwrite($handle, "</ul><ul");
+
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id\"");
+
+                fwrite($handle, ">");
+
+
+                $this->process_toolbar_items($node_item, $handle, $data_type, $data_source);
+
+                fwrite($handle, "</ul><ul>");
+            }
+
 
             /* Ignore other tags */
             if ($node_item->nodeName != "item")
@@ -625,6 +657,7 @@ class TemplateEngine
                 case "datebox":
                     $name = $node_item->getAttribute("name");
                     $id = $node_item->getAttribute("id");
+                    $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
 
                     fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
 
@@ -633,6 +666,9 @@ class TemplateEngine
 
                     if (!empty($id))
                         fwrite($handle, " id=\"$id\"");
+
+                    if (!empty($title))
+                        fwrite($handle, " title=\"$title\"");
 
                     if ($node_item->hasAttribute("value")) {
                         $value = $this->get_attribute_shortcode($node_item, "value", "", $data_type, $data_source);
@@ -808,13 +844,13 @@ class TemplateEngine
         $data_source = $node_tag->getAttribute("data-source");
         $data_type = $node_tag->getAttribute("data-type");
         $min_rows = $node_tag->getAttribute("min-rows");
+        $class = $node_tag->getAttribute("class");
 
         /* Required attributes */
         if (empty($data_source) || empty($data_type))
             return;
 
-
-        fwrite($handle, "<table id=\"\" class=\"grid\">");
+        fwrite($handle, "<table id=\"\" class=\"grid $class\">");
 
         $var_count = $this->get_unique_varname();
         fwrite($handle, "<?php $var_count=0 ?>");

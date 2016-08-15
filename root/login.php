@@ -45,14 +45,19 @@ try {
     $f_pass = (isset($_REQUEST["pass"]) ? $_REQUEST["pass"] : "");
 
     if (!empty($f_user)) {
-        $result = $DB->exec_select_query("users", "*", array("user" => $f_user), 1);
+        $result = $DB->exec_query(
+            "
+            SELECT * from users
+            WHERE user = ?
+            LIMIT 1
+            ", array($f_user)
+        );
 
         if (!(@odbc_fetch_row($result)))
             throw new Exception("User '$f_user' don't exist.");
 
         if (hash("sha256", $f_pass, false) != odbc_result($result, "pwhash"))
             throw new Exception("Authentication failed"); // ah ah ah, you didn't say the magic word...
-
 
         $_SESSION["user"] = $f_user;
         $_SESSION["logged"] = true;
@@ -63,13 +68,12 @@ try {
         $_SESSION["vbox"] = odbc_result($result, "vbox");
         $_SESSION["user_chan"] = odbc_result($result, "user_chan");
 
-
         /* Use default theme if specified theme does not exists. */
         if (!file_exists(dirname(__FILE__) . "/themes/" . $_SESSION["ui_theme"]))
             $_SESSION["ui_theme"] = "default";
 
         /* Read user configuration data from user_config */
-        $result = $DB->exec_select_query("user_config", "*", array("user" => $f_user));
+        $result = $DB->exec_select_query("user_config", "*", array(array("user = ?", $f_user)));
 
         while (odbc_fetch_row($result)) {
             $keyname = odbc_result($result, "keyname");
@@ -91,12 +95,12 @@ try {
 
         odbc_free_result($result);
 
-        header("Location:index.php");
+        header("Location: index.php");
         exit();
     }
 
 } catch (Exception $e) {
-        $error_msg = $e->getmessage();
+    $error_msg = $e->getmessage();
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -109,7 +113,7 @@ try {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
     <link rel="stylesheet" type="text/css" href="themes/default/theme.css" />
-    <script type="text/javascript" src="include/js/jquery_components.js"></script>
+    <script type="text/javascript" src="include/js/jquery-env.min.js"></script>
 
 
     <script type="text/javascript">
@@ -144,7 +148,7 @@ try {
 
         <div class="toolbar center v_spacing">
             <ul>
-                <li><button type="submit" id="originate_btnok">Login</button></li>
+                <li><button type="submit">Login</button></li>
             </ul>
         </div>
         <div class="clear"><br /></div>

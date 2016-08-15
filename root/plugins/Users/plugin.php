@@ -42,8 +42,8 @@ class PluginUsers extends Plugin
     {
         $this->register_tab("on_show", "users", null, "Users", "admin");
 
-        if (!isset($_SESSION["users_rpp"]))
-            $_SESSION["users_rpp"] = '25';
+        if (!isset($_SESSION["rpp"]))
+            $_SESSION["rpp"] = '25';
 
     }
 
@@ -87,17 +87,19 @@ class PluginUsers extends Plugin
                     $url = $this->build_tab_url($params, false, true);
 
                     $this->redirect($url);
+                    return;
                 }
 
 
-                $filter = null;
+                $filter = array();
 
                 /* Set search filters */
                 if (isset($_GET["s"])) {
                     $search = $_GET["s"];
 
-                    $filter = array(
-                        "user,fullname,pgroups,user_chan,vbox" => "%$search%"
+                    $filter[] = array(
+                        array("user,fullname,pgroups,user_chan,vbox", "LIKE ?"),
+                        "%$search%"
                     );
                 }
 
@@ -108,7 +110,7 @@ class PluginUsers extends Plugin
                 odbc_free_result($results);
 
                 /* Set pager variables for the template. */
-                $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["users_rpp"])), 1);
+                $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["rpp"])), 1);
                 $total_pages = max(1, ceil($num_results / $max_results));
                 $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
                 $row_start = ($current_page - 1) * $max_results;
