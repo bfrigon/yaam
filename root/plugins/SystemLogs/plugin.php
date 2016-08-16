@@ -91,8 +91,6 @@ class PluginSystemLogs extends Plugin
 
         $log_filename .= str_replace(basename($log_filename), "", $log_basename);
 
-        require($template->load("template.tpl"));
-
-        $this->include_js_script("ui.js");
+        require($template->load("systemlogs.tpl"));
     }
 }

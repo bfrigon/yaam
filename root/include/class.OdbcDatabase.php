@@ -110,7 +110,7 @@ class OdbcDatabase
      *
      * Returns : ODBC result identifier.
      */
-    function exec_select_query($table, $columns="*", $filters=null, $limit=null, $offset=0)
+    function exec_select_query($table, $columns="*", $filters=null, $limit=null, $offset=0, $order=null)
     {
 
         $query = "SELECT $columns FROM $table";
@@ -120,7 +120,27 @@ class OdbcDatabase
         if (!is_null($filters))
             $this->query_add_filters($query, $data, $filters);
 
-        /* Add limit and offset options to the query */
+        /* Add order by clause */
+        if (!is_null($order)) {
+
+            if (is_string($order))
+                $order = array($order);
+
+            $orderby = "";
+            foreach ($order as $order_column) {
+                if (!empty($orderby))
+                    $orderby .= ", ";
+
+                if ($order_column[0] == "!")
+                    $orderby .= substr($order_column, 1) . " DESC";
+                else
+                    $orderby .= $order_column;
+            }
+
+            $query .= " ORDER BY $orderby";
+        }
+
+        /* Add limit and offset clauses to the query */
         if (!is_null($limit))
             $query .= " LIMIT $offset, $limit";
 
@@ -255,16 +275,10 @@ class OdbcDatabase
      *  - data    :
      *  - filters : An array containing the conditions.
      *
-     *              array(array("column", "operator", "value", ["logic"]))
-     *
-     *              array(array("col1,col2", "LIKE" "value") :
-     *                  WHERE ((col1 LIKE value) OR (col2 LIKE value))
-     *
-     *              array(array("col1,col2", "=", "value")) :
-     *                  WHERE ((col1 = ?) OR (col2 = ?))
-     *
-     *              array(array("col1,col2", "=", "value"), array("col3", "value", ">=", "AND")) :
-     *                  WHERE ((col1 = ? OR col2 = ?) AND (col3 >= ?))
+     *              array(
+     *                  array(array("column1,column2", "operator"), "value", ["logic"]),
+     *                  array("column=?", "value", ["logic"])
+     *              )
      *
      * Returns : Nothing
      */

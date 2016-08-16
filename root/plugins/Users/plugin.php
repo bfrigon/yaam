@@ -196,7 +196,9 @@ class PluginUsers extends Plugin
         try {
 
             $user_id = $_GET["id"];
-            $filters = array("user" => $user_id);
+            $filters = array(
+                array("user=?", $user_id),
+            );
 
             /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {
@@ -256,7 +258,9 @@ class PluginUsers extends Plugin
         global $DB;
 
         $user_id = $_GET["id"];
-        $filters = array("user" => $user_id);
+        $filters = array(
+            array("user=?", $user_id)
+        );
 
         if (isset($_GET["confirm"])) {
 

@@ -163,23 +163,6 @@ class Plugin
 
 
     /*--------------------------------------------------------------------------
-     * include_js_script() : Include a jacscript file to the tab content output.
-     *
-     * Arguments
-     * ---------
-     *  - $name : script filename
-     *
-     * Returns : Nothing
-     */
-    function include_js_script($name)
-    {
-        echo "<script>";
-        require($this->PLUGIN_DIR . "/$name");
-        echo "</script>";
-    }
-
-
-    /*--------------------------------------------------------------------------
      * register_tab() : Create a new tab
      *
      * Arguments

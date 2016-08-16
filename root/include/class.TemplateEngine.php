@@ -74,8 +74,9 @@ class TemplateEngine
         if (($template_mtime = @filemtime($template_file)) === False)
             throw new Exception("Can't load the template file ($template_file)");
 
-        /* TEST : Force re-compile the template */
-        $template_mtime = time();
+        /* Force re-compiling the template if enabled */
+        if (FORCE_RECOMPILE_TEMPLATE)
+            $template_mtime = time();
 
         if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
             return $cache_file;
@@ -310,6 +311,10 @@ class TemplateEngine
                                 case "call":
                                 case "callback":
                                     $this->process_tag_callback($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "script":
+                                    fwrite($handle, $child->ownerDocument->saveHTML($child));
                                     break;
 
                                 default:

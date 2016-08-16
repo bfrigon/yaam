@@ -15,23 +15,25 @@
 //******************************************************************************
 $DEBUG_TIME_START = microtime(true);
 
-define('DOCUMENT_ROOT', dirname(__DIR__));
-define('SERVER_SCRIPT_DIR', dirname($_SERVER['SCRIPT_NAME']));
+define("DOCUMENT_ROOT", dirname(__DIR__));
+define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 
-define('YAAM_VERSION', '0.2.1');
+define("FORCE_RECOMPILE_TEMPLATE", false);
 
-
-define('DATE_FORMAT_MYSQL', 0);
-define('DATE_FORMAT_DATEPICKER', 1);
+define("YAAM_VERSION", "0.2.1");
 
 
-require(DOCUMENT_ROOT . '/include/class.OdbcException.php');
-require(DOCUMENT_ROOT . '/include/class.HTTPException.php');
-require(DOCUMENT_ROOT . '/include/class.OdbcDatabase.php');
-require(DOCUMENT_ROOT . '/include/class.PluginManager.php');
-require(DOCUMENT_ROOT . '/include/class.Plugin.php');
-require(DOCUMENT_ROOT . '/include/class.TemplateEngine.php');
-require(DOCUMENT_ROOT . '/include/Template.Functions.php');
+define("DATE_FORMAT_MYSQL", 0);
+define("DATE_FORMAT_DATEPICKER", 1);
+
+
+require(DOCUMENT_ROOT . "/include/class.OdbcException.php");
+require(DOCUMENT_ROOT . "/include/class.HTTPException.php");
+require(DOCUMENT_ROOT . "/include/class.OdbcDatabase.php");
+require(DOCUMENT_ROOT . "/include/class.PluginManager.php");
+require(DOCUMENT_ROOT . "/include/class.Plugin.php");
+require(DOCUMENT_ROOT . "/include/class.TemplateEngine.php");
+require(DOCUMENT_ROOT . "/include/Template.Functions.php");
 
 
 /*--------------------------------------------------------------------------
@@ -46,21 +48,24 @@ require(DOCUMENT_ROOT . '/include/Template.Functions.php');
 function load_global_config()
 {
     $default_cfg = array(
-        'db_dsn' => '',
-        'db_user' => '',
-        'db_pass' => '',
-        'ami_host' => 'localhost',
-        'ami_port' => 5038,
-        'ami_user' => '',
-        'ami_pass' => '',
-        'plugins' => ''
+        "db_dsn" => "",
+        "db_user" => "",
+        "db_pass" => "",
+        "ami_host" => "localhost",
+        "ami_port" => 5038,
+        "ami_user" => "",
+        "ami_pass" => "",
+        "plugins" => ""
     );
 
-    if (!file_exists('/etc/yaam.conf'))
-        throw new Exception('Configuration file /etc/yaam.conf does not exist.');
+    if (!file_exists("/etc/yaam.conf"))
+        throw new Exception("Configuration file /etc/yaam.conf does not exist.");
 
-    if (($config = parse_ini_file('/etc/yaam.conf')) === false)
-        throw new Exception('Can\'t open config file! (/etc/yaam.conf). Make sure the permissions are set correctly.');
+    if (($config = parse_ini_file("/etc/yaam.conf")) === false)
+        throw new Exception(
+            "Can't open config file! (/etc/yaam.conf). \r\n
+            Make sure the permissions are set correctly."
+        );
 
     return array_merge($default_cfg, $config);
 }
@@ -80,7 +85,7 @@ function check_permissions($req_perm)
     if (trim($req_perm) == "")
         return true;
 
-    $permissions = explode(",", $_SESSION['pgroups']);
+    $permissions = explode(",", $_SESSION["pgroups"]);
 
     foreach ($permissions as $perm) {
 
@@ -140,16 +145,25 @@ function print_message($message, $error = false)
     $message = preg_replace("/\n/", "<br />", $message);
 
     if ($error)
-        echo '<div class="box dialog error">';
+        echo "<div class=\"box dialog error\">";
     else
-        echo '<div class="box dialog info">';
+        echo "<div class=\"box dialog info\">";
 
     echo $message;
-    echo '</div>';
+    echo "</div>";
 }
 
 
-function get_config_dateformat($type=null)
+/*--------------------------------------------------------------------------
+ * get_user_dateformat() : Get the date format from user settings.
+ *
+ * Arguments
+ * ---------
+ *  - type : Date format syntax.
+ *
+ * Returns   : The date format string.
+ */
+function get_user_dateformat($type=null)
 {
     $format = $_SESSION["date_format"];
 
@@ -159,6 +173,14 @@ function get_config_dateformat($type=null)
             switch ($type) {
                 case DATE_FORMAT_MYSQL: return "%d/%m/%Y";
                 case DATE_FORMAT_DATEPICKER: return "D/M/YYYY";
+                default: return $format;
+            }
+
+        /* Year-Month-Day */
+        case "YYYY-MM-DD":
+            switch ($type) {
+                case DATE_FORMAT_MYSQL: return "%Y/%m/%d";
+                case DATE_FORMAT_DATEPICKER: return "YYYY-M-D";
                 default: return $format;
             }
 
