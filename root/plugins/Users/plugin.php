@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// Users/plugin.php - User management plugin
+// Plugins/Users/plugin.php - User management plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author  : Benoit Frigon <benoit@frigon.info>
@@ -146,7 +146,6 @@ class PluginUsers extends Plugin
                 "user_chan" => isset($_POST["user_chan"]) ? $_POST["user_chan"] : "",
                 "pwhash"    => isset($_POST["password"])  ? hash(sha256, $_POST["password"]) : "",
                 "pgroups"   => isset($_POST["pgroups"])   ? $_POST["pgroups"] : "",
-                "ui_theme"  => isset($_POST["ui_theme"])  ? $_POST["ui_theme"] : "",
                 "vbox"      => isset($_POST["vbox"])      ? $_POST["vbox"] : "",
             );
 
@@ -208,7 +207,6 @@ class PluginUsers extends Plugin
                     "extension" => $_POST["extension"],
                     "user_chan" => $_POST["user_chan"],
                     "pgroups"   => $_POST["pgroups"],
-                    "ui_theme"  => $_POST["ui_theme"],
                     "vbox"      => $_POST["vbox"],
                 );
 

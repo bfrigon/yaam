@@ -61,39 +61,15 @@ try {
 
         $_SESSION["user"] = $f_user;
         $_SESSION["logged"] = true;
-        $_SESSION["ui_theme"] = odbc_result($result, "ui_theme");
         $_SESSION["pwhash"] = odbc_result($result, "pwhash");
         $_SESSION["fullname"] = odbc_result($result, "fullname");
         $_SESSION["pgroups"] = odbc_result($result, "pgroups");
         $_SESSION["vbox"] = odbc_result($result, "vbox");
         $_SESSION["user_chan"] = odbc_result($result, "user_chan");
 
-        /* Use default theme if specified theme does not exists. */
-        if (!file_exists(dirname(__FILE__) . "/themes/" . $_SESSION["ui_theme"]))
-            $_SESSION["ui_theme"] = "default";
-
         /* Read user configuration data from user_config */
-        $result = $DB->exec_select_query("user_config", "*", array(array("user = ?", $f_user)));
+        load_user_config();
 
-        while (odbc_fetch_row($result)) {
-            $keyname = odbc_result($result, "keyname");
-            $value = odbc_result($result, "value");
-
-            switch ($keyname) {
-                case "pwhash":
-                case "pgroups":
-                case "user":
-                case "ui_theme":
-                case "fullname":
-                    continue;
-
-                default:
-                    $_SESSION[$keyname] = $value;
-                    break;
-            }
-        }
-
-        odbc_free_result($result);
 
         header("Location: index.php");
         exit();
@@ -135,15 +111,15 @@ try {
 
     <?php if (!empty($error_msg)) print_message($error_msg, true); ?>
 
-    <div class="box form dialog">
+    <div class="box dialog">
         <form id="login" method="post">
 
         <label for="user">Username</label>
-        <input style="width: 160px" type="text" name="user" value="<?php echo $f_user ?>">
+        <input type="text" name="user" value="<?php echo $f_user ?>">
         <div class="clear"><br /></div>
 
         <label for="pass">Password</label>
-        <input style="width: 160px" type="password" name="pass">
+        <input type="password" name="pass">
         <div class="clear"><br /></div>
 
         <div class="toolbar center v_spacing">

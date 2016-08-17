@@ -73,6 +73,51 @@ class OdbcDatabase
 
 
     /*--------------------------------------------------------------------------
+     * set_autocommit() : Enable or disable auto-commit.
+     *
+     * Arguments
+     * ---------
+     *  - auto : Auto commit ON or OFF.
+     *
+     * Returns : Nothing
+     */
+    function set_autocommit($auto)
+    {
+        odbc_autocommit($this->_conn, $auto);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * commit() : Commit current transaction.
+     *
+     * Arguments
+     * ---------
+     *  None
+     *
+     * Returns : Nothing
+     */
+    function commit()
+    {
+        odbc_commit($this->_conn);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * rollback() : Discard current transaction.
+     *
+     * Arguments
+     * ---------
+     *  None
+     *
+     * Returns : Nothing
+     */
+    function rollback()
+    {
+        odbc_rollback($this->_conn);
+    }
+
+
+    /*--------------------------------------------------------------------------
      * exec_query_simple() : Same as exec_query(), but return the data of a
      *                       single column in the first row.
      *

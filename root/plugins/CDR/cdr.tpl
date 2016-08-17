@@ -2,14 +2,14 @@
     <toolbar id="cdr_filters">
         <item type="label">Date :</item>
         <group id="cdr_date_filter">
-            <item type="datebox" id="cdr_d_from" name="d_from" width="90px" title="Filter calls by date"/>
+            <item type="date" id="cdr_d_from" name="d_from" width="90px" title="Filter calls by date"/>
             <item type="label">To</item>
-            <item type="datebox" id="cdr_d_to" name="d_to" width="90px" title="Filter calls by date" />
+            <item type="date" id="cdr_d_to" name="d_to" width="90px" title="Filter calls by date" />
         </group>
         <item type="separator"></item>
 
         <item type="label">Find :</item>
-        <item type="textbox" name="s" width="150px" title="Filter calls by number or name"></item>
+        <item type="text" name="s" width="150px" title="Filter calls by number or name"></item>
 
         <item type="submit" action="search" icon="search" title="Search"></item>
         <item type="button" action="clear" icon="clear" title="Clear filters"></item>

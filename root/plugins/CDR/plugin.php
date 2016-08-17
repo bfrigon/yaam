@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// CDR/plugin.php - Call log plugin
+// Plugins/CDR/plugin.php - Call log plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author  : Benoit Frigon <benoit@frigon.info>

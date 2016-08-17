@@ -1,7 +1,7 @@
 <form id="frm_users" method="post">
     <toolbar>
         <item type="label">Find :</item>
-        <item type="textbox" name="s"  width="170px"title="Search user"></item>
+        <item type="text" name="s"  width="170px"title="Search user"></item>
 
         <item type="submit" icon="search" title="Search user"></item>
         <item type="button" action="clear" icon="clear" title="Clear search query"></item>
@@ -39,7 +39,7 @@
         </header>
 
         <row>
-            <column><input type="checkbox" name="user_[[user]]"/></column>
+            <column><input type="checkbox" name="user_[[user]]" /></column>
             <column>[[user]]</column>
             <column>[[fullname]]</column>
             <column>[[extension]]</column>

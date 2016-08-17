@@ -308,6 +308,10 @@ class TemplateEngine
                                     fwrite($handle, $html);
                                     break;
 
+                                case "clear":
+                                    fwrite($handle, "<div class=\"clear\"></div>");
+                                    break;
+
                                 case "call":
                                 case "callback":
                                     $this->process_tag_callback($child, $handle, $data_type, $data_source);
@@ -376,6 +380,7 @@ class TemplateEngine
 
         $keep_uri = $this->get_attribute_boolean($node_tag, "keep-uri", false);
         $no_referrer = $this->get_attribute_boolean($node_tag, "no-referrer", false);
+        $force = $this->get_attribute_boolean($node_tag, "force-update", false);
 
         $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
 
@@ -391,16 +396,20 @@ class TemplateEngine
             } else {
                 switch ($action) {
                     case "refresh":
-                        $url_params["force"] = "1";
                         $href = $this->func_build_tab_url($url_params, true);
+
+                        $btn_class .= " action-refresh ";
                         break;
 
                     case "clear":
                         $href = $this->func_build_tab_url($url_params, false);
+
+                        $btn_class .= " action-clear ";
                         break;
 
                     case "cancel":
                         $href = "<?php echo \$this->get_tab_referrer() ?>";
+                        $btn_class .= " action-cancel ";
                         break;
 
                     case "first-page":
@@ -446,7 +455,10 @@ class TemplateEngine
                         break;
                 }
             }
-       }
+        }
+
+        if ($force)
+            $btn_class .= " force-update ";
 
         if (!empty($href))
             fwrite($handle, "<a id=\"$id\" href=\"$href\" class=\"$btn_class\" tabindex=\"1\" title=\"$title\" >");
@@ -486,25 +498,71 @@ class TemplateEngine
         $type = $node_tag->getAttribute("type");
         $id = $node_tag->getAttribute("id");
         $caption = $this->get_attribute_shortcode($node_tag, "caption", "", $data_type, $data_source);
-        $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source);
-
-
+        $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source, false);
 
         fwrite($handle, "<label for=\"$name\">$caption :</label>");
 
-
         switch ($type) {
 
+            // -----------------------------------------------
+            //  Select box
+            // -----------------------------------------------
+            case "select":
+                $var_list = trim($node_tag->getAttribute("list"));
+                if (empty($var_list))
+                    break;
+
+                if ($var_list[0] != "$")
+                    $var_list = "\$$varlist";
+
+                $var_key = $this->get_unique_varname();
+                $var_val = $this->get_unique_varname();
+
+
+                fwrite($handle, "<select name=\"$name\" id=\"$id\">");
+                fwrite($handle, "<?php if(is_array($var_list)): foreach($var_list as $var_key => $var_val): ?>");
+
+                fwrite($handle, "<option value=\"<?php echo $var_key ?>\"");
+                fwrite($handle, " <?php echo ($var_key == $value) ? 'selected' : '' ?> >");
+                fwrite($handle, "<?php echo $var_val ?></option>\n");
+
+                fwrite($handle, "<?php endforeach; endif; ?>");
+                fwrite($handle, "</select>");
+                break;
+
+            // -----------------------------------------------
+            //  Read-only textbox
+            // -----------------------------------------------
             case "view":
-                fwrite($handle, "<input type=\"text\" id=\"$id\" name=\"$name\" value=\"$value\" readonly />");
+            case "readonly":
+                fwrite($handle, "<input type=\"text\"");
+
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id");
+
+                if (!empty($value))
+                    fwrite($handle, " value=\"<?php echo $value ?>\"");
+
+                fwrite($handle, " readonly />\n");
                 break;
 
-            case "textbox":
-                fwrite($handle, "<input type=\"text\" id=\"$id\" name=\"$name\" value=\"$value\" />");
-                break;
+            // -----------------------------------------------
+            //  Text box
+            // -----------------------------------------------
+            case "text":
+            case "password":
+                fwrite($handle, "<input type=\"$type\"");
 
-            case "password";
-                fwrite($handle, "<input type=\"password\" id=\"$id\" name=\"$name\" value=\"$value\" />");
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id");
+
+                if (!empty($name))
+                    fwrite($handle, " name=\"$name\"");
+
+                if (!empty($value))
+                    fwrite($handle, " value=\"<?php echo $value ?>\"");
+
+                fwrite($handle, " />\n");
                 break;
         }
 
@@ -512,7 +570,8 @@ class TemplateEngine
 
         if (!empty($node_help)) {
 
-            fwrite($handle, "<a href=\"#\" class=\"tooltip\">Help");
+            fwrite($handle, "<a href=\"#\" class=\"tooltip\">");
+            fwrite($handle, "<img src=\"images/blank.png\" class=\"icon16 icon16-help\" />");
             fwrite($handle, "<span><img class=\"callout\" src=\"images\blank.png\" />");
             fwrite($handle, $node_help->textContent);
             fwrite($handle, "</span></a>");
@@ -543,7 +602,7 @@ class TemplateEngine
             $class = "box";
 
 
-
+        fwrite($handle, "<div class=\"clear\"></div>");
         fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><ul>");
 
         $this->process_toolbar_items($node_tag, $handle, $data_type, $data_source);
@@ -624,7 +683,7 @@ class TemplateEngine
                     $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
 
 
-                    fwrite($handle, "<li class=\"$li_class\">\r\n");
+                    fwrite($handle, "<li class=\"$li_class\">\n");
                     fwrite($handle, "<button class=\"$btn_class\" type=\"submit\"");
 
                     if (!empty($id))
@@ -638,7 +697,7 @@ class TemplateEngine
                     if (!empty($title))
                         fwrite($handle, " title=\"$title\"");
 
-                    fwrite($handle, ">\r\n");
+                    fwrite($handle, ">\n");
 
 
                     if (!empty($icon)) {
@@ -647,26 +706,26 @@ class TemplateEngine
                         if (empty($icon_class))
                             $icon_class = "icon16";
 
-                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />\r\n");
+                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />\n");
                     }
 
                     fwrite($handle, $caption);
-                    fwrite($handle, "</button></li>\r\n");
+                    fwrite($handle, "</button></li>\n");
 
                     break;
 
                 // -----------------------------------------------
                 //  text box
                 // -----------------------------------------------
-                case "textbox":
-                case "datebox":
+                case "text":
+                case "date":
                     $name = $node_item->getAttribute("name");
                     $id = $node_item->getAttribute("id");
                     $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
 
                     fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
 
-                    if ($item_type == "datebox")
+                    if ($item_type == "date")
                         fwrite($handle, " class=\"dateinput\"");
 
                     if (!empty($id))
@@ -686,7 +745,7 @@ class TemplateEngine
                     if ($node_item->hasAttribute("width"))
                         fwrite($handle, " style=\"width: " . $node_item->getAttribute("width") . ";\"");
 
-                    fwrite($handle, " /></li>\r\n");
+                    fwrite($handle, " /></li>\n");
                     break;
 
                 // -----------------------------------------------
@@ -719,15 +778,15 @@ class TemplateEngine
                     $params = array("page" => "$var_counter");
                     $href = $this->func_build_tab_url($params, true);
 
-                    fwrite($handle, "<li class=\"dropdown\">\r\n");
-                    fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\r\n");
-                    fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\r\n");
+                    fwrite($handle, "<li class=\"dropdown\">\n");
+                    fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\n");
+                    fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
-                    fwrite($handle, "<ul>\r\n");
-                    fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\r\n");
-                    fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\r\n");
-                    fwrite($handle, "<?php } ?>\r\n");
-                    fwrite($handle, "</ul></li>\r\n");
+                    fwrite($handle, "<ul>\n");
+                    fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\n");
+                    fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\n");
+                    fwrite($handle, "<?php } ?>\n");
+                    fwrite($handle, "</ul></li>\n");
                     break;
 
                 // -----------------------------------------------
@@ -758,9 +817,9 @@ class TemplateEngine
                     }
 
                     fwrite($handle, $this->convert_shortcode($caption));
-                    fwrite($handle, "</a>\r\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\r\n");
+                    fwrite($handle, "</a>\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
-                    fwrite($handle, "<ul>\r\n");
+                    fwrite($handle, "<ul>\n");
 
 
                     $node_row = $node_item->getElementsByTagName("row")->item(0);
@@ -815,12 +874,12 @@ class TemplateEngine
                         $this->process_toolbar_items($node_item, $handle);
                     }
 
-                    fwrite($handle, "</ul></li>\r\n");
+                    fwrite($handle, "</ul></li>\n");
                     break;
             }
         }
 
-        fwrite($handle, "\r\n");
+        fwrite($handle, "\n");
     }
 
 

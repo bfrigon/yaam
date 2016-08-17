@@ -72,6 +72,124 @@ function load_global_config()
 
 
 /*--------------------------------------------------------------------------
+ * load_user_config() : Load user configuration from database and populate
+ *                      the _SESSION variable.
+ *
+ * Arguments
+ * ---------
+ *  None
+ *
+ * Returns   : Nothing
+ */
+function load_user_config()
+{
+    global $DB;
+
+    $user = $_SESSION["user"];
+    $filters = array(
+        array("user=?", $user)
+    );
+
+    $result = $DB->exec_select_query("user_config", "*", $filters);
+
+    while (odbc_fetch_row($result)) {
+        $key = strtolower(odbc_result($result, "keyname"));
+        $value = odbc_result($result, "value");
+
+        switch ($key) {
+
+            /* Skip these config item as they are defined in the user table */
+            case "pwhash":
+            case "pgroups":
+            case "user":
+            case "user_chan":
+            case "fullname":
+            case "vbox":
+            case "extension":
+                continue;
+
+            /* These key are used internaly */
+            case "logged":
+            case "js":
+                continue;
+
+            default:
+                $_SESSION[$key] = $value;
+                break;
+        }
+    }
+
+    /* Use default theme if specified theme does not exists. */
+    if (!file_exists(dirname(__FILE__) . "/themes/" . $_SESSION["ui_theme"]))
+        $_SESSION["ui_theme"] = "default";
+
+    odbc_free_result($result);
+}
+
+
+/*--------------------------------------------------------------------------
+ * save_user_config() : Save user configuration to database.
+ *
+ * Arguments
+ * ---------
+ *  None
+ *
+ * Returns   : Nothing
+ */
+function save_user_config()
+{
+    global $DB;
+
+    $user = $_SESSION["user"];
+
+    /* Turn off auto-commit */
+    $DB->set_autocommit(false);
+
+    foreach ($_SESSION as $key => $value) {
+
+        $key = strtolower($key);
+
+        switch ($key) {
+
+            /* Skip these config item as they are defined in the user table */
+            case "pwhash":
+            case "pgroups":
+            case "user":
+            case "user_chan":
+            case "fullname":
+            case "vbox":
+            case "extension":
+                continue;
+
+            /* These key are used internaly */
+            case "logged":
+            case "js":
+                continue;
+
+            default:
+                /* Skip if the session variable is a temporary one */
+                if (strpos($key, "tmp_", 0) === 0)
+                    continue;
+
+                $query = "
+                    INSERT INTO user_config
+                    SET user=?, keyname=?, value=?
+                    ON DUPLICATE KEY UPDATE value=?
+                ";
+
+                $params = array($user, $key, $value, $value);
+
+                $DB->exec_query($query, $params);
+        }
+    }
+
+    /* Commit transaction */
+    $DB->commit();
+    $DB->set_autocommit(true);
+}
+
+
+/*--------------------------------------------------------------------------
  * check_permission() : Check if the current user has the required permissions.
  *
  * Arguments
@@ -192,4 +310,23 @@ function get_user_dateformat($type=null)
                 default: return $format;
             }
     }
+}
+
+
+/*--------------------------------------------------------------------------
+ * get_dateformat_list() : Returns an array containing supported date formats.
+ *
+ * Arguments
+ * ---------
+ *  None
+ *
+ * Returns   : The date format list
+ */
+function get_dateformat_list()
+{
+    return array(
+        "DD/MM/YYYY" => "D/M/Y",
+        "MM/DD/YYYY" => "M/D/Y",
+        "YYYY-MM-DD" => "Y-M-D",
+    );
 }

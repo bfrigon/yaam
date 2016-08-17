@@ -299,11 +299,14 @@ $(document).ready(function() {
         event.preventDefault();
 
 
-        if ($(this).hasClass('cancel')) {
+        if ($(this).hasClass('action-cancel')) {
             history.go(-1);
 
-        } else  if ($(this).hasClass('refresh')) {
+        } else if ($(this).hasClass('action-refresh')) {
             set_tab_url(current_tab_url(), null, true);
+
+        } else if ($(this).hasClass('force-update')) {
+            set_tab_url(url, null, true);
 
         } else {
             window.location = url;

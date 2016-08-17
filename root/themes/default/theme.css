@@ -371,9 +371,15 @@ body {
 .icon16-calandar    {background-position: -128px -80px;}
 .icon16-blacklist   {background-position: -144px -80px;}
 
+.icon16-help        {background-position: 0px -96px;}
+.icon16-map         {background-position: -16px -96px;}
+.icon16-download2   {background-position: -32px -96px;}
+.icon16-message     {background-position: -48px -96px;}
+.icon16-tag         {background-position: -64px -96px;}
+
 
 /* -------------------------------------------------------------------------------------------
-   Forms / Widgets
+   Forms/Dialog
 */
 .box {
     background-color: #E6DCCF;
@@ -391,7 +397,7 @@ body {
     color: white;
     text-align: center;
     font-size: 1em;
-    padding: 2px;
+    padding: 5px;
     margin: 0px 0px 8px 0px;
 }
 
@@ -402,38 +408,40 @@ body {
     border-bottom: 1px solid;
     font-size: 1em;
     margin: 15px 0px 8px 0px;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
 }
 
+.box .toolbar {
+    margin: 15px 0px;
+}
+
+
+
+/* -------------------------------------------------------------------------------------------
+   Forms fields
+*/
 .box.form {
     width: 400px;
     margin: 40px auto;
 }
 
-.box.dialog {
-    margin: 20px auto;
-    width: 280px;
-    padding: 15px;
-
-    -webkit-box-shadow:0 4px 10px #8b8b8b;
-    -moz-box-shadow:0 4px 10px #8b8b8b;
-    box-shadow:0 4px 10px #8b8b8b;
-}
-
 .box.form label {
     display: inline-block;
-    width: 100px;
+    width: 130px;
     text-align: right;
     font-weight: bold;
 }
 
 .box.form input[type="text"],
-.box.form input[type="password"] {
+.box.form input[type="password"],
+.box.form select {
+    width: 220px;
     padding: 4px 2px;
     border: solid 1px #B2ACA1;
     background-color: white;
-    width: 240px;
     margin: 0px 10px 5px 10px;
+    color: black;
+
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     border-radius: 3px;
@@ -443,29 +451,64 @@ body {
     background-color: #ddd;
 }
 
-.box.form .small {
-    color: #666666;
-    display: block;
-    font-size: 0.8em;
-    font-weight: normal;
-    text-align: right;
-    width: 100px;
-    line-height: 10px;
+
+.box.form select {
+    -webkit-appearance: button;
+    -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    -webkit-padding-end: 20px;
+    -webkit-padding-start: 2px;
+    -webkit-user-select: none;
+
+    background-image: url(images/dropdown.png);
+    background-repeat: no-repeat;
+    background-position: right -3px;
+    font-size: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
 
 .box.form .highlight {
     border: solid 2px red;
     background-color: #FFD0D0;
 }
 
-.box.form input[type="text"].highlight,
-.box.form input[type="password"].highlight {
+.box input[type="text"].highlight,
+.box input[type="password"].highlight {
     border: solid 2px red;
     background-color: #FFD0D0;
 }
 
+
+/* -------------------------------------------------------------------------------------------
+   Dialog box widgets
+*/
 .box.dialog label {
     width: 80px;
+}
+
+.box.dialog {
+    margin: 20px auto;
+    width: 250px;
+    padding: 15px;
+
+    -webkit-box-shadow:0 4px 10px #8b8b8b;
+    -moz-box-shadow:0 4px 10px #8b8b8b;
+    box-shadow:0 4px 10px #8b8b8b;
+}
+
+.box.dialog input[type="text"],
+.box.dialog input[type="password"] {
+    width: 160px;
+    padding: 4px 2px;
+    border: solid 1px #B2ACA1;
+    background-color: white;
+    margin: 0px 10px 5px 10px;
+
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
 }
 
 
@@ -496,33 +539,7 @@ body {
 }
 
 .box.dialog .toolbar {
-    margin-top: 20px;
-    clear: both;
-}
-
-.box.dialog.popup {
-    display: none;
-    position: absolute;
-    z-index: 10000;
-    padding: 6px;
-}
-
-.box.dialog.popup h1 {
-    position: relative;
-    padding: 5px;
-    min-height: 10px;
-
-}
-
-.box.dialog.popup h1 a.close {
-    position: absolute;
-    right: 3px;
-    top: 3px;
-
-    width: 15px;
-    height: 15px;
-    background-color: #F2EEE7;
-    color: black;
+    margin-top: 30px;
 }
 
 
