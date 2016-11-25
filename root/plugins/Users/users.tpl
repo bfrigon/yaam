@@ -44,7 +44,7 @@
             <column>[[fullname]]</column>
             <column>[[extension]]</column>
             <column>[[user_chan]]</column>
-            <column>[[vbox]]</column>
+            <column>[[vbox_context]] / [[vbox_user]]</column>
             <column>[[pgroups]]</column>
             <column type="actions">
                 <icon action="edit" icon="edit" title="Edit user profile" params="id=[[user]]" />

@@ -91,20 +91,24 @@ class PluginUsers extends Plugin
                 }
 
 
-                $filter = array();
+                $query = $DB->create_query("users");
+
 
                 /* Set search filters */
                 if (isset($_GET["s"])) {
                     $search = $_GET["s"];
 
-                    $filter[] = array(
-                        array("user,fullname,pgroups,user_chan,vbox", "LIKE ?"),
+                    $query->groupe_where_begin();
+                    $query->where(
+                        array("user", "fullname", "pgroups", "user_chan", "vbox"),
+                        "LIKE",
                         "%$search%"
                     );
+                    $query->group_where_end();
                 }
 
                 /* Get the number of users matching the filters. */
-                $results = $DB->exec_select_query("users", "COUNT(*) as row_count", $filter);
+                $results = $query->run_query_select("COUNT(*) as row_count");
                 $num_results = odbc_result($results, "row_count");
 
                 odbc_free_result($results);
@@ -115,10 +119,15 @@ class PluginUsers extends Plugin
                 $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
                 $row_start = ($current_page - 1) * $max_results;
 
+                $query->limit = $max_results;
+                $query->offset = $row_start;
+
                 /* Select the users matching the filters. */
-                $results = $DB->exec_select_query("users", "*", $filter, $max_results, $row_start);
+                $results = $query->run_query_select("*");
 
                 require($template->load("users.tpl"));
+
+                odbc_free_result($results);
                 break;
         }
     }
@@ -137,16 +146,19 @@ class PluginUsers extends Plugin
     {
         global $DB;
 
+        $query = $DB->create_query("users");
+
         try {
 
             $user_data = array(
-                "user"      => isset($_POST["user"])      ? $_POST["user"] : "",
-                "fullname"  => isset($_POST["fullname"])  ? $_POST["fullname"] : "",
-                "extension" => isset($_POST["extension"]) ? $_POST["extension"] : "",
-                "user_chan" => isset($_POST["user_chan"]) ? $_POST["user_chan"] : "",
-                "pwhash"    => isset($_POST["password"])  ? hash(sha256, $_POST["password"]) : "",
-                "pgroups"   => isset($_POST["pgroups"])   ? $_POST["pgroups"] : "",
-                "vbox"      => isset($_POST["vbox"])      ? $_POST["vbox"] : "",
+                "user"         => isset($_POST["user"])         ? $_POST["user"] : "",
+                "fullname"     => isset($_POST["fullname"])     ? $_POST["fullname"] : "",
+                "extension"    => isset($_POST["extension"])    ? $_POST["extension"] : "",
+                "user_chan"    => isset($_POST["user_chan"])    ? $_POST["user_chan"] : "",
+                "pwhash"       => isset($_POST["password"])     ? hash(sha256, $_POST["password"]) : "",
+                "pgroups"      => isset($_POST["pgroups"])      ? $_POST["pgroups"] : "",
+                "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",
+                "vbox_user"    => isset($_POST["vbox_user"])    ? $_POST["vbox_user"] : "",
             );
 
             /* If data has been submited, validate it and update the database. */
@@ -163,7 +175,7 @@ class PluginUsers extends Plugin
                     throw new Exception("The password must have at least 6 characters");
 
                 /* If all fields are valid, Insert the new user profile in the database. */
-                $DB->exec_insert_query("users", $user_data);
+                $query->run_query_insert($user_data);
 
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
@@ -195,19 +207,22 @@ class PluginUsers extends Plugin
         try {
 
             $user_id = $_GET["id"];
-            $filters = array(
-                array("user=?", $user_id),
-            );
+
+            $query = $DB->create_query("users");
+
+            $query->where("user", "=", $user_id);
+            $query->limit(1);
 
             /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {
 
                 $user_data = array(
-                    "fullname"  => $_POST["fullname"],
-                    "extension" => $_POST["extension"],
-                    "user_chan" => $_POST["user_chan"],
-                    "pgroups"   => $_POST["pgroups"],
-                    "vbox"      => $_POST["vbox"],
+                    "fullname"     => $_POST["fullname"],
+                    "extension"    => $_POST["extension"],
+                    "user_chan"    => $_POST["user_chan"],
+                    "pgroups"      => $_POST["pgroups"],
+                    "vbox_context" => $_POST["vbox_context"],
+                    "vbox_user"    => $_POST["vbox_user"],
                 );
 
                 /* Validate fields */
@@ -220,7 +235,7 @@ class PluginUsers extends Plugin
                 }
 
                 /* If all fields are valid, update the user profile in the database. */
-                $DB->exec_update_query("users", $user_data, $filters, 1);
+                $query->run_query_update($user_data);
 
                 /* Redirect to the previous location */
                 $this->redirect($this->get_tab_referrer());
@@ -228,7 +243,8 @@ class PluginUsers extends Plugin
 
             /* If not, read the user profile from the database */
             } else {
-                $res = $DB->exec_select_query("users", "*", $filters, 1);
+
+                $res = $query->run_query_select("*");
 
                 $user_data = odbc_fetch_array($res);
            }
@@ -255,14 +271,14 @@ class PluginUsers extends Plugin
     {
         global $DB;
 
-        $user_id = $_GET["id"];
-        $filters = array(
-            array("user=?", $user_id)
-        );
+        $query = $DB->create_query("users");
+
+        $query->where("user", "=", $_GET["id"]);
+        $query->limit(1);
 
         if (isset($_GET["confirm"])) {
 
-            $DB->exec_delete_query("users", $filters);
+            $query->run_query_delete();
 
             /* Redirect to the previous location */
             $this->redirect($this->get_tab_referrer());

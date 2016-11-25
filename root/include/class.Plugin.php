@@ -146,7 +146,7 @@ class Plugin
     function build_tab_url($params, $keep_uri=true, $no_referrer=false)
     {
         if ($keep_uri) {
-            $uri = $_GET;
+            $uri = $_REQUEST;
             unset($uri["js"], $uri["output"]);
 
             $params = array_merge($uri, $params);
@@ -159,6 +159,21 @@ class Plugin
             $params["path"] = $_GET["path"];
 
         return "?" . http_build_query($params);
+    }
+
+
+    function insert_form_uri_params($params=array())
+    {
+        foreach ($params as $name) {
+            $name = trim($name);
+
+            if (!isset($_GET[$name]))
+                continue;
+
+            $value = $_GET[$name];
+
+            printf("<input type=\"hidden\" name=\"%s\" value=\"%s\" />", $name, $value);
+        }
     }
 
 
@@ -178,7 +193,7 @@ class Plugin
      */
     function register_tab($callback, $id, $parent, $caption, $req_perms, $order = 100)
     {
-        if (!check_permissions($req_perms))
+        if (!check_permission($req_perms))
             return;
 
         if ($parent != NULL) {

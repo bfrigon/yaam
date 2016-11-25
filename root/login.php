@@ -63,11 +63,14 @@ try {
         $_SESSION["logged"] = true;
         $_SESSION["pwhash"] = odbc_result($result, "pwhash");
         $_SESSION["fullname"] = odbc_result($result, "fullname");
-        $_SESSION["pgroups"] = odbc_result($result, "pgroups");
-        $_SESSION["vbox"] = odbc_result($result, "vbox");
+        $_SESSION["pgroups"] = array_map("trim", explode(",", odbc_result($result, "pgroups")));
+        $_SESSION["vbox_context"] = odbc_result($result, "vbox_context");
+        $_SESSION["vbox_user"] = odbc_result($result, "vbox_user");
         $_SESSION["user_chan"] = odbc_result($result, "user_chan");
 
-        /* Read user configuration data from user_config */
+
+
+        /* Read user configuration data from user_config table */
         load_user_config();
 
 

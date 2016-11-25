@@ -69,7 +69,7 @@ class PluginTools extends Plugin
                 "fullname"    => isset($_POST["fullname"])    ? $_POST["fullname"]    : $_SESSION["fullname"],
             );
 
-            if (isset($_POST["submit"])) {
+            if (isset($_POST["user"])) {
 
                 if ((!empty($_POST["old_pwd"])) || (!empty($_POST["pwd"])) || (!empty($_POST["pwd_check"]))) {
 
@@ -98,12 +98,11 @@ class PluginTools extends Plugin
                     $user_data["pwhash"] = $pwhash;
                 }
 
+                $query = $DB->create_query("users");
+                $query->where("user", "=", $user);
+                $query->limit(1);
 
-                $filters = array(
-                    array("user=?", $user),
-                );
-
-                $DB->exec_update_query("users", $user_data, $filters, 1);
+                $query->run_query_update($user_data);
 
                 /* Save user config */
                 $_SESSION["date_format"] = $_POST["date_format"];

@@ -20,16 +20,18 @@ define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 
 define("FORCE_RECOMPILE_TEMPLATE", false);
 
-define("YAAM_VERSION", "0.2.1");
+define("YAAM_VERSION", "0.2.2");
 
 
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);
+define("DATE_FORMAT_DATETIME", 2);
 
 
 require(DOCUMENT_ROOT . "/include/class.OdbcException.php");
 require(DOCUMENT_ROOT . "/include/class.HTTPException.php");
 require(DOCUMENT_ROOT . "/include/class.OdbcDatabase.php");
+require(DOCUMENT_ROOT . "/include/class.QueryBuilder.php");
 require(DOCUMENT_ROOT . "/include/class.PluginManager.php");
 require(DOCUMENT_ROOT . "/include/class.Plugin.php");
 require(DOCUMENT_ROOT . "/include/class.TemplateEngine.php");
@@ -84,13 +86,11 @@ function load_global_config()
 function load_user_config()
 {
     global $DB;
+    $query = $DB->create_query("user_config");
 
-    $user = $_SESSION["user"];
-    $filters = array(
-        array("user=?", $user)
-    );
+    $query->where("user", "=", $_SESSION["user"]);
 
-    $result = $DB->exec_select_query("user_config", "*", $filters);
+    $result = $query->run_query_select("*");
 
     while (odbc_fetch_row($result)) {
         $key = strtolower(odbc_result($result, "keyname"));
@@ -104,7 +104,8 @@ function load_user_config()
             case "user":
             case "user_chan":
             case "fullname":
-            case "vbox":
+            case "vbox_context":
+            case "vbox_user":
             case "extension":
                 continue;
 
@@ -157,7 +158,8 @@ function save_user_config()
             case "user":
             case "user_chan":
             case "fullname":
-            case "vbox":
+            case "vbox_context":
+            case "vbox_user":
             case "extension":
                 continue;
 
@@ -198,17 +200,15 @@ function save_user_config()
  *
  * Returns   : True if permission match, false otherwise.
  */
-function check_permissions($req_perm)
+function check_permission($req_perm)
 {
+
     if (trim($req_perm) == "")
         return true;
 
-    $permissions = explode(",", $_SESSION["pgroups"]);
+    foreach ($_SESSION["pgroups"] as $perm) {
 
-    foreach ($permissions as $perm) {
-
-        $perm = strtolower(trim($perm));
-
+        /* If user has admin permission, always allow access */
         if ($perm == "admin")
             return true;
 
@@ -217,6 +217,14 @@ function check_permissions($req_perm)
     }
 
     return false;
+}
+
+
+
+function callback_format_permission($item)
+{
+
+
 }
 
 
@@ -289,27 +297,29 @@ function get_user_dateformat($type=null)
         /* Day/Month/Year */
         case "DD/MM/YYYY":
             switch ($type) {
-                case DATE_FORMAT_MYSQL: return "%d/%m/%Y";
+                case DATE_FORMAT_MYSQL:      return "%d/%m/%Y";
                 case DATE_FORMAT_DATEPICKER: return "D/M/YYYY";
-                default: return $format;
+                case DATE_FORMAT_DATETIME:   return "%d/%m/%Y %R";
             }
 
         /* Year-Month-Day */
         case "YYYY-MM-DD":
             switch ($type) {
-                case DATE_FORMAT_MYSQL: return "%Y/%m/%d";
+                case DATE_FORMAT_MYSQL:      return "%Y/%m/%d";
                 case DATE_FORMAT_DATEPICKER: return "YYYY-M-D";
-                default: return $format;
+                case DATE_FORMAT_DATETIME:   return "%Y-%m-%d %R";
             }
 
         /* Month/Day/Year */
         default:
             switch ($type) {
-                case DATE_FORMAT_MYSQL: return "%m/%d/%Y";
+                case DATE_FORMAT_MYSQL:      return "%m/%d/%Y";
                 case DATE_FORMAT_DATEPICKER: return "M/D/YYYY";
-                default: return $format;
+                case DATA_FORMAT_DATETIME:   return "%m/%d/%Y %R";
             }
     }
+
+    return $format;
 }
 
 

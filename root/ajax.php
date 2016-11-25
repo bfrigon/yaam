@@ -16,7 +16,7 @@
 require("include/common.php");
 
 
-$output = isset($_REQUEST["output"]) ? $_REQUEST["output"] : "json";
+$output = isset($_REQUEST["output"]) ? $_REQUEST["output"] : "";
 
 header("Cache-Control: no-cache, must-revalidate");
 
@@ -24,7 +24,7 @@ switch ($output) {
     case "wav":  header("Content-Type: audio/x-wav"); break;
     case "mp3":  header("Content-Type: audio/mpeg");  break;
     case "html": header("Content-Type: text/html");   break;
-    default:     header("Content-Type: text/plain");  break;
+    case "json": header("Content-Type: text/plain");  break;
 }
 
 try {
@@ -52,7 +52,7 @@ try {
     /* Call plugin AJAX function */
     if (isset($_REQUEST["function"])) {
         $path = $_REQUEST["function"];
-        $path = explode("/$path");
+        $path = explode("/", $path);
 
         $plugin_name = $path[count($path) - 2];
         $ajax_function = "ajax_" . $path[count($path) - 1];

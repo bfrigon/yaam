@@ -38,7 +38,8 @@ class TemplateEngine
      *
      * Returns : None
      */
-    function __construct($plugin=null) {
+    function __construct($plugin=null)
+    {
         $this->_plugin = $plugin;
 
         if (is_null($plugin))
@@ -183,8 +184,8 @@ class TemplateEngine
 
     /*--------------------------------------------------------------------------
      * func_build_tab_url() : Generates the code to call the plugin function
-     *                        "build_tab_url" to the template output. This
-     *                        function creates an url based on the content
+     *                        "build_tab_url" and adds it to the template output.
+     *                        This function creates an url based on the content
      *                        of $_GET and the given parameters.
      *
      * Arguments
@@ -261,24 +262,7 @@ class TemplateEngine
 
                             switch ($child->nodeName) {
                                 case "form":
-
-                                    $method = strtolower($child->getAttribute("method"));
-
-                                    /* Sets form action to the current tab url */
-                                    if ($method == "post") {
-                                        if (empty($child->getAttribute("action")))
-                                            $child->setAttribute("action", "<?php echo \$this->get_tab_url(false) ?>");
-                                    } else {
-
-                                        $element = $child->ownerDocument->createElement("input");
-                                        $element->setAttribute("type", "hidden");
-                                        $element->setAttribute("name", "path");
-                                        $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
-
-                                        $child->appendChild($element);
-                                    }
-
-                                    $this->process_node($handle, $child, true, true, $data_type, $data_source);
+                                    $this->process_tag_form($child, $handle, $data_type, $data_source);
                                     break;
 
                                 case "icon":
@@ -291,6 +275,10 @@ class TemplateEngine
 
                                 case "field":
                                     $this->process_tag_field($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "if":
+                                    $this->process_tag_if($child, $handle, $data_type, $data_source);
                                     break;
 
                                 case "grid":
@@ -357,6 +345,101 @@ class TemplateEngine
 
 
     /*--------------------------------------------------------------------------
+     * process_tag_form() : Process the template tag "form".
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_form($node_form, $handle, $data_type=null, $data_source=null)
+    {
+        $method = strtolower($node_form->getAttribute("method"));
+
+        /* Sets form action to the current tab url */
+        if ($method == "post") {
+            if (empty($node_form->getAttribute("action")))
+                $node_form->setAttribute("action", "<?php echo \$this->get_tab_url(false) ?>");
+
+        } else {
+            $element = $node_form->ownerDocument->createElement("input");
+            $element->setAttribute("type", "hidden");
+            $element->setAttribute("name", "path");
+            $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
+
+            $node_form->appendChild($element);
+        }
+
+        if ($node_form->hasAttribute("keep-uri")) {
+            $keep_uri = explode(",", $node_form->getAttribute("keep-uri"));
+
+            $params = "";
+            if (!empty($keep_uri))
+                $params = "array('" . implode("', '", $keep_uri) . "')";
+
+            $element = $node_form->ownerDocument->createProcessingInstruction(
+                "php",
+                "\$this->insert_form_uri_params($params) ?");
+
+            $node_form->appendChild($element);
+        }
+
+        $this->process_node($handle, $node_form, true, true, $data_type, $data_source);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_if() : Process the template tag "if".
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_if($node_if, $handle, $data_type=null, $data_source=null)
+    {
+
+        $type = strtolower($node_if->getAttribute("type"));
+        $name = $node_if->getAttribute("name");
+        $value = $this->get_attribute_shortcode($node_if, "value", "", $data_type, $data_source);
+
+
+        switch ($type) {
+
+            /* Permission check */
+            case "permission":
+            case "perm":
+                fwrite($handle, "<?php if (check_permission('$value')): ?>");
+                break;
+
+            /* Check if variable Boolean */
+            case "boolean":
+            case "bool":
+                fwrite($handle, "<?php if (\$$name === true): ?>");
+                break;
+
+            case "is":
+            default:
+                fwrite($handle, "<?php if (\$$name == '$value'): ?>");
+                break;
+
+       }
+
+        $this->process_node($handle, $node_if, false, true, $data_type, $data_source);
+
+        fwrite($handle, "<?php endif; ?>");
+    }
+
+
+    /*--------------------------------------------------------------------------
      * process_tag_icon() : Process the template tag "icon".
      *
      * Arguments
@@ -384,7 +467,7 @@ class TemplateEngine
 
         $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
 
-        if (empty($href)) {
+        if (empty($href) && (!empty($params) || !empty($action))) {
 
             $url_params = array();
             if (!empty($params))
@@ -540,6 +623,9 @@ class TemplateEngine
                 if (!empty($id))
                     fwrite($handle, " id=\"$id");
 
+                if (!empty($name))
+                    fwrite($handle, " name=\"$name\"");
+
                 if (!empty($value))
                     fwrite($handle, " value=\"<?php echo $value ?>\"");
 
@@ -675,7 +761,9 @@ class TemplateEngine
                 case "submit":
                     $icon = $node_item->getAttribute("icon");
                     $id = $node_item->getAttribute("id");
-                    $action = $this->get_attribute_shortcode($node_item, "action", "", $data_type, $data_source);
+                    $name = $node_item->getAttribute("name");
+                    $value = $node_item->getAttribute("value");
+                    $action = $node_item->getAttribute("action");
                     $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
                     $caption = $this->convert_shortcode($node_item->textContent, $data_type, $data_source);
 
@@ -689,10 +777,12 @@ class TemplateEngine
                     if (!empty($id))
                         fwrite($handle, " id=\"$id\"");
 
-                    if (!empty($action))
+                    if (!empty($name)) {
+                        fwrite($handle, " name=\"$name\" value=\"$value\"");
+
+                    } else if (!empty($action)) {
                         fwrite($handle, " name=\"action\" value=\"$action\"");
-                    else
-                        fwrite($handle, " name=\"submit\" value=\"submit\"");
+                    }
 
                     if (!empty($title))
                         fwrite($handle, " title=\"$title\"");
@@ -706,7 +796,7 @@ class TemplateEngine
                         if (empty($icon_class))
                             $icon_class = "icon16";
 
-                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />\n");
+                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
                     }
 
                     fwrite($handle, $caption);
@@ -899,8 +989,10 @@ class TemplateEngine
         $node_row = $node_tag->getElementsByTagName("row")->item(0);
         $node_header = $node_tag->getElementsByTagName("header")->item(0);
         $node_empty = $node_tag->getElementsByTagName("if-empty")->item(0);
+        $node_caption = $node_tag->getElementsByTagName("caption")->item(0);
+        $node_footer = $node_tag->getElementsByTagName("footer")->item(0);
 
-        /* Required child */
+        /* Required child node */
         if (empty($node_row))
             return;
 
@@ -914,14 +1006,21 @@ class TemplateEngine
         if (empty($data_source) || empty($data_type))
             return;
 
-        fwrite($handle, "<table id=\"\" class=\"grid $class\">");
+        fwrite($handle, "<table id=\"\" class=\"grid $class\">\n");
+
+        /* Generate caption tag */
+        if (!empty($node_caption)) {
+            fwrite($handle, "<caption>");
+            fwrite($handle, $this->convert_Shortcode($node_caption->textContent, $data_type, $data_source));
+            fwrite($handle, "</caption>\n");
+        }
 
         $var_count = $this->get_unique_varname();
         fwrite($handle, "<?php $var_count=0 ?>");
 
         /* Generate grid header if present */
         if (!empty($node_header)) {
-            fwrite($handle, "<tr>");
+            fwrite($handle, "<thead><tr>");
 
             foreach ($node_header->getElementsByTagName("column") as $node_column) {
                 $style = $node_column->getAttribute("style");
@@ -934,8 +1033,10 @@ class TemplateEngine
                 fwrite($handle, "</th>");
             }
 
-            fwrite($handle, "</tr>");
+            fwrite($handle, "</tr></thead>\n");
         }
+
+        fwrite($handle, "<tbody>");
 
         /* Insert rows iteration code */
         switch ($data_type) {
@@ -998,6 +1099,27 @@ class TemplateEngine
             fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
             fwrite($handle, str_repeat("<td>&nbsp;</td>", $num_columns));
             fwrite($handle, "</tr><?php $var_count++; endwhile; ?>");
+        }
+
+        fwrite($handle, "</tbody>");
+
+
+        /* Generate grid footer if present */
+        if (!empty($node_footer)) {
+            fwrite($handle, "<tfoot><tr>");
+
+            foreach ($node_footer->getElementsByTagName("column") as $node_column) {
+                $style = $node_column->getAttribute("style");
+                $type = $node_column->getAttribute("type");
+
+                fwrite($handle, "<th style=\"$style\" class=\"column-$type\">");
+
+                $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
+
+                fwrite($handle, "</th>");
+            }
+
+            fwrite($handle, "</tr></tfoot>");
         }
 
         fwrite($handle, "</table>");
@@ -1138,7 +1260,7 @@ class TemplateEngine
 
                     if ($token[0] == "$") {
 
-                        if (strpos($text, "@") !== false) {
+                        if (strpos($token, "@") !== false) {
                             $token = explode("@", $token);
 
                             $output = "{$token[0]}[" . implode("][", array_slice($token, 1)) . "]";
@@ -1248,6 +1370,14 @@ class TemplateEngine
 
                         case "dumpgzfile":
                             $output = "dumpgzfile($output)";
+                            break;
+
+                        case "format_unix_time":
+                            $output = "format_unix_time($output)";
+                            break;
+
+                        case "format_byte":
+                            $output = "format_byte($output)";
                             break;
                    }
                 }

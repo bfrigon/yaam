@@ -9,13 +9,16 @@
         <h2>Call settings</h2>
         <field name="extension" type="text" caption="Extension" tip="e.g. 100" value="[[$user_data@extension]]" />
         <field name="user_chan" type="text" caption="Channel" tip="e.g. SIP/user100" value="[[$user_data@user_chan]]" />
-        <field name="vbox" type="text" caption="Voicemail box" value="[[$user_data@vbox]]" />
+
+        <h2>Voicemail</h2>
+        <field name="vbox_context" type="text" caption="Voicemail context" value="[[$user_data@vbox_context]]" />
+        <field name="vbox_user" type="text" caption="Voicemail user" value="[[$user_data@vbox_user]]" />
 
         <h2>Password</h2>
         <field name="password" type="text" caption="Password" value="[[$user_data@password]]" />
 
         <toolbar class="center v_spacing">
-            <item type="submit" icon="save">Save</item>
+            <item type="submit" name="submit" icon="save">Save</item>
             <item type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
     </form>

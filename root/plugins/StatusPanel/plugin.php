@@ -134,6 +134,6 @@ class PluginStatusPanel extends Plugin
 
         echo "</div><div class=\"clear\"></div>";
 
-        $template->load("statuspanel.tpl");
+        require($template->load("statuspanel.tpl"));
    }
 }

@@ -1,5 +1,7 @@
 <div class="box form">
-    <h1>Add call route</h1>
+    <if type="is" name="action" value="add"><h1>Add call route</h1></if>
+    <if type="is" name="action" value="edit"><h1>Edit call route</h1></if>
+
     <form id="frm_add_crte" method="post">
 
         <field name="name" type="text" caption="Route name" value="[[$rte_data@name]]" />
@@ -19,7 +21,7 @@
         <field name="dst" type="text" caption="Dest. number" value="[[$rte_data@dst]]" />
 
         <toolbar class="center v_spacing">
-            <item type="submit" icon="save">Save</item>
+            <item type="submit" name="submit" icon="save">Save</item>
             <item type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
     </form>

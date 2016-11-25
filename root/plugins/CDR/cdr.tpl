@@ -55,7 +55,7 @@
         <column>[[duration | format_time_seconds]]</column>
         <column>[[billsec | format_time_seconds]]</column>
         <column>[[cost | format_money]]</column>
-        <column>[[disposition || lower]]</column>
+        <column>[[disposition | lower | ucwords]]</column>
     </row>
 
     <footer>
@@ -63,9 +63,11 @@
         <column></column>
         <column></column>
         <column></column>
+        <column></column>
         <column>[[$total_duration | format_seconds]]</column>
         <column>[[$total_billsec | format_seconds]]</column>
         <column>[[$total_cost | format_money]]</column>
+        <column></column>
     </footer>
 
     <if-empty>** No calls **</if-empty>

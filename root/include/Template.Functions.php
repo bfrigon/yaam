@@ -54,7 +54,7 @@ function format_phone_number($number, $add_rlookup_link=true)
 
     switch(strlen($number)) {
         case 11:
-            $fmt_number = preg_replace("/(\d{1})(\d{3})(\d{3})(\d{4})/", "$1($2) $3-$4", $number);
+            $fmt_number = preg_replace("/(\d{1})(\d{3})(\d{3})(\d{4})/", "$1 ($2) $3-$4", $number);
             break;
 
         case 10:
@@ -105,6 +105,17 @@ function format_time_seconds($seconds)
     $seconds = floor($seconds);
 
     return sprintf("%d:%02d.%02d", $hour, $min, $seconds);
+}
+
+
+
+function format_unix_time($date)
+{
+
+    $fmt = get_user_dateformat(DATE_FORMAT_DATETIME);
+//    $epoch = (long)floatval($date);
+
+    return strftime($fmt, $date);
 }
 
 

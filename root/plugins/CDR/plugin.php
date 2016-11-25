@@ -63,38 +63,55 @@ class PluginCDR extends Plugin
     {
         global $DB;
 
-        $filters = array();
-        $orderby = array("!calldate");
+        $query = $DB->create_query("cdr");
+
+        $query->orderby_desc("calldate");
 
         /* Set search filters */
         if (!empty($_GET["s"])) {
-            $search = $_GET["s"];
 
-            $filters[] = array(
-                array("dst,src,clid", "LIKE ?"),
-                "%$search%"
+            $search = "%{$_GET["s"]}%";
+
+            $query->group_where_begin();
+
+            $query->or_where(
+                array("dst","src","clid"),
+                "like",
+                $search
             );
+
+            $query->group_where_end();
         }
 
         if (!empty($_GET["d_from"])) {
-            $filters[] = array(
-                "CAST(calldate as DATE) >= STR_TO_DATE(?, ?)",
-                array($_GET["d_from"], get_user_dateformat(DATE_FORMAT_MYSQL)),
-                "AND"
+
+            $query->and_where(
+                "CAST(calldate AS DATE) >= STR_TO_DATE(?,?)",
+                array($_GET["d_from"], get_user_dateformat(DATE_FORMAT_MYSQL))
             );
         }
 
         if (!empty($_GET["d_to"])) {
-            $filters[] = array(
-                "CAST(calldate as DATE) <= STR_TO_DATE(?, ?)",
-                array($_GET["d_to"], get_user_dateformat(DATE_FORMAT_MYSQL)),
-                "AND"
+            $query->and_where(
+                "CAST(calldate as DATE) <= STR_TO_DATE(?,?)",
+                array($_GET["d_to"], get_user_dateformat(DATE_FORMAT_MYSQL))
             );
         }
 
         /* Get the number of cdr entries matching the filters. */
-        $results = $DB->exec_select_query("cdr", "COUNT(*) as row_count", $filters);
+        $columns = array(
+            "COUNT(*) as row_count",
+            "sum(duration) as total_duration",
+            "sum(billsec) as total_billsec",
+            "sum(cost) as total_cost"
+        );
+
+        $results = $query->run_query_select($columns);
+
         $num_results = odbc_result($results, "row_count");
+        $total_duration = odbc_result($results, "total_duration");
+        $total_billsec = odbc_result($results, "total_billsec");
+        $total_cost = odbc_result($results, "total_cost");
 
         odbc_free_result($results);
 
@@ -104,11 +121,16 @@ class PluginCDR extends Plugin
         $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
         $row_start = ($current_page - 1) * $max_results;
 
+        $query->limit($max_results);
+        $query->offset($row_start);
+
         /* Select the users matching the filters. */
-        $results = $DB->exec_select_query("cdr", "*", $filters, $max_results, $row_start, $orderby);
+        $results = $query->run_query_select("*");
 
         /* Load the template */
         require($template->load("cdr.tpl"));
+
+        odbc_free_result($results);
     }
 
 
@@ -127,7 +149,7 @@ class PluginCDR extends Plugin
         preg_match('|(?:"(.*)")?\s*<?([\d\*#]*)>?|', $clid, $matches);
         list(, $clid_name, $clid_number) = $matches;
 
-        $clid_name = ucfirst(strtolower($clid_name));
+        $clid_name = ucwords(strtolower($clid_name));
 
         return array($clid_name, $clid_number);
     }
@@ -150,35 +172,32 @@ class PluginCDR extends Plugin
 
         switch ($action) {
             case "add":
-                $this->action_add_route($template, $tab_path);
+                $this->action_addedit_route($template, "add");
                 break;
 
             case "edit":
-                $this->action_edit_route($template, $tab_path);
+                $this->action_addedit_route($template, "edit");
                 break;
 
             case "delete":
-                $this->action_delete_route($template, $tab_path);
+                $this->action_delete_route($template);
                 break;
 
             default:
 
-                $filters = array();
+                $query = $DB->create_query("cdr_routes");
 
                 /* Set search filters */
                 if (!empty($_GET["s"])) {
                     $search = $_GET["s"];
 
-                    $filters[] = array(
-                        array("name", "LIKE ?"),
-                        "%$search%"
-                    );
+                    $query->where("name", "LIKE", "%$search%");
                 }
 
-                $orderby = array("priority");
+                $query->orderby_asc("priority");
 
                 /* Get the number of cdr entries matching the filters. */
-                $results = $DB->exec_select_query("cdr_routes", "COUNT(*) as row_count", $filters);
+                $results = $query->run_query_select("COUNT(*) as row_count");
                 $num_results = odbc_result($results, "row_count");
 
                 odbc_free_result($results);
@@ -189,8 +208,11 @@ class PluginCDR extends Plugin
                 $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
                 $row_start = ($current_page - 1) * $max_results;
 
+                $query->limit($max_results);
+                $query->offset($row_start);
+
                 /* Select the users matching the filters. */
-                $results = $DB->exec_select_query("cdr_routes", "*", $filters, $max_results, $row_start, $orderby);
+                $results = $query->run_query_select("*");
 
                 /* Load the template */
                 require($template->load("cdr_routes.tpl"));
@@ -201,19 +223,24 @@ class PluginCDR extends Plugin
 
 
     /*--------------------------------------------------------------------------
-     * action_add_route() : Create a new call route.
+     * action_addedit_route() : Create or update a new call route.
      *
      * Arguments :
      * ---------
      *  - template : Instance of the template engine.
+     *  - action : "add" or "edit" call route
      *
      * Return : None
      */
-    function action_add_route($template)
+    function action_addedit_route($template, $action)
     {
         global $DB;
 
         try {
+            $query = $DB->create_query("cdr_routes");
+
+            $query->where("id", "=", $_GET["id"]);
+            $query->limit(1);
 
             $rte_data = array(
                 "name"       => isset($_POST["name"])       ? $_POST["name"] : "",
@@ -234,75 +261,22 @@ class PluginCDR extends Plugin
 
                 /* Validate fields */
 
-                /* If all fields are valid, Insert the new user profile in the database. */
-                $DB->exec_insert_query("cdr_routes", $rte_data);
+
+                /* If all fields are valid, Insert the new call route in the database. */
+                if ($action == "add")
+                    $query->run_query_insert($rte_data);
+                else
+                    $query->run_query_update($rte_data);
 
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
                 return;
-            }
 
-        } catch (Exception $e) {
+            } elseif ($action == "edit") {
 
-            print_message($e->getmessage(), true);
-        }
-
-        require($template->load("cdr_routes_addedit.tpl"));
-    }
-
-
-    /*--------------------------------------------------------------------------
-     * action_edit_route() : Modify an existing call route.
-     *
-     * Arguments :
-     * ---------
-     *  - template : Instance of the template engine.
-     *
-     * Return : None
-     */
-    function action_edit_route($template)
-    {
-        global $DB;
-
-        try {
-
-            $route_id = $_GET["id"];
-            $filters = array(
-                array("id=?", $route_id),
-            );
-
-            /* If data has been submited, validate it and update the database. */
-            if (isset($_POST["submit"])) {
-
-                $rte_data = array(
-                    "name"       => $_POST["name"],
-                    "type"       => $_POST["type"],
-                    "cost"       => $_POST["cost"],
-                    "min"        => $_POST["min"],
-                    "increment"  => $_POST["increment"],
-                    "priority"   => $_POST["priority"],
-                    "channel"    => $_POST["channel"],
-                    "src"        => $_POST["src"],
-                    "dcontext"   => $_POST["dcontext"],
-                    "dst"        => $_POST["dst"],
-                    "dstchannel" => $_POST["dstchannel"],
-                );
-
-                /* Validate fields */
-
-                /* If all fields are valid, update the user profile in the database. */
-                $DB->exec_update_query("cdr_routes", $rte_data, $filters, 1);
-
-                /* Redirect to the previous location */
-                $this->redirect($this->get_tab_referrer());
-                return;
-
-            /* If not, read the user profile from the database */
-            } else {
-                $res = $DB->exec_select_query("cdr_routes", "*", $filters, 1);
-
+                $res = $query->run_query_select("*");
                 $rte_data = odbc_fetch_array($res);
-           }
+            }
 
         } catch (Exception $e) {
 
@@ -325,15 +299,13 @@ class PluginCDR extends Plugin
     function action_delete_route($template)
     {
         global $DB;
+        $query = $DB->create_query("cdr_routes");
 
-        $route_id = $_GET["id"];
-        $filters = array(
-            array("id=?", $route_id)
-        );
+        $query->where("id", "=", $_GET["id"]);
 
         if (isset($_GET["confirm"])) {
 
-            $DB->exec_delete_query("cdr_routes", $filters);
+            $query->run_query_delete();
 
             /* Redirect to the previous location */
             $this->redirect($this->get_tab_referrer());
