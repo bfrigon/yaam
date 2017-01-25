@@ -26,12 +26,12 @@
     <datagrid id="ct_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
             <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column style="width: 60px">Extension</column>
+            <column style="width: 40px">Ext.</column>
             <column style="width: 220px">Description</column>
-            <column style="width: 120px">Action</column>
-            <column style="width: 160px">Caller number</column>
+            <column style="width: 160px">Action</column>
+            <column style="width: 120px">Caller number</column>
             <column style="width: 160px">Caller name</column>
-            <column style="width: 60px" type="actions"></column>
+            <column style="width: 50px" type="actions"></column>
         </header>
 
         <row>

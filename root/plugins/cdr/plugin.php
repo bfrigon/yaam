@@ -37,9 +37,6 @@ class PluginCdr extends Plugin
      */
     function on_load()
     {
-        if (!isset($_SESSION["cdr_columns"]))
-            $_SESSION["cdr_columns"] = "type;calldate;cid_num;cid_name;dst;duration;billsec;cost;disposition";
-
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = "25";
 
@@ -66,7 +63,10 @@ class PluginCdr extends Plugin
         $query = $DB->create_query("cdr");
 
         $query->orderby_desc("calldate");
-        $query->where("disposition", "=", "answered");
+
+        /* if unanswered_calls is off, only show calls with disposition 'ANSWERED' */
+        if (!get_global_config_item("cdr", "unanswered_calls", False))
+            $query->where("disposition", "=", "answered");
 
         /* Set search filters */
         if (!empty($_GET["s"])) {
@@ -84,6 +84,7 @@ class PluginCdr extends Plugin
             $query->group_where_close();
         }
 
+        /* Set date filters */
         if (!empty($_GET["d_from"])) {
 
             $query->and_where(

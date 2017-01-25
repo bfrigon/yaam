@@ -26,11 +26,8 @@ try {
     /* Start a new session or resume the current one */
     session_start();
 
-    /* Load configuration */
-    $CONFIG = load_global_config();
-
-    /* Connect to the database */
-    $DB = new ODBCDatabase($CONFIG["db_dsn"], $CONFIG["db_user"], $CONFIG["db_pass"]);
+    /* load config, connect to database */
+    init_session();
 
     /* Check if admin user exists, if not redirect to setup page */
     if ($DB->exec_query_simple("SELECT user FROM users where user=\"admin\"", "user") != "admin") {

@@ -25,9 +25,9 @@ class OdbcException extends Exception
         if (!empty($message))
             $message .= "\n";
 
-        $message .= preg_replace("/\[.*\]/", "", odbc_errormsg($conn));
+        $message .= preg_replace("/\[.*\]/", "", odbc_errormsg());
 
-        $this->state = odbc_error($conn);
+        $this->state = odbc_error();
 
         parent::__construct($message, 0, $previous);
     }

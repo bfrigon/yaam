@@ -5,7 +5,7 @@
     <form id="frm_addedit_ct" method="post">
 
         <field name="description" type="text" caption="Description" value="[[$ct_data@description]]" />
-        <field name="ct_action" type="text" caption="Action" value="[[$ct_data@action]]" />
+        <field name="ct_action" type="select" caption="Action" value="[[$ct_data@action]]" data-type="dict" data-source="action_list" />
 
         <h2>Match rules</h2>
         <field name="extension" type="text" caption="Extension" value="[[$ct_data@extension]]" />

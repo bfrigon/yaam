@@ -31,21 +31,15 @@ try {
 
     session_start();
 
-
     if (!isset($_SESSION["logged"]))
         throw new HTTPException(403);
-
-    /* Load configuration */
-    $CONFIG = load_global_config();
-
-    /* Connect to the database */
-    $DB = new ODBCDatabase($CONFIG["db_dsn"], $CONFIG["db_user"], $CONFIG["db_pass"]);
 
     if (!isset($_REQUEST["path"]) && !isset($_REQUEST["function"]))
         throw new Exception("Path was not specified.");
 
-    if (isset($_REQUEST["js"]))
-        $_SESSION["js"] = true;
+    /* load config, connect to database */
+    init_session();
+
 
     $manager = new PluginManager();
 

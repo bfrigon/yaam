@@ -25,15 +25,12 @@ try
         exit();
     }
 
-    /* Load configuration */
-    $CONFIG = load_global_config();
-
-    /* Connect to the database */
-    $DB = new ODBCDatabase($CONFIG["db_dsn"], $CONFIG["db_user"], $CONFIG["db_pass"]);
+    /* Load config, connect to database */
+    init_session();
 
     /* Load plugins */
     $PLUGINS = new PluginManager();
-    $plugin_list = explode(";", $CONFIG["plugins"]);
+    $plugin_list = explode(";", $CONFIG["general"]["plugins"]);
 
     foreach($plugin_list as $name)
         $PLUGINS->load($name);

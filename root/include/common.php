@@ -19,6 +19,7 @@ define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 
 define("FORCE_RECOMPILE_TEMPLATE", false);
+define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
 
 define("YAAM_VERSION", "0.2.3");
 
@@ -45,11 +46,13 @@ require(DOCUMENT_ROOT . "/include/template_functions.php");
  * ---------
  *  None
  *
- * Returns   : An array containing the site configuration
+ * Returns   : Nothing
  */
 function load_global_config()
 {
-    $default_cfg = array(
+    global $CONFIG;
+
+    $default_cfg = array("general" => array(
         "db_dsn" => "",
         "db_user" => "",
         "db_pass" => "",
@@ -58,18 +61,41 @@ function load_global_config()
         "ami_user" => "",
         "ami_pass" => "",
         "plugins" => ""
-    );
+    ));
 
-    if (!file_exists("/etc/yaam.conf"))
-        throw new Exception("Configuration file /etc/yaam.conf does not exist.");
+    if (!file_exists(YAAM_CONFIG_FILE))
+        throw new Exception("Configuration file " . YAAM_CONFIG_FILE . " does not exist.");
 
-    if (($config = parse_ini_file("/etc/yaam.conf")) === false)
+    if (($config = parse_ini_file(YAAM_CONFIG_FILE, true)) === false)
         throw new Exception(
-            "Can't open config file! (/etc/yaam.conf). \r\n
+            "Can't open config file! (" . YAAM_CONFIG_FILE . "). \r\n
             Make sure the permissions are set correctly."
         );
 
-    return array_merge($default_cfg, $config);
+    $CONFIG = array_merge($default_cfg, $config);
+}
+
+
+/*--------------------------------------------------------------------------
+ * get_global_config_item() : Return the value of a setting in the loaded
+ *                            config file yaam.conf
+ *
+ * Arguments
+ * ---------
+ *  - section : Section to read the setting from.
+ *  - item    : Setting name.
+ *  - default : Default value.
+ *
+ * Returns   : The setting value or default value if not found.
+ */
+function get_global_config_item($section, $item, $default='')
+{
+    global $CONFIG;
+
+    if (!(isset($CONFIG[$section][$item])))
+        return $default;
+
+    return $CONFIG[$section][$item];
 }
 
 
@@ -186,6 +212,30 @@ function save_user_config()
     /* Commit transaction */
     $DB->commit();
     $DB->set_autocommit(true);
+}
+
+
+/*--------------------------------------------------------------------------
+ * init_session() : Initialize session (load config, connect to database)
+ *
+ * Arguments
+ * ---------
+ *  None
+ *
+ * Returns   : Nothing
+ */
+function init_session()
+{
+    global $CONFIG, $DB;
+
+    /* Load configuration */
+    load_global_config();
+
+    /* Connect to the database */
+    $dsn = get_global_config_item("general", "db_dsn");
+    $user = get_global_config_item("general", "db_user");
+    $pwd = get_global_config_item("general", "db_pass");
+    $DB = new ODBCDatabase($dsn, $user, $pwd);
 }
 
 

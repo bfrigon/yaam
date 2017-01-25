@@ -118,9 +118,11 @@ class PluginCallTreatment extends Plugin
      */
     function action_addedit_ct($template, $action)
     {
-        global $DB;
+        global $DB, $CONFIG;
 
         try {
+            $action_list = $CONFIG["call_treatment"]["actions"];
+
             $query = $DB->create_query("call_treatment");
 
             $query->where("id", "=", $_GET["id"]);
