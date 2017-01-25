@@ -26,9 +26,6 @@ try {
     /* Start a new session or resume the current one */
     session_start();
 
-    if (isset($_POST["js_detect"]))
-        $_SESSION["js"] = true;
-
     /* Load configuration */
     $CONFIG = load_global_config();
 
@@ -92,18 +89,6 @@ try {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
     <link rel="stylesheet" type="text/css" href="themes/default/theme.css" />
-    <script type="text/javascript" src="include/js/jquery-env.min.js"></script>
-
-
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $("#login").append($("<input>")
-                .attr("type", "hidden")
-                .attr("name", "js_detect")
-                .attr("value", "true"));
-        });
-    </script>
-
 </head>
 
 <body>
@@ -118,7 +103,7 @@ try {
         <form id="login" method="post">
 
         <label for="user">Username</label>
-        <input type="text" name="user" value="<?php echo $f_user ?>">
+        <input type="text" name="user" value="<?=$f_user?>">
         <div class="clear"><br /></div>
 
         <label for="pass">Password</label>

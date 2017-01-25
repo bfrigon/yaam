@@ -542,6 +542,16 @@ body {
     margin-top: 30px;
 }
 
+.box.dialog .list {
+    list-style-position: inside;
+    margin: 10px;
+
+
+}
+.box.dialog .list li {
+    padding-left : 5px;
+}
+
 
 /* -------------------------------------------------------------------------------------------
    Tooltip popup

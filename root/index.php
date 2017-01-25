@@ -60,12 +60,9 @@ try
     <title>Asterisk Manager</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/<?=$_SESSION['ui_theme']?>/theme.css" />
-
+    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/<?=$_SESSION['ui_theme']?>/theme.css?" />
     <script type="text/javascript" src="include/js/jquery-env.min.js"></script>
-    <script type="text/javascript" src="include/js/index.js"></script>
     <script type="text/javascript" src="include/js/jquery-custom-ui-dialog.js"></script>
-    <script src="http://maps.google.com/maps/api/js?sensor=false" type="text/javascript" ></script>
 </head>
 
 <body>
@@ -76,7 +73,7 @@ try
             <ul class="top-nav" id="tabs">
                 <?php
 
-                    $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "StatusPanel.status";
+                    $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "status_panel.status";
                     list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
 
                     $selected_tab_haschilds = false;
@@ -84,7 +81,7 @@ try
                     foreach ($PLUGINS->_tabs as $parent_id => $parent_tab) {
                         $parent_path = $parent_tab["plugin"] . '.' . $parent_id;
 
-                        $link_class = ($selected_tab == $parent_id && !isset($_SESSION["js"])) ? "selected" : "";
+                        $link_class = ($selected_tab == $parent_id) ? "selected" : "";
 
                         echo "<li id=\"tab_$parent_id\" class=\"$link_class\"><a href=\"?path=$parent_path\">";
                         echo $parent_tab["caption"], "</a>";
@@ -128,10 +125,8 @@ try
         </div>
         <div class="clear"></div>
 
-        <?php
-            if (!isset($_SESSION['js'])) {
-                echo "<div class=\"page ", ($selected_tab_haschilds ? "has-childs" : "") , "\" id=\"tab_$selected_tab\">";
-
+        <div class="page <?php echo ($selected_tab_haschilds ? "has-childs" : "")?>" id="tab_<?=$selected_tab?>">
+            <?php
                 try {
                     $PLUGINS->show_tab_content($selected_path);
 
@@ -139,16 +134,11 @@ try
 
                 } catch (Exception $e) {
 
-                    $error = $e->getmessage();
+                    $error = $e->getMessage();
                     print_message($error, true);
                 }
-
-                echo "</div>";
-            }
-
-            unset($_SESSION["js"]);
-        ?>
-
+            ?>
+        </div>
     </div>
     <div class="footer">
         Y.A.A.M (v<?=YAAM_VERSION?>)

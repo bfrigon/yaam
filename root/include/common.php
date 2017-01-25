@@ -20,7 +20,7 @@ define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 
 define("FORCE_RECOMPILE_TEMPLATE", false);
 
-define("YAAM_VERSION", "0.2.2");
+define("YAAM_VERSION", "0.2.3");
 
 
 define("DATE_FORMAT_MYSQL", 0);
@@ -28,14 +28,14 @@ define("DATE_FORMAT_DATEPICKER", 1);
 define("DATE_FORMAT_DATETIME", 2);
 
 
-require(DOCUMENT_ROOT . "/include/class.OdbcException.php");
-require(DOCUMENT_ROOT . "/include/class.HTTPException.php");
-require(DOCUMENT_ROOT . "/include/class.OdbcDatabase.php");
-require(DOCUMENT_ROOT . "/include/class.QueryBuilder.php");
-require(DOCUMENT_ROOT . "/include/class.PluginManager.php");
-require(DOCUMENT_ROOT . "/include/class.Plugin.php");
-require(DOCUMENT_ROOT . "/include/class.TemplateEngine.php");
-require(DOCUMENT_ROOT . "/include/Template.Functions.php");
+require(DOCUMENT_ROOT . "/include/class_odbc_exception.php");
+require(DOCUMENT_ROOT . "/include/class_http_exception.php");
+require(DOCUMENT_ROOT . "/include/class_odbc_database.php");
+require(DOCUMENT_ROOT . "/include/class_query_builder.php");
+require(DOCUMENT_ROOT . "/include/class_plugin_manager.php");
+require(DOCUMENT_ROOT . "/include/class_plugin.php");
+require(DOCUMENT_ROOT . "/include/class_template_engine.php");
+require(DOCUMENT_ROOT . "/include/template_functions.php");
 
 
 /*--------------------------------------------------------------------------
@@ -111,7 +111,6 @@ function load_user_config()
 
             /* These key are used internaly */
             case "logged":
-            case "js":
                 continue;
 
             default:
@@ -165,7 +164,6 @@ function save_user_config()
 
             /* These key are used internaly */
             case "logged":
-            case "js":
                 continue;
 
             default:
