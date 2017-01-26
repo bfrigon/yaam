@@ -1,4 +1,4 @@
-<if type="permission" value="vm-admin">
+<if type="permission" value=500>
     <form method="get" keep-uri="folder,test">
         <toolbar>
             <item type="label">Mailbox user :</item>

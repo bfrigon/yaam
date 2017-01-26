@@ -17,16 +17,21 @@ $DEBUG_TIME_START = microtime(true);
 
 define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
-
-define("FORCE_RECOMPILE_TEMPLATE", false);
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
 
-define("YAAM_VERSION", "0.2.3");
+define("FORCE_RECOMPILE_TEMPLATE", true);
+define("TEMPLATE_ENGINE_DEBUG", true);
 
+define("YAAM_VERSION", "0.2.301");
 
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);
 define("DATE_FORMAT_DATETIME", 2);
+
+define("PERMISSION_LVL_ADMIN", 1000);
+define("PERMISSION_LVL_MANAGER", 500);
+define("PERMISSION_LVL_USER", 1);
+define("PERMISSION_LVL_DISABLED", 0);
 
 
 require(DOCUMENT_ROOT . "/include/class_odbc_exception.php");
@@ -126,9 +131,10 @@ function load_user_config()
 
             /* Skip these config item as they are defined in the user table */
             case "pwhash":
-            case "pgroups":
+            case "plevel":
             case "user":
-            case "user_chan":
+            case "dial_string":
+            case "did":
             case "fullname":
             case "vbox_context":
             case "vbox_user":
@@ -179,12 +185,13 @@ function save_user_config()
 
             /* Skip these config item as they are defined in the user table */
             case "pwhash":
-            case "pgroups":
+            case "plevel":
             case "user":
-            case "user_chan":
+            case "dial_string":
             case "fullname":
             case "vbox_context":
             case "vbox_user":
+            case "did":
             case "extension":
                 continue;
 
@@ -236,43 +243,6 @@ function init_session()
     $user = get_global_config_item("general", "db_user");
     $pwd = get_global_config_item("general", "db_pass");
     $DB = new ODBCDatabase($dsn, $user, $pwd);
-}
-
-
-/*--------------------------------------------------------------------------
- * check_permission() : Check if the current user has the required permissions.
- *
- * Arguments
- * ---------
- *  - req_perm : Required permission to check.
- *
- * Returns   : True if permission match, false otherwise.
- */
-function check_permission($req_perm)
-{
-
-    if (trim($req_perm) == "")
-        return true;
-
-    foreach ($_SESSION["pgroups"] as $perm) {
-
-        /* If user has admin permission, always allow access */
-        if ($perm == "admin")
-            return true;
-
-        if ($perm == strtolower(trim($req_perm)))
-            return true;
-    }
-
-    return false;
-}
-
-
-
-function callback_format_permission($item)
-{
-
-
 }
 
 

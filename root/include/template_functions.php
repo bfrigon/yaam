@@ -47,14 +47,14 @@ function format_byte($value)
  *
  * Returns : Formated phone number
  */
-function format_phone_number($number, $add_rlookup_link=true)
+function format_phone_number($number)
 {
     if (strpos($number, "*") !== false)
         return $number;
 
     switch(strlen($number)) {
         case 11:
-            $fmt_number = preg_replace("/(\d{1})(\d{3})(\d{3})(\d{4})/", "$1 ($2) $3-$4", $number);
+            $fmt_number = preg_replace("/(\d{1})(\d{3})(\d{3})(\d{4})/", "($2) $3-$4", $number);
             break;
 
         case 10:
@@ -70,10 +70,7 @@ function format_phone_number($number, $add_rlookup_link=true)
             break;
     }
 
-    if ($add_rlookup_link && strlen($number) >= 10)
-        return '<a href="?path=ReverseLookup.tools.rlookup&number=' . $number . '">' . $fmt_number . '</a>';
-    else
-        return $fmt_number;
+    return $fmt_number;
 }
 
 

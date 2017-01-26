@@ -57,16 +57,15 @@ try {
         $_SESSION["logged"] = true;
         $_SESSION["pwhash"] = odbc_result($result, "pwhash");
         $_SESSION["fullname"] = odbc_result($result, "fullname");
-        $_SESSION["pgroups"] = array_map("trim", explode(",", odbc_result($result, "pgroups")));
+        $_SESSION["plevel"] = intval(odbc_result($result, "plevel"));
         $_SESSION["vbox_context"] = odbc_result($result, "vbox_context");
         $_SESSION["vbox_user"] = odbc_result($result, "vbox_user");
-        $_SESSION["user_chan"] = odbc_result($result, "user_chan");
-
-
+        $_SESSION["dial_string"] = odbc_result($result, "dial_string");
+        $_SESSION["did"] = odbc_result($result, "did");
+        $_SESSION["extension"] = odbc_result($result, "extension");
 
         /* Read user configuration data from user_config table */
         load_user_config();
-
 
         header("Location: index.php");
         exit();

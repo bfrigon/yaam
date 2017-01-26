@@ -37,9 +37,9 @@ class PluginTools extends Plugin
     function on_load()
     {
 
-        $this->register_tab(null, "tools", null, "Tools", "user", 200);
-        $this->register_tab("on_show_profile", "profile", "tools", "Edit profile", "user");
-        $this->register_tab("on_show_originate", "originate", "tools", "Originate Call", "user");
+        $this->register_tab(null, "tools", null, "Tools", PERMISSION_LVL_USER, 200);
+        $this->register_tab("on_show_profile", "profile", "tools", "Edit profile", PERMISSION_LVL_USER);
+        $this->register_tab("on_show_originate", "originate", "tools", "Click-2-dial", PERMISSION_LVL_USER);
     }
 
 

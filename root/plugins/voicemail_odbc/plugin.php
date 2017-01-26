@@ -24,7 +24,7 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 class PluginVoicemailOdbc extends Plugin
 {
     public $_dependencies = array();
-    public $_conflicts = array("Voicemail");
+    public $_conflicts = array("voicemail");
 
 
     /*--------------------------------------------------------------------------
@@ -38,7 +38,7 @@ class PluginVoicemailOdbc extends Plugin
      */
     function on_load()
     {
-        $this->register_tab("on_show", "vm", null, "Voicemail", "user");
+        $this->register_tab("on_show", "vm", null, "Voicemail", PERMISSION_LVL_USER);
 
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = '25';
@@ -91,7 +91,7 @@ class PluginVoicemailOdbc extends Plugin
 
 
         /* If current user has 'admin' or 'vm-admin' access, allow access other users mailbox */
-        if (check_permission("vm-admin")) {
+        if ($_SESSION["plevel"] >= PERMISSION_LVL_MANAGER) {
 
             $vbox_user = isset($_GET["user"]) ? $_GET["user"] : $_SESSION["vbox_user"];
             $vbox_context = isset($_GET["context"]) ? $_GET["context"] : $_SESSION["vbox_context"];

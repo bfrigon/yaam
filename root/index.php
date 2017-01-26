@@ -16,6 +16,8 @@
 
 require("include/common.php");
 
+$TEMPLATE_ENGINE_DEBUGINFO = "";
+
 try
 {
     session_start();
@@ -70,7 +72,13 @@ try
             <ul class="top-nav" id="tabs">
                 <?php
 
-                    $selected_path = !empty($_GET["path"]) ? $_GET["path"] : "status_panel.status";
+                    $selected_path = $_GET["path"];
+                    if (empty($selected_path)) {
+
+                        $first_tab = reset($PLUGINS->_tabs);
+                        $selected_path = "{$first_tab['plugin']}.{$first_tab['id']}";
+                    }
+
                     list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
 
                     $selected_tab_haschilds = false;
@@ -140,6 +148,8 @@ try
     <div class="footer">
         Y.A.A.M (v<?=YAAM_VERSION?>)
         <p class="copyright">Execution time : <span id="exec_time"><?php echo isset($exec_time) ? $exec_time : ""; ?></span></p>
+
+        <?=$TEMPLATE_ENGINE_DEBUGINFO ?>
     </div>
 </body>
 </html>

@@ -40,7 +40,7 @@ class PluginUsers extends Plugin
      */
     function on_load()
     {
-        $this->register_tab("on_show", "users", null, "Users", "admin");
+        $this->register_tab("on_show", "users", null, "Users", PERMISSION_LVL_MANAGER);
 
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = '25';
@@ -140,7 +140,7 @@ class PluginUsers extends Plugin
                 "fullname"     => isset($_POST["fullname"])     ? $_POST["fullname"] : "",
                 "extension"    => isset($_POST["extension"])    ? $_POST["extension"] : "",
                 "dial_string"  => isset($_POST["dial_string"])  ? $_POST["dial_string"] : "",
-                "pgroups"      => isset($_POST["pgroups"])      ? $_POST["pgroups"] : "",
+                "plevel"       => isset($_POST["plevel"])       ? $_POST["plevel"] : "",
                 "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",
                 "vbox_user"    => isset($_POST["vbox_user"])    ? $_POST["vbox_user"] : "",
                 "did"          => isset($_POST["did"])          ? $_POST["did"] : "",

@@ -37,7 +37,7 @@ class PluginCNAM extends Plugin
      */
     function on_load()
     {
-        $this->register_tab("on_show_cnam", "cnam", "tools", "CNAM records", "user");
+        $this->register_tab("on_show_cnam", "cnam", "tools", "CNAM records", PERMISSION_LVL_MANAGER);
     }
 
 

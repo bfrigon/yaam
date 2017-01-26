@@ -42,7 +42,7 @@ class PluginStatusPanel extends Plugin
         if (!isset($_SESSION["statuspanel_disk_info"]))
             $_SESSION["statuspanel_disk_info"] = "/;/var/log";
 
-        $this->register_tab("on_show", "status", null, "Status", "user", 1);
+        $this->register_tab("on_show", "status", null, "Status", PERMISSION_LVL_USER, 1);
     }
 
 

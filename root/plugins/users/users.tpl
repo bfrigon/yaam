@@ -40,7 +40,7 @@
             <column>[[extension]]</column>
             <column>[[did | format_phone]]</column>
             <column>[[vbox_context]] @ [[vbox_user]]</column>
-            <column>[[pgroups]]</column>
+            <column>[[plevel]]</column>
             <column type="actions">
                 <icon action="edit" icon="edit" title="Edit user profile" params="user=[[user]]" />
                 <icon action="delete" icon="delete" title="Delete user" params="user=[[user]]" />

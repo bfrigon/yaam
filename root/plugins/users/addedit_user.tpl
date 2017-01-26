@@ -7,7 +7,7 @@
         <if type="is" name="action" value="edit"><field name="user" type="view" caption="Username" value="[[$user_data@user]]" /></if>
 
         <field name="fullname" type="text" caption="Full name" value="[[$user_data@fullname]]" />
-        <field name="pgroups" type="text" caption="Permissions" value="[[$user_data@pgroups]]" />
+        <field name="plevel" type="text" caption="Permissions level" value="[[$user_data@plevel]]" />
 
         <h2>Account settings</h2>
         <field name="extension" type="text" caption="Extension" value="[[$user_data@extension]]">

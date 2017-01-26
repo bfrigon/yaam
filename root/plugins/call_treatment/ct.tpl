@@ -38,9 +38,13 @@
             <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
             <column>[[extension]]</column>
             <column>[[description]]</column>
-            <column>[[action]]</column>
+            <column>
+                <call name="get_action_desc" params="[[action]]" return="action_desc" />
+                [[$action_desc]]
+            </column>
             <column>[[caller_num]]</column>
             <column>[[caller_name]]</column>
+
             <column type="actions">
                 <icon action="edit" icon="edit" title="Edit call treatment" params="id=[[id]]" />
                 <icon action="delete" icon="delete" title="Delete call treatment" params="id=[[id]]" />

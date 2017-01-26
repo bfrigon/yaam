@@ -40,8 +40,8 @@ class PluginCdr extends Plugin
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = "25";
 
-        $this->register_tab("on_show_cdr", "cdr", null, "Call log", "user");
-        $this->register_tab("on_show_routes", "cdr_routes", "tools", "Call routes", "admin");
+        $this->register_tab("on_show_cdr", "cdr", null, "Call log", PERMISSION_LVL_USER);
+        $this->register_tab("on_show_routes", "cdr_routes", "tools", "Call routes", PERMISSION_LVL_ADMIN);
     }
 
 
@@ -67,6 +67,20 @@ class PluginCdr extends Plugin
         /* if unanswered_calls is off, only show calls with disposition 'ANSWERED' */
         if (!get_global_config_item("cdr", "unanswered_calls", False))
             $query->where("disposition", "=", "answered");
+
+        /* If user don't have manager permissions, restrict the CDR result to the user extension */
+        if (($_SESSION["plevel"]) < PERMISSION_LVL_MANAGER) {
+
+            $user_ext = $_SESSION["extension"];
+            $user_did = $_SESSION["did"];
+
+            $query->group_where_begin();
+            $query->or_where("src", "=", $user_ext);
+            $query->or_where("dst", "=", $user_ext);
+            $query->or_where("src", "RLIKE", "$user_did\$");
+            $query->or_where("dst", "RLIKE", "$user_did\$");
+            $query->group_where_close();
+        }
 
         /* Set search filters */
         if (!empty($_GET["s"])) {

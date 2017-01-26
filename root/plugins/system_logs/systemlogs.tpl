@@ -1,6 +1,6 @@
 <toolbar id="filters">
     <item type="label">Log file :</item>
-    <item type="list" icon="move" data-type="dict" data-source="log_list">
+    <item type="list" width="250px" icon="move" data-type="array" data-source="log_list">
         <caption>[[$log_basename]]</caption>
         <row>
             <item type="button" params="file=[[value]]">[[value]]</item>

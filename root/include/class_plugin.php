@@ -165,14 +165,14 @@ class Plugin
      *  - id          : New tab id
      *  - parent      : Parent tab
      *  - caption     : Tab caption
-     *  - permissions : Required permission to open the tab
+     *  - permissions : Required permission level to open the tab
      *  - order       : Tab priority (lower first)
      *
      * Returns : Nothing
      */
-    function register_tab($callback, $id, $parent, $caption, $req_perms, $order = 100)
+    function register_tab($callback, $id, $parent, $caption, $req_plevel=1, $order=100)
     {
-        if (!check_permission($req_perms))
+        if ($_SESSION["plevel"] < $req_plevel)
             return;
 
         if ($parent != NULL) {
@@ -193,7 +193,7 @@ class Plugin
         $tab["id"] = $id;
         $tab["callback"] = $callback;
         $tab["plugin"] = $this->NAME;
-        $tab["perm"] = $permissions;
+        $tab["plevel"] = $req_plevel;
         $tab["caption"] = $caption;
         $tab["order"] = $order;
     }

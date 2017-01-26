@@ -101,6 +101,7 @@ class TemplateEngine
      */
     private function compile($template_file, $cache_file)
     {
+        global $TEMPLATE_ENGINE_DEBUGINFO;
 
         $compile_start = microtime(true);
 
@@ -120,7 +121,9 @@ class TemplateEngine
         $this->process_node($handle, $dom_input, false, true);
 
         $compile_time = microtime(true) - $compile_start;
-        printf("Compile time: %0.4f s", $compile_time);
+
+        $TEMPLATE_ENGINE_DEBUGINFO .= sprintf("Compiled : %s to %s - compile time: %0.4f s<br />",
+            $template_file, $cache_file, $compile_time);
 
         fclose($handle);
     }
@@ -418,6 +421,10 @@ class TemplateEngine
             $suffix_html = "</li>";
         }
 
+
+        if ($data_source[0] != "$")
+            $data_source = "\$$data_source";
+
         /* Insert rows iteration code */
         switch ($data_type) {
 
@@ -426,7 +433,7 @@ class TemplateEngine
                 $var_value = $this->get_unique_varname();
                 $var_key = $this->get_unique_varname();
 
-                fwrite($handle, "<?php foreach(\$$data_source as $var_key => $var_value): ?>$prefix_html");
+                fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n$prefix_html\n");
 
                 $this->process_node($handle, $node_foreach, false, true, $data_type, array($data_source, $var_key, $var_value));
 
@@ -436,7 +443,7 @@ class TemplateEngine
             /* ODBC query result */
             case "odbc":
 
-                fwrite($handle, "<?php while (@odbc_fetch_row($$data_source)): ?>$prefix_html");
+                fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n$prefix_html\n");
 
                 $this->process_node($handle, $node_foreach, false, true, $data_type, $data_source);
 
@@ -446,7 +453,7 @@ class TemplateEngine
             /* Ordinary array */
             case "array":
                 $var_value = $this->get_unique_varname();
-                fwrite($handle, "<?php foreach(\$$data_source as $var_value): ?>$prefix_html");
+                fwrite($handle, "<?php foreach($data_source as $var_value): ?>\n$prefix_html\n");
 
                 $this->process_node($handle, $node_foreach, false, true, $data_type, array($data_source, $var_value));
 
@@ -488,7 +495,7 @@ class TemplateEngine
             /* Permission check */
             case "permission":
             case "perm":
-                fwrite($handle, "<?php if (check_permission('$value')): ?>");
+                fwrite($handle, "<?php if (\$_SESSION['plevel'] >= $value): ?>");
                 break;
 
             /* Check if variable Boolean */
@@ -676,6 +683,9 @@ class TemplateEngine
 
                 fwrite($handle, "<select name=\"$name\" id=\"$id\">");
 
+                if ($data_source[0] != "$")
+                    $data_source = "\$$data_source";
+
                 /* Insert rows iteration code */
                 switch ($data_type) {
 
@@ -684,37 +694,37 @@ class TemplateEngine
                         $var_value = $this->get_unique_varname();
                         $var_key = $this->get_unique_varname();
 
-                        fwrite($handle, "<?php foreach(\$$data_source as $var_key => $var_value): ?>\n");
+                        fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n");
 
                         fwrite($handle, "<option value=\"<?php echo $var_key ?>\"");
                         fwrite($handle, " <?php echo ($var_key == $value) ? 'selected' : '' ?> >");
                         fwrite($handle, "<?php echo $var_value ?></option>\n");
 
-                        fwrite($handle, "<?php endforeach; ?>");
+                        fwrite($handle, "<?php endforeach; ?>\n");
                         break;
 
                     /* ODBC query result */
                     case "odbc":
-                        fwrite($handle, "<?php while (@odbc_fetch_row($$data_source)): ?>");
+                        fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
 
                         fwrite($handle, "<option value=\"<?php echo odbc_result($$data_source, '$column_key') ?>\"");
                         fwrite($handle, " <?php echo (odbc_result($$data_source, '$column_key') == \"$value\") ? 'selected' : '' ?> >");
                         fwrite($handle, "<?php echo odbc_result($$data_source, '$column_value') ?></option>\n");
 
-                        fwrite($handle, "<?php endwhile; ?>");
+                        fwrite($handle, "<?php endwhile; ?>\n");
                         break;
 
                     /* Ordinary array */
                     case "array":
                         $var_value = $this->get_unique_varname();
                         $var_index = $this->get_unique_varname();
-                        fwrite($handle, "<?php $var_index=0; foreach(\$$data_source as $var_value): ?>");
+                        fwrite($handle, "<?php $var_index=0; foreach($data_source as $var_value): ?>\n");
 
                         fwrite($handle, "<option value=\"<?php echo $var_index ?>\"");
                         fwrite($handle, " <?php echo ($var_index == intval(\"$value\")) ? 'selected' : '' ?> >");
                         fwrite($handle, "<?php echo $var_value ?></option>\n");
 
-                        fwrite($handle, "<?php $var_index++; endforeach; ?>");
+                        fwrite($handle, "<?php $var_index++; endforeach; ?>\n");
                         break;
 
                     /* Invalid data type */
@@ -772,7 +782,7 @@ class TemplateEngine
             fwrite($handle, "<img src=\"images/blank.png\" class=\"icon16 icon16-help\" />");
             fwrite($handle, "<span><img class=\"callout\" src=\"images\blank.png\" />");
             fwrite($handle, $node_help->textContent);
-            fwrite($handle, "</span></a>");
+            fwrite($handle, "</span></a>\n");
         }
     }
 
@@ -1032,10 +1042,13 @@ class TemplateEngine
                     if (!empty($node_row) && !empty($data_source)) {
 
                         if (!empty($node_ifempty)) {
-                            fwrite($handle, "<?php if (empty(\$$data_source)): ?>");
+                            fwrite($handle, "<?php if (empty(\$$data_source)): ?>\n");
                             $this->process_toolbar_items($node_ifempty, $handle);
-                            fwrite($handle, "<?php else: ?>");
+                            fwrite($handle, "<?php else: ?>\n");
                         }
+
+                        if ($data_source[0] != "$")
+                            $data_source = "\$$data_source";
 
                         switch ($data_type) {
 
@@ -1044,32 +1057,32 @@ class TemplateEngine
                                 $var_value = $this->get_unique_varname();
                                 $var_key = $this->get_unique_varname();
 
-                                fwrite($handle, "<?php foreach(\$$data_source as $var_key => $var_value): ?>");
+                                fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n");
 
                                 $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
 
-                                fwrite($handle, "<?php endforeach; ?>");
+                                fwrite($handle, "<?php endforeach; ?>\n");
                                 break;
 
                             /* ODBC query result */
                             case "odbc":
 
-                                fwrite($handle, "<?php while (@odbc_fetch_row($$data_source)): ?>");
+                                fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
 
                                 $this->process_toolbar_items($node_row, $handle, $data_type, $data_source);
 
-                                fwrite($handle, "<?php endwhile; ?>");
+                                fwrite($handle, "<?php endwhile; ?>\n");
 
                                 break;
 
                             /* Ordinary array */
                             case "array":
                                 $var_value = $this->get_unique_varname();
-                                fwrite($handle, "<?php foreach(\$$data_source as $var_value): ?>");
+                                fwrite($handle, "<?php foreach($data_source as $var_value): ?>\n");
 
                                 $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_value));
 
-                                fwrite($handle, "<?php endforeach; ?>");
+                                fwrite($handle, "<?php endforeach; ?>\n");
                                 break;
 
                             /* Invalid data type */
@@ -1079,7 +1092,7 @@ class TemplateEngine
                         }
 
                         if (!empty($node_empty))
-                            fwrite($handle, "<?php endif; ?>");
+                            fwrite($handle, "<?php endif; ?>\n");
 
                     } else if (empty($node_row)) {
 
@@ -1152,7 +1165,7 @@ class TemplateEngine
 
                 $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
 
-                fwrite($handle, "</th>");
+                fwrite($handle, "</th>\n");
             }
 
             fwrite($handle, "</tr></thead>\n");
@@ -1160,10 +1173,15 @@ class TemplateEngine
 
         fwrite($handle, "<tbody>");
 
+        print $data_source;
+
+        if (substr($data_source, 0, 1) != "$")
+            $data_source = "\$$data_source";
+
         /* Insert rows iteration code */
         switch ($data_type) {
             case "odbc":
-                fwrite($handle, "<?php while (@odbc_fetch_row($$data_source)): ?>");
+                fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
                 break;
 
             /* invalid data type */
@@ -1215,7 +1233,7 @@ class TemplateEngine
 
             $this->process_node($handle, $node_empty, false, false);
 
-            fwrite($handle, "</td></tr><?php $var_count++; endif; ?>");
+            fwrite($handle, "</td>\n</tr>\n<?php $var_count++; endif; ?>\n");
         }
 
         if ($min_rows) {
@@ -1230,7 +1248,7 @@ class TemplateEngine
 
         /* Generate grid footer if present */
         if (!empty($node_footer)) {
-            fwrite($handle, "<tfoot><tr>");
+            fwrite($handle, "<tfoot><tr>\n");
 
             foreach ($node_footer->getElementsByTagName("column") as $node_column) {
                 $style = $node_column->getAttribute("style");
@@ -1240,13 +1258,13 @@ class TemplateEngine
 
                 $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
 
-                fwrite($handle, "</th>");
+                fwrite($handle, "</th>\n");
             }
 
-            fwrite($handle, "</tr></tfoot>");
+            fwrite($handle, "</tr></tfoot>\n");
         }
 
-        fwrite($handle, "</table>");
+        fwrite($handle, "</table>\n");
     }
 
 
@@ -1342,8 +1360,7 @@ class TemplateEngine
             if (count($return) > 1)
                 $return = "@list(\$" . implode(", \$", $return) . ")";
             else
-                $return = "\$$return";
-
+                $return = "\$$return[0]";
 
             fwrite($handle, "<?php $return = ");
         }
@@ -1395,6 +1412,7 @@ class TemplateEngine
 
                     } else {
 
+
                         switch ($data_type) {
                             /* Ordinary array */
                             case "array":
@@ -1403,11 +1421,12 @@ class TemplateEngine
                                 } else {
                                     $output = "\$$token";
                                 }
+
                                 break;
 
                             /* ODBC resultset */
                             case "odbc":
-                                $output = "odbc_result(\$$data_source, '$token')";
+                                $output = "odbc_result($data_source, '$token')";
                                 break;
 
                             /* Dictionary array */

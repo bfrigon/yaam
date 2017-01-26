@@ -25,6 +25,8 @@ class PluginCallTreatment extends Plugin
 {
     public $_dependencies = array("Tools");
 
+    private $_action_list = array();
+
 
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
@@ -37,7 +39,9 @@ class PluginCallTreatment extends Plugin
      */
     function on_load()
     {
-        $this->register_tab("on_show_ct", "ct", "tools", "Call treatment", "user");
+        $this->register_tab("on_show_ct", "ct", "tools", "Call treatment", PERMISSION_LVL_USER);
+
+        $this->_action_list = get_global_config_item("call_treatment", "actions");
     }
 
 
@@ -107,6 +111,24 @@ class PluginCallTreatment extends Plugin
 
 
     /*--------------------------------------------------------------------------
+     * get_action_desc() : Get the call treatment action description from the name
+     *
+     * Arguments :
+     * ---------
+     *  - name : Name of the call treatment action
+     *
+     * Return : The action description.
+     */
+    function get_action_desc($name)
+    {
+        if (isset($this->_action_list[$name]))
+            return $this->_action_list[$name];
+        else
+            return "Unknown";
+    }
+
+
+    /*--------------------------------------------------------------------------
      * action_addedit_ct() : Create or update a new call treatment rule.
      *
      * Arguments :
@@ -118,11 +140,9 @@ class PluginCallTreatment extends Plugin
      */
     function action_addedit_ct($template, $action)
     {
-        global $DB, $CONFIG;
+        global $DB;
 
         try {
-            $action_list = $CONFIG["call_treatment"]["actions"];
-
             $query = $DB->create_query("call_treatment");
 
             $query->where("id", "=", $_GET["id"]);
@@ -163,6 +183,7 @@ class PluginCallTreatment extends Plugin
             print_message($e->getmessage(), true);
         }
 
+        $action_list = $this->_action_list;
         require($template->load("ct_addedit.tpl"));
     }
 

@@ -35,12 +35,12 @@ class PluginSystemLogs extends Plugin
     function on_load()
     {
 
-        $this->register_tab(null, "logs", NULL, "System logs", "admin");
-        $this->register_tab("on_show", "ast", "logs", "Asterisk server", "admin");
-        $this->register_tab("on_show", "sys", "logs", "System (syslog)", "admin");
-        $this->register_tab("on_show", "kern", "logs", "Kernel", "admin");
-        $this->register_tab("on_show", "dmesg", "logs", "Boot log", "admin");
-        $this->register_tab("on_show", "auth", "logs", "Authentication", "admin");
+        $this->register_tab(null, "logs", NULL, "System logs", PERMISSION_LVL_ADMIN,2);
+        $this->register_tab("on_show", "ast", "logs", "Asterisk server", PERMISSION_LVL_ADMIN);
+        $this->register_tab("on_show", "sys", "logs", "System (syslog)", PERMISSION_LVL_ADMIN);
+        $this->register_tab("on_show", "kern", "logs", "Kernel", PERMISSION_LVL_ADMIN);
+        $this->register_tab("on_show", "dmesg", "logs", "Boot log", PERMISSION_LVL_ADMIN);
+        $this->register_tab("on_show", "auth", "logs", "Authentication", PERMISSION_LVL_ADMIN);
     }
 
 
@@ -60,24 +60,24 @@ class PluginSystemLogs extends Plugin
         $log_basename = preg_replace("_.*/_", "", isset($_REQUEST["file"]) ? $_REQUEST["file"] : "");
 
         switch ($tab_path) {
-            case "SystemLogs.logs.sys":
+            case "system_logs.logs.sys":
                 $log_filename = "/var/log/syslog";
                 break;
 
-            case "SystemLogs.logs.kern":
+            case "system_logs.logs.kern":
                 $log_filename = "/var/log/kern.log";
                 break;
 
-            case "SystemLogs.logs.dmesg":
+            case "system_logs.logs.dmesg":
                 $log_filename = "/var/log/dmesg";
                 break;
 
-            case "SystemLogs.logs.auth":
+            case "system_logs.logs.auth":
                 $log_filename = "/var/log/auth.log";
                 break;
 
             default:
-                $tab_id = "SystemLogs.logs.ast";
+                $tab_id = "system_logs.logs.ast";
                 $log_filename = "/var/log/asterisk/messages";
                 break;
         }
