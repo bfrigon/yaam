@@ -2,9 +2,9 @@
     <toolbar id="cdr_filters">
         <item type="label">Date :</item>
         <group id="cdr_date_filter">
-            <item type="date" id="cdr_d_from" name="d_from" width="90px" title="Filter calls by date"/>
+            <item type="date" id="cdr_d_from" name="d_from" width="90px" placeholder="[[format_date]]" title="Filter calls by date"/>
             <item type="label">To</item>
-            <item type="date" id="cdr_d_to" name="d_to" width="90px" title="Filter calls by date" />
+            <item type="date" id="cdr_d_to" name="d_to" width="90px" placeholder="[[format_date]]" title="Filter calls by date" />
         </group>
         <item type="separator"></item>
 
@@ -90,7 +90,7 @@
     $(document).ready(function() {
 
         $('#cdr_date_filter').dateRangePicker({
-            format: '<?php echo get_user_dateformat(DATE_FORMAT_DATEPICKER) ?>',
+            format: '<?php echo $format_date ?>',
             autoClose: true,
             separator : ' to ',
             showShortcuts: true,

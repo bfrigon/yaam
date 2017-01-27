@@ -771,6 +771,7 @@ class TemplateEngine
         $id = $node_tag->getAttribute("id");
         $caption = $this->get_attribute_shortcode($node_tag, "caption", "", $data_type, $data_source);
         $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source, false);
+        $placeholder = $this->get_attribute_shortcode($node_tag, "placeholder", "", $data_type, $data_source);
 
         fwrite($handle, "<label for=\"$name\">$caption :</label>");
 
@@ -855,6 +856,9 @@ class TemplateEngine
                 if (!empty($id))
                     fwrite($handle, " id=\"$id");
 
+                if (!empty($placeholder))
+                    fwrite($handle, " placeholder=\"$placeholder\"");
+
                 if (!empty($name))
                     fwrite($handle, " name=\"$name\"");
 
@@ -876,6 +880,9 @@ class TemplateEngine
 
                 if (!empty($name))
                     fwrite($handle, " name=\"$name\"");
+
+                if (!empty($placeholder))
+                    fwrite($handle, " placeholder=\"$placeholder\"");
 
                 if (!empty($value))
                     fwrite($handle, " value=\"<?php echo $value ?>\"");
@@ -1044,6 +1051,7 @@ class TemplateEngine
                     $name = $node_item->getAttribute("name");
                     $id = $node_item->getAttribute("id");
                     $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
+                    $placeholder = $this->get_attribute_shortcode($node_item, "placeholder", "", $data_type, $data_source);
 
                     fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
 
@@ -1052,6 +1060,9 @@ class TemplateEngine
 
                     if (!empty($id))
                         fwrite($handle, " id=\"$id\"");
+
+                    if (!empty($placeholder))
+                        fwrite($handle, " placeholder=\"$placeholder\"");
 
                     if (!empty($title))
                         fwrite($handle, " title=\"$title\"");

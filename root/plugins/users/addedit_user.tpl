@@ -7,29 +7,29 @@
         <if type="is" name="action" value="edit"><field name="user" type="view" caption="Username" value="[[$user_data@user]]" /></if>
 
         <field name="fullname" type="text" caption="Full name" value="[[$user_data@fullname]]" />
-        <field name="plevel" type="text" caption="Permissions level" value="[[$user_data@plevel]]" />
+        <field name="plevel" type="text" caption="Permissions level" placeholder="1" value="[[$user_data@plevel]]" />
 
         <h2>Account settings</h2>
-        <field name="extension" type="text" caption="Extension" value="[[$user_data@extension]]">
+        <field name="extension" type="text" caption="Extension" placeholder="(e.g. 100)" value="[[$user_data@extension]]">
             <help>Extension number of the user in the dialplan (e.g. 100)</help>
         </field>
 
-        <field name="dial_string" type="text" caption="Dial string" tip="e.g. SIP/phone100" value="[[$user_data@dial_string]]">
+        <field name="dial_string" type="text" caption="Dial string" placeholder="(e.g. SIP/phone100)" value="[[$user_data@dial_string]]">
             <help>Dial string used to reach the user's phone. (e.g. SIP/phone100)</help>
         </field>
 
-        <field name="did" type="text" caption="DID number" tip="e.g. 4501231234" value="[[$user_data@did]]">
+        <field name="did" type="text" caption="DID number" placeholder="(e.g. 4501231234)" value="[[$user_data@did]]">
             <help>The external phone number associated with this extension (e.g. 4501231234)</help>
         </field>
 
 
         <h2>Voicemail</h2>
-        <field name="vbox_context" type="text" caption="Voicemail context" value="[[$user_data@vbox_context]]">
+        <field name="vbox_context" type="text" caption="Voicemail context" placeholder="(e.g. local)" value="[[$user_data@vbox_context]]">
             <help>Voicemail box context the user belongs to. (e.g. local)</help>
         </field>
 
-        <field name="vbox_user" type="text" caption="Voicemail user" value="[[$user_data@vbox_user]]">
-            <help>Voicemail box extension of the user. (e.g. 100).</help>
+        <field name="vbox_user" type="text" caption="Voicemail user" placeholder="(e.g. 100)" value="[[$user_data@vbox_user]]">
+            <help>Voicemail box id of the user. (e.g. 100).</help>
         </field>
 
         <h2>Password</h2>

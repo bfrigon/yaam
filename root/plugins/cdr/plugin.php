@@ -143,6 +143,8 @@ class PluginCdr extends Plugin
         /* Select the users matching the filters. */
         $results = $query->run_query_select("*");
 
+        $format_date = get_user_dateformat(DATE_FORMAT_DATEPICKER);
+
         /* Load the template */
         require($template->load("cdr.tpl"));
 
