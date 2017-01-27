@@ -22,7 +22,7 @@ define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
 define("FORCE_RECOMPILE_TEMPLATE", false);
 define("TEMPLATE_ENGINE_DEBUG", true);
 
-define("YAAM_VERSION", "0.2.301");
+define("YAAM_VERSION", "0.2.304");
 
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);

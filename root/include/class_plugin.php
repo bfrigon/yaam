@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.plugin.php - Base Plugin class
+// class_plugin.php - Base Plugin class
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>
@@ -17,11 +17,12 @@ class Plugin
 {
     public $_dependencies = array();
     public $_tabs = array();
+    public $_actions = array();
     public $_tab_url = array();
 
     public $REQUEST_JS_ENABLED = false;
     public $PLUGIN_DIR = '';
-    public $NAME = '';
+    public $PLUGIN_NAME = '';
 
 
     /*--------------------------------------------------------------------------
@@ -29,16 +30,18 @@ class Plugin
      *
      * Arguments
      * ---------
-     *  - name : plugin name
-     *  - tabs : Global tabs collection
+     *  - name      : plugin name
+     *  - tabs      : List containing the registered tabs of all plugins.
+     *  - actions   : List containing the registered actions of all plugins.
      *
      * Returns : Nothing
      */
-    function Plugin($name, &$tabs)
+    function Plugin($name, &$tabs, &$actions)
     {
         $this->_tabs = &$tabs;
+        $this->_actions = &$actions;
 
-        $this->NAME = $name;
+        $this->PLUGIN_NAME = $name;
         $this->PLUGIN_DIR = DOCUMENT_ROOT . "/plugins/$name";
 
         $tab_url = $_GET;
@@ -192,9 +195,26 @@ class Plugin
 
         $tab["id"] = $id;
         $tab["callback"] = $callback;
-        $tab["plugin"] = $this->NAME;
+        $tab["plugin"] = $this->PLUGIN_NAME;
         $tab["plevel"] = $req_plevel;
         $tab["caption"] = $caption;
         $tab["order"] = $order;
+    }
+
+    function register_action($type, $name, $path, $caption, $icon, $tooltip="", $req_level=PERMISSION_LVL_USER)
+    {
+        if (!(isset($this->_actions[$type])))
+            $this->_actions[$type] = array();
+
+        $action = array();
+        $action['type'] = $type;
+        $action['name'] = $name;
+        $action["path"] = $path;
+        $action["caption"] = $caption;
+        $action["tooltip"] = $tooltip;
+        $action["icon"] = $icon;
+        $action["req_level"] = $req_level;
+
+        $action = array_push($this->_actions[$type], $action);
     }
 }

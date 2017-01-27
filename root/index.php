@@ -59,9 +59,9 @@ try
     <title>Asterisk Manager</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/<?=$_SESSION['ui_theme']?>/theme.css?" />
-    <script type="text/javascript" src="include/js/jquery-env.min.js"></script>
-    <script type="text/javascript" src="include/js/jquery-custom-ui-dialog.js"></script>
+    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/<?=$_SESSION['ui_theme']?>/theme.css?v=<?=YAAM_VERSION?>" />
+    <script type="text/javascript" src="include/js/jquery-env.min.js?v=<?=YAAM_VERSION?>"></script>
+    <script type="text/javascript" src="include/js/jquery-custom-ui-dialog.js?v=<?=YAAM_VERSION?>"></script>
 </head>
 
 <body>

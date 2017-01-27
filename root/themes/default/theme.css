@@ -148,6 +148,10 @@ body {
 .column_left_content { margin-right: 290px; overflow: hidden; }
 .column_right_panel { float: left; width:280px; margin-left:-280px; }
 
+.float-right { float: right; }
+.float-left { float: left; }
+
+
 
 /* -------------------------------------------------------------------------------------------
    Navigation menu (left)
@@ -378,6 +382,25 @@ body {
 .icon16-tag         {background-position: -64px -96px;}
 
 
+
+[class*="icon12"] {
+    background-image: url(images/icons-12x12.png);
+    background-repeat: no-repeat;
+    width: 12px;
+    height: 12px;
+    border: 0;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.icon12-blacklist   {background-position: 0px 0px;}
+.icon12-call        {background-position: -12px 0px;}
+.icon12-clock       {background-position: -24px 0px;}
+.icon12-help        {background-position: -36px 0px;}
+.icon12-message     {background-position: -48px 0px;}
+.icon12-warning     {background-position: -60px 0px;}
+
+
 /* -------------------------------------------------------------------------------------------
    Forms/Dialog
 */
@@ -521,6 +544,12 @@ body {
     border-radius: 5px;
     padding: 10px 10px 10px 40px;
     min-height: 40px;
+}
+
+.box.dialog.error p,
+.box.dialog.warning p,
+.box.dialog.info p {
+    margin: 10px 0px;
 }
 
 .box.dialog.warning {
@@ -896,6 +925,11 @@ div.toolbar .spacer {
     width: 50px;
 }
 
+.grid .action-list img {
+    opacity: 0.2;
+    margin-right: 2px;
+}
+
 .grid .column-actions img {
     margin-right: 5px;
     opacity: 0.2;
@@ -905,7 +939,8 @@ div.toolbar .spacer {
     background-color: #ffdd99;
 }
 
-.grid tr:hover .column-actions img {
+.grid tr:hover .column-actions img,
+.grid tr:hover .action-list img {
     opacity: 1.0;
 }
 

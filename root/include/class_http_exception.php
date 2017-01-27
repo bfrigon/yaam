@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.HTTPException.php - HTTP exception class
+// class_http_exception.php - HTTP exception class
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>

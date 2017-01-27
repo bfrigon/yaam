@@ -41,6 +41,15 @@ class PluginCallTreatment extends Plugin
     {
         $this->register_tab("on_show_ct", "ct", "tools", "Call treatment", PERMISSION_LVL_USER);
 
+        $this->register_action(
+            "phone_number_tools",
+            "add",
+            "call_treatment.tools.ct",
+            "Add call treatment rule",
+            "blacklist",
+            "Create a call treatment rule for this number",
+            PERMISION_LVL_USER);
+
         $this->_action_list = get_global_config_item("call_treatment", "actions");
     }
 
@@ -155,6 +164,9 @@ class PluginCallTreatment extends Plugin
                 "caller_name"   => isset($_POST["caller_name"]) ? $_POST["caller_name"] : "",
                 "description"   => isset($_POST["description"]) ? $_POST["description"] : ""
             );
+
+            if (isset($_GET["number"]) && !(isset($_POST["caller_num"])))
+                $ct_data["caller_num"] = $_GET["number"];
 
             /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {

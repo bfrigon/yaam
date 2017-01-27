@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.PluginManager.php - plugin manager (loader)
+// class_plugin_manager.php - plugin manager (loader)
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>
@@ -17,6 +17,7 @@ class PluginManager
 {
     public $_plugins = array();
     public $_tabs = array();
+    public $_actions = array();
 
 
     /*--------------------------------------------------------------------------
@@ -62,7 +63,7 @@ class PluginManager
             throw new Exception("Invalid plugin format : '$plugin_name' does not have a class name beginning with 'Plugin'.");
 
 
-        $plugin = new $plugin_class($plugin_name, $this->_tabs);
+        $plugin = new $plugin_class($plugin_name, $this->_tabs, $this->_actions);
         $this->_plugins[$plugin_name] = $plugin;
 
         foreach($plugin->_dependencies as $dep) {

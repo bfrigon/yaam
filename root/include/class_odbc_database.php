@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.OdbcDatabase.php - ODBC Database connection
+// class_odbc_database.php - ODBC Database connection
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>

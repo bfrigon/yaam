@@ -29,13 +29,13 @@
 <datagrid class="expand" data-type="odbc" data-source="results" min-rows="25">
     <header>
         <column style="width: 16px" type="icon"></column>
-        <column style="width: 130px">Date</column>
-        <column style="width: 110px">Number</column>
-        <column style="width: 150px">Name</column>
-        <column style="width: 110px">Destination</column>
-        <column style="width: 50px">Duration</column>
-        <column style="width: 50px">Billed</column>
-        <column style="width: 50px">Cost</column>
+        <column style="width: 120px">Date</column>
+        <column style="width: 120px">From</column>
+        <column style="width: 160px">Name</column>
+        <column style="width: 120px">Destination</column>
+        <column style="width: 40px">Duration</column>
+        <column style="width: 40px">Billed</column>
+        <column style="width: 40px">Cost</column>
     </header>
 
     <row>
@@ -45,12 +45,22 @@
         <column>
             <call name="regex_clid" params="[[clid]]" return="clid_name,clid_number" />
             [[$clid_number | format_phone]]
+
+            <action-list type="icon" icon-size="12" class="float-right" name="phone_number_tools">
+                <param name="number" value="$clid_number" />
+            </action>
         </column>
         <column>
             <var name="clid_name" if-empty="Unknown" />
         </column>
 
-        <column>[[dst | format_phone]]</column>
+        <column>
+            [[dst | format_phone]]
+
+            <action-list type="icon" icon-size="12" class="float-right" name="phone_number_tools">
+                <param name="number" value="dst" />
+            </action-list>
+        </column>
         <column>[[duration | format_time_seconds]]</column>
         <column>[[billsec | format_time_seconds]]</column>
         <column>[[cost | format_money]]</column>

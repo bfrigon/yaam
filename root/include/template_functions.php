@@ -197,3 +197,14 @@ function print_progressbar($caption, $value, $percentage=-1, $critical=false)
 
     echo "</span></div>";
 }
+
+
+function get_action_list($name)
+{
+    global $PLUGINS;
+
+    if (!(isset($PLUGINS->_actions[$name])))
+        return array();
+
+    return $PLUGINS->_actions[$name];
+}

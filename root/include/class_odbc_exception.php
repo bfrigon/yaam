@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.OdbcException.php - ODBC Exception
+// class_odbc_exception.php - ODBC Exception
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>

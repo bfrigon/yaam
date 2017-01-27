@@ -21,20 +21,15 @@
 //<![CDATA[
 
     $(document).ready(function () {
+        $("#log_content").contents().filter(function(){return this.nodeType !== 1;}).each(function() {
 
-        $(".page#tab_logs").one("tab.content_change", function (e) {
+            if ($(this).text().match(/error|fatal|panic/i)) {
+                $(this).wrap("<span class=\"log-error\" />");
 
-            $("#log_content").contents().filter(function(){return this.nodeType !== 1;}).each(function() {
-
-                if ($(this).text().match(/error|fatal|panic/i)) {
-                    $(this).wrap("<span class=\"log-error\" />");
-
-                } else if ($(this).text().match(/warning/i)) {
-                    $(this).wrap("<span class=\"log-warning\" />");
-                }
-            });
+            } else if ($(this).text().match(/warning/i)) {
+                $(this).wrap("<span class=\"log-warning\" />");
+            }
         });
-
     });
 
 //]]>

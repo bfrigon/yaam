@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.QueryBuilder.php - SQL Query builder
+// class_query_builder.php - SQL Query builder
 //
 // Project   : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author    : Benoit Frigon <benoit@frigon.info>

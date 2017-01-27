@@ -40,6 +40,15 @@ class PluginTools extends Plugin
         $this->register_tab(null, "tools", null, "Tools", PERMISSION_LVL_USER, 200);
         $this->register_tab("on_show_profile", "profile", "tools", "Edit profile", PERMISSION_LVL_USER);
         $this->register_tab("on_show_originate", "originate", "tools", "Click-2-dial", PERMISSION_LVL_USER);
+
+        $this->register_action(
+            "phone_number_tools",
+            "dial",
+            "tools.tools.originate",
+            "Click to dial",
+            "call",
+            "Call this number",
+            PERMISION_LVL_USER);
     }
 
 

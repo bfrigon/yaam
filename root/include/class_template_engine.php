@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// class.TemplateEngine.php - Template engine
+// class_template_engine.php - Template engine
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author  : Benoit Frigon <benoit@frigon.info>
@@ -22,6 +22,8 @@ class TemplateEngine
     private $_template_dir;
     private $_cache_dir;
     private $_plugin;
+
+    private $_template_file;
 
     public $currency_format = "%.3i $";
 
@@ -105,6 +107,7 @@ class TemplateEngine
 
         $compile_start = microtime(true);
 
+        $this->_template_file = $template_file;
         $this->unique_base = hash("crc32b", $template_file);
 
         /* Open template file */
@@ -130,6 +133,24 @@ class TemplateEngine
 
 
     /*--------------------------------------------------------------------------
+     * throw_compile_exception() : Throw a compile exception
+     *
+     * Arguments
+     * ---------
+     *  - message : Reason for the exception.
+     *
+     * Returns : Nothing
+     */
+    private function throw_compile_exception($node, $message)
+    {
+        $file = $this->_template_file;
+        $line = $node->getLineNo();
+
+        throw new Exception("Template compile error in '$file' at line $line<p>$message</p>");
+    }
+
+
+    /*--------------------------------------------------------------------------
      * get_attribute_shortcode() : Convert shortcode contained in a node attribute
      *
      * Arguments
@@ -151,7 +172,7 @@ class TemplateEngine
 
         $value = trim($node->getAttribute($name));
 
-        return $this->convert_shortcode($value, $data_type, $data_source, $wrap);
+        return $this->process_shortcode($value, $data_type, $data_source, $wrap);
     }
 
 
@@ -245,7 +266,7 @@ class TemplateEngine
             if ($node->hasAttributes()) {
                 foreach ($node->attributes as $attrib) {
 
-                    $value = $this->convert_shortcode($attrib->value, $data_type, $data_source);
+                    $value = $this->process_shortcode($attrib->value, $data_type, $data_source);
 
                     fwrite($handle, " {$attrib->nodeName}=\"$value\"");
                 }
@@ -266,6 +287,11 @@ class TemplateEngine
                             switch ($child->nodeName) {
                                 case "form":
                                     $this->process_tag_form($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "action":
+                                case "action-list":
+                                    $this->process_tag_action_list($child, $handle, $data_type, $data_source);
                                     break;
 
                                 case "foreach":
@@ -328,7 +354,7 @@ class TemplateEngine
                             break;
 
                         case XML_TEXT_NODE:
-                            $html = $this->convert_shortcode($child->ownerDocument->saveHTML($child), $data_type, $data_source);
+                            $html = $this->process_shortcode($child->ownerDocument->saveHTML($child), $data_type, $data_source);
                             fwrite($handle, $html);
                             break;
 
@@ -339,7 +365,7 @@ class TemplateEngine
                 } else {
 
 
-                    $html = $this->convert_shortcode($child->ownerDocument->saveXML($child), $data_type, $data_source);
+                    $html = $this->process_shortcode($child->ownerDocument->saveXML($child), $data_type, $data_source);
                     fwrite($handle, $html);
                 }
 
@@ -348,6 +374,81 @@ class TemplateEngine
 
         if ($outer)
             fwrite($handle, "</{$node->nodeName}>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_tag_action_list() : Process the template tag "action-list".
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_action_list($node_action, $handle, $data_type=null, $data_source=null)
+    {
+        $type = strtolower($node_action->getAttribute("type"));
+        $name = strtolower($node_action->getAttribute("name"));
+        $class = $node_action->getAttribute("class");
+        $keep_uri = $this->get_attribute_boolean($node_action, "keep-uri", false);
+        $keep_referrer = $this->get_attribute_boolean($node_action, "keep-referrer", false);
+
+        $var_action = $this->get_unique_varname();
+
+        /* Required attributes */
+        if (empty($type))
+            $this->throw_compile_exception($node_action, "The tag 'action-list' requires a 'type' attribute.");
+
+        if (empty($name))
+            $this->throw_compile_exception($node_action, "The tag 'action-list' requires a 'name' attribute.");
+
+
+        /* Build items href */
+        $url_params = array();
+        $url_params["path"] = "{$var_action}[\"path\"]";
+        $url_params["action"] = "{$var_action}[\"name\"]";
+        $url_params["referrer"] = "\$this->get_tab_url(true)";
+
+        foreach ($node_action->getElementsByTagName("param") as $node_param) {
+
+            $param_name = $node_param->getAttribute("name");
+            $param_value = $this->process_tokens($node_param->getAttribute("value"), $data_type, $data_source);
+
+            if (empty($param_name) || empty($param_value))
+                continue;
+
+            $url_params[$param_name] = trim($param_value);
+        }
+
+        $href = $this->func_build_tab_url($url_params, $keep_uri, false);
+
+
+        fwrite($handle, "<span class=\"action-list $class\">");
+
+        fwrite($handle, "<?php foreach(get_action_list(\"$name\") as $var_action): ?>\n");
+
+        switch ($type) {
+
+            /* Icon list */
+            default:
+                $icon_size = intval($node_action->getAttribute("icon-size"));
+                if ($icon_size == 0)
+                    $icon_size = 16;
+
+                $icon_class = "icon$icon_size";
+
+                fwrite($handle, "<a class=\"icon-only\" href=\"$href\" title=\"<?php echo {$var_action}['tooltip'] ?>\" >");
+
+                fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-<?php echo {$var_action}['icon'] ?>\" />");
+                fwrite($handle, "</a>\n");
+        }
+
+        fwrite($handle, "<?php endforeach; ?>\n");
+        fwrite($handle, "</span>");
     }
 
 
@@ -401,7 +502,6 @@ class TemplateEngine
     private function process_tag_foreach($node_foreach, $handle, $data_type=null, $data_source=null)
     {
         /* Get tag attributes */
-
         $data_source = (is_null($data_source)) ? $node_foreach->getAttribute("data-source") : $data_source;
         $data_type = strtolower((is_null($data_type)) ? $node_foreach->getAttribute("data-type") : $data_type);
         $type = strtolower($node_foreach->getAttribute("type"));
@@ -412,8 +512,11 @@ class TemplateEngine
 
 
         /* Required attributes */
-        if (is_null($data_type) || is_null($data_source))
-            return;
+        if (empty($data_type))
+            $this->throw_compile_exception($node_foreach, "The tag 'foreach' requires a 'data-type' attribute.");
+
+        if (empty($data_source))
+            $this->throw_compile_exception($node_foreach, "The tag 'foreach' requires a 'data-source' attribute.");
 
         if ($type == "list") {
             fwrite($handle, "<ul class=\"list $class\">");
@@ -489,6 +592,10 @@ class TemplateEngine
         $name = $node_if->getAttribute("name");
         $value = $this->get_attribute_shortcode($node_if, "value", "", $data_type, $data_source);
 
+        /* Required attribute */
+        if (empty($type))
+            $this->throw_compile_exception($node_if, "The tag 'if' requires a 'type' attribute.");
+
 
         switch ($type) {
 
@@ -537,7 +644,7 @@ class TemplateEngine
         $params = $this->get_attribute_shortcode($node_tag, "params", "", $data_type, $data_source, false);
         $href = $this->get_attribute_shortcode($node_tag, "href", "", $data_type, $data_source);
         $id = $node_tag->getAttribute("id");
-        $caption = $this->convert_shortcode($node_tag->textContent, $data_type, $data_source);
+        $caption = $this->process_shortcode($node_tag->textContent, $data_type, $data_source);
 
         $keep_uri = $this->get_attribute_boolean($node_tag, "keep-uri", false);
         $keep_referrer = $this->get_attribute_boolean($node_tag, "keep-referrer", false);
@@ -616,7 +723,7 @@ class TemplateEngine
                         else
                             $url_params["referrer"] = "\$this->get_tab_url(true)";
 
-                        $href = $this->func_build_tab_url($url_params, $keep_uri, $no_referrer);
+                        $href = $this->func_build_tab_url($url_params, $keep_uri, false);
                         break;
                 }
             }
@@ -678,8 +785,11 @@ class TemplateEngine
                 $column_key = $node_tag->getAttribute("column-key");
                 $column_value = $node_tag->getAttribute("column-value");
 
-                if (empty($data_type) || empty($data_source))
-                    break;
+                if (empty($data_type))
+                    $this->throw_compile_exception($node_tag, "The tag 'field' of type 'select' requires a 'data-type' attribute.");
+
+                if (empty($data_source))
+                    $this->throw_compile_exception($node_tag, "The tag 'field' of type 'select' requires a 'data-source' attribute.");
 
                 fwrite($handle, "<select name=\"$name\" id=\"$id\">");
 
@@ -707,9 +817,9 @@ class TemplateEngine
                     case "odbc":
                         fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
 
-                        fwrite($handle, "<option value=\"<?php echo odbc_result($$data_source, '$column_key') ?>\"");
-                        fwrite($handle, " <?php echo (odbc_result($$data_source, '$column_key') == \"$value\") ? 'selected' : '' ?> >");
-                        fwrite($handle, "<?php echo odbc_result($$data_source, '$column_value') ?></option>\n");
+                        fwrite($handle, "<option value=\"<?php echo @odbc_result($$data_source, '$column_key') ?>\"");
+                        fwrite($handle, " <?php echo (@odbc_result($$data_source, '$column_key') == \"$value\") ? 'selected' : '' ?> >");
+                        fwrite($handle, "<?php echo @odbc_result($$data_source, '$column_value') ?></option>\n");
 
                         fwrite($handle, "<?php endwhile; ?>\n");
                         break;
@@ -887,7 +997,7 @@ class TemplateEngine
                     $value = $node_item->getAttribute("value");
                     $action = $node_item->getAttribute("action");
                     $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
-                    $caption = $this->convert_shortcode($node_item->textContent, $data_type, $data_source);
+                    $caption = $this->process_shortcode($node_item->textContent, $data_type, $data_source);
 
                     $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
                     $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
@@ -1028,7 +1138,7 @@ class TemplateEngine
                         fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
                     }
 
-                    fwrite($handle, $this->convert_shortcode($caption));
+                    fwrite($handle, $this->process_shortcode($caption));
                     fwrite($handle, "</a>\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
                     fwrite($handle, "<ul>\n");
@@ -1108,7 +1218,7 @@ class TemplateEngine
     }
 
 
-   /*--------------------------------------------------------------------------
+    /*--------------------------------------------------------------------------
      * process_tag_grid() : Process the template tag "datagrid"
      *
      * Arguments
@@ -1129,7 +1239,7 @@ class TemplateEngine
 
         /* Required child node */
         if (empty($node_row))
-            return;
+            $this->throw_compile_exception($node_tag, "The tag 'grid' requires a row element.");
 
         /* Get tag attributes */
         $data_source = $node_tag->getAttribute("data-source");
@@ -1138,15 +1248,18 @@ class TemplateEngine
         $class = $node_tag->getAttribute("class");
 
         /* Required attributes */
-        if (empty($data_source) || empty($data_type))
-            return;
+        if (empty($data_source))
+            $this->throw_compile_exception($node_tag, "The tag 'grid' requires a 'data-source' attribute.");
+
+        if (empty($data_type))
+            $this->throw_compile_exception($node_tag, "The tag 'grid' requires a 'data-type' attribute.");
 
         fwrite($handle, "<table id=\"\" class=\"grid $class\">\n");
 
         /* Generate caption tag */
         if (!empty($node_caption)) {
             fwrite($handle, "<caption>");
-            fwrite($handle, $this->convert_Shortcode($node_caption->textContent, $data_type, $data_source));
+            fwrite($handle, $this->process_shortcode($node_caption->textContent, $data_type, $data_source));
             fwrite($handle, "</caption>\n");
         }
 
@@ -1173,8 +1286,6 @@ class TemplateEngine
 
         fwrite($handle, "<tbody>");
 
-        print $data_source;
-
         if (substr($data_source, 0, 1) != "$")
             $data_source = "\$$data_source";
 
@@ -1186,6 +1297,7 @@ class TemplateEngine
 
             /* invalid data type */
             default:
+                $this->throw_compile_exception($node_tag, "The tag 'grid' has an invalid data-type : $data_type");
                 break;
         }
 
@@ -1219,10 +1331,6 @@ class TemplateEngine
         switch ($data_type) {
             case "odbc":
                 fwrite($handle, "<?php $var_count++; endwhile; ?>");
-                break;
-
-            /* Invalid data type */
-            default:
                 break;
         }
 
@@ -1303,7 +1411,7 @@ class TemplateEngine
         }
 
         if (empty($vars))
-            return;
+            $this->throw_compile_exception($node_tag, "The tag 'variable' requires at least one variable name.");
 
         if (!empty($node_empty) || !empty($if_empty)) {
             fwrite($handle, "<?php if(empty(" . implode(") || empty(", $vars) . ")): ?>");
@@ -1350,9 +1458,9 @@ class TemplateEngine
 
         /* Required attribute */
         if (empty($name))
-            return;
+            $this->throw_compile_exception($node_tag, "The tag 'callback' requires a 'name' attribute.");
 
-        fwrite($handle, "\r\n");
+        fwrite($handle, "\r\n<?php ");
 
         if (!empty($return)) {
             $return = preg_split("/[\s,]+/", $return);
@@ -1362,7 +1470,7 @@ class TemplateEngine
             else
                 $return = "\$$return[0]";
 
-            fwrite($handle, "<?php $return = ");
+            fwrite($handle, "$return = ");
         }
 
         fwrite($handle, "\$this->$name($params); ?>");
@@ -1370,7 +1478,170 @@ class TemplateEngine
 
 
     /*--------------------------------------------------------------------------
-     * convert_shortcode() : Convert the shortcode syntax contained in a string.
+     * process_tokens() : Convert a list of tokens contained in a single
+     *                    shortcode bracket [[...]]
+     *
+     * Arguments
+     * ---------
+     *  - tokens      : List of tokens to process.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : The converted tokens.
+     */
+    private function process_tokens($tokens, $data_type=null, $data_source=null)
+    {
+        /* Split the tokens */
+        $tokens =  preg_split("/[\s|]+/", $tokens);
+
+        foreach($tokens as $token) {
+
+            /* The first token is the variable name, following tokens contains modifier
+               functions, except for "if".  */
+            if ((substr($token, 0, 2) != "if") && empty($output)) {
+
+                if ($token[0] == "$") {
+
+                    if (strpos($token, "@") !== false) {
+                        $token = explode("@", $token);
+
+                        $output = "{$token[0]}[" . implode("][", array_slice($token, 1)) . "]";
+
+                    } else {
+                        $output = $token;
+                    }
+
+                } else {
+
+
+                    switch ($data_type) {
+                        /* Ordinary array */
+                        case "array":
+                            if (strtolower($token) == "value") {
+                                $output = $data_source[1];
+                            } else {
+                                $output = "\$$token";
+                            }
+
+                            break;
+
+                        /* ODBC resultset */
+                        case "odbc":
+                            $output = "@odbc_result($data_source, '$token')";
+                            break;
+
+                        /* Dictionary array */
+                        case "dict":
+                            switch (strtolower($token)) {
+                                case "key":
+                                    $output = $data_source[1];
+                                    break;
+
+                                case "value":
+                                    $output = $data_source[2];
+                                    break;
+
+                                default:
+                                    $output = "\$$token";
+                                    break;
+                            }
+                            break;
+
+                        /* Single variable */
+                        default:
+                            $output = "\$$token";
+                            break;
+                    }
+                }
+            } else {
+
+                $params = explode(":", $token);
+
+                switch ($params[0]) {
+                    case 'if':
+                        $output = "(({$params[1]}) ? {$params[2]} : {$params[3]})";
+                        break;
+
+                    case "lower":
+                        $output = "strtolower($output)";
+                        break;
+
+                    case "upper":
+                        $output = "strtoupper($output)";
+                        break;
+
+                    case "ucfirst":
+                        $output = "ucfirst($output)";
+                        break;
+
+                    case "ucwords":
+                        $output = "ucwords($output)";
+                        break;
+
+                    case "var_dump":
+                        $output = "var_dump($output)";
+                        break;
+
+                    case "explode":
+                        $sep = " ";
+
+                        if (!empty($params[1])) {
+                            $sep = $params[1];
+                        }
+
+                        $output = "explode('" . addslashes($sep) . "', $output)";
+                        break;
+
+                    case "format_phone":
+                        $output = "format_phone_number($output";
+
+                        if (isset($params[1]) && strtolower($params[1]) == "false")
+                            $output .= ", false";
+
+                        $output .= ")";
+
+                        break;
+
+                    case "format_time_seconds":
+                    case "format_seconds":
+                        $output = "format_time_seconds($output)";
+                        break;
+
+                    case "money_format":
+                    case "format_money":
+                        if (isset($params[1])) {
+                            $output = "money_format('{$params[1]}', $output)";
+                        } else {
+                            $output = "money_format('" . $this->currency_format . "', $output)";
+                        }
+
+                        break;
+
+                    case "dumpfile":
+                        $output = "dumpfile($output)";
+                        break;
+
+                    case "dumpgzfile":
+                        $output = "dumpgzfile($output)";
+                        break;
+
+                    case "format_unix_time":
+                        $output = "format_unix_time($output)";
+                        break;
+
+                    case "format_byte":
+                        $output = "format_byte($output)";
+                        break;
+               }
+            }
+        }
+
+        return $output;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_shortcode() : Convert the shortcode syntax contained in a string.
      *
      * Arguments
      * ---------
@@ -1381,7 +1652,7 @@ class TemplateEngine
      *
      * Returns : The converted text.
      */
-    private function convert_shortcode($text, $data_type=null, $data_source=null, $wrap=true)
+    private function process_shortcode($text, $data_type=null, $data_source=null, $wrap=true)
     {
         $offset = 0;
         while(($offset = strpos($text, "[[", $offset)) !== false) {
@@ -1389,151 +1660,9 @@ class TemplateEngine
             if (($end = strpos($text, "]]", $offset)) === false)
                 break;
 
-            /* Split the tokens */
-            $tokens =  preg_split("/[\s|]+/", trim(substr($text, $offset + 2, $end - $offset - 2)));
+            $tokens = trim(substr($text, $offset + 2, $end - $offset - 2));
 
-            $output = '';
-            foreach($tokens as $token) {
-
-                /* The first token is the variable name, following tokens contains modifier
-                   functions, except for "if".  */
-                if ((substr($token, 0, 2) != "if") && empty($output)) {
-
-                    if ($token[0] == "$") {
-
-                        if (strpos($token, "@") !== false) {
-                            $token = explode("@", $token);
-
-                            $output = "{$token[0]}[" . implode("][", array_slice($token, 1)) . "]";
-
-                        } else {
-                            $output = $token;
-                        }
-
-                    } else {
-
-
-                        switch ($data_type) {
-                            /* Ordinary array */
-                            case "array":
-                                if (strtolower($token) == "value") {
-                                    $output = $data_source[1];
-                                } else {
-                                    $output = "\$$token";
-                                }
-
-                                break;
-
-                            /* ODBC resultset */
-                            case "odbc":
-                                $output = "odbc_result($data_source, '$token')";
-                                break;
-
-                            /* Dictionary array */
-                            case "dict":
-                                switch (strtolower($token)) {
-                                    case "key":
-                                        $output = $data_source[1];
-                                        break;
-
-                                    case "value":
-                                        $output = $data_source[2];
-                                        break;
-
-                                    default:
-                                        $output = "\$$token";
-                                        break;
-                                }
-                                break;
-
-                            /* Single variable */
-                            default:
-                                $output = "\$$token";
-                                break;
-                        }
-                    }
-                } else {
-
-                    $params = explode(":", $token);
-
-                    switch ($params[0]) {
-                        case 'if':
-                            $output = "(({$params[1]}) ? {$params[2]} : {$params[3]})";
-                            break;
-
-                        case "lower":
-                            $output = "strtolower($output)";
-                            break;
-
-                        case "upper":
-                            $output = "strtoupper($output)";
-                            break;
-
-                        case "ucfirst":
-                            $output = "ucfirst($output)";
-                            break;
-
-                        case "ucwords":
-                            $output = "ucwords($output)";
-                            break;
-
-                        case "var_dump":
-                            $output = "var_dump($output)";
-                            break;
-
-                        case "explode":
-                            $sep = " ";
-
-                            if (!empty($params[1])) {
-                                $sep = $params[1];
-                            }
-
-                            $output = "explode('" . addslashes($sep) . "', $output)";
-                            break;
-
-                        case "format_phone":
-                            $output = "format_phone_number($output";
-
-                            if (isset($params[1]) && strtolower($params[1]) == "false")
-                                $output .= ", false";
-
-                            $output .= ")";
-
-                            break;
-
-                        case "format_time_seconds":
-                        case "format_seconds":
-                            $output = "format_time_seconds($output)";
-                            break;
-
-                        case "money_format":
-                        case "format_money":
-                            if (isset($params[1])) {
-                                $output = "money_format('{$params[1]}', $output)";
-                            } else {
-                                $output = "money_format('" . $this->currency_format . "', $output)";
-                            }
-
-                            break;
-
-                        case "dumpfile":
-                            $output = "dumpfile($output)";
-                            break;
-
-                        case "dumpgzfile":
-                            $output = "dumpgzfile($output)";
-                            break;
-
-                        case "format_unix_time":
-                            $output = "format_unix_time($output)";
-                            break;
-
-                        case "format_byte":
-                            $output = "format_byte($output)";
-                            break;
-                   }
-                }
-            }
+            $output = $this->process_tokens($tokens, $data_type, $data_source);
 
             if (empty($output))
                 continue;
@@ -1557,7 +1686,7 @@ class TemplateEngine
      * ---------
      *  None
      *
-     * Returns   : Unique variable name.
+     * Returns : Unique variable name.
      */
     private function get_unique_varname()
     {
