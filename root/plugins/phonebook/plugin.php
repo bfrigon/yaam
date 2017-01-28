@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// Plugins/CNAM/plugin.php - CNAM records plugin
+// plugins/phonebook/plugin.php - Phonebook plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author  : Benoit Frigon <benoit@frigon.info>
@@ -21,10 +21,12 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
-class PluginCNAM extends Plugin
-{
-    public $_dependencies = array("Tools");
+define("PERM_PHONEBOOK_READ", "phonebook_read");
+define("PERM_PHONEBOOK_WRITE", "phonebook_write");
+define("PERM_PHONEBOOK_ALL_USERS", "phonebook_all_users");
 
+class PluginPhonebook extends Plugin
+{
 
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
@@ -35,14 +37,20 @@ class PluginCNAM extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
-        $this->register_tab("on_show_cnam", "cnam", "tools", "CNAM records", PERMISSION_LVL_MANAGER);
+        $manager->register_tab($this, "on_show_phonebook", "phonebook", null, "Phone book", PERM_PHONEBOOK_READ, 140);
+
+        $manager->declare_permissions($this, array(
+            PERM_PHONEBOOK_READ,
+            PERM_PHONEBOOK_WRITE,
+            PERM_PHONEBOOK_ALL_USERS,
+        ));
     }
 
 
     /*--------------------------------------------------------------------------
-     * on_show_cnam() : Called when the 'CNAM records' tab content is requested.
+     * on_show_phonebook() : Called when the 'Phone book' tab content is requested.
      *
      * Arguments :
      * ---------
@@ -52,26 +60,29 @@ class PluginCNAM extends Plugin
      *
      * Return : None
      */
-    function on_show_cnam($template, $tab_path, $action)
+    function on_show_phonebook($template, $tab_path, $action)
     {
         global $DB;
 
         switch ($action) {
             case "add":
-                $this->action_addedit_cnam($template, "add");
+                $this->action_addedit_phone($template, "add");
                 break;
 
             case "edit":
-                $this->action_addedit_cnam($template, "edit");
+                $this->action_addedit_phone($template, "edit");
                 break;
 
             case "delete":
-                $this->action_delete_cnam($template);
+                $this->action_delete_phone($template);
                 break;
 
             default:
 
-                $query = $DB->create_query("cnam");
+                if (!(check_permission(PERM_PHONEBOOK_READ)))
+                    throw new Exception("You do not have the required permissions to view the phone book!");
+
+                $query = $DB->create_query("phonebook");
 
                 /* Set search filters */
                 if (!empty($_GET["s"])) {
@@ -99,7 +110,7 @@ class PluginCNAM extends Plugin
                 $results = $query->run_query_select("*");
 
                 /* Load the template */
-                require($template->load("cnam.tpl"));
+                require($template->load("phonebook.tpl"));
 
                 break;
         }
@@ -107,7 +118,7 @@ class PluginCNAM extends Plugin
 
 
     /*--------------------------------------------------------------------------
-     * action_addedit_cnam() : Create or update a new CNAM record.
+     * action_addedit_phone() : Create or update a new phonebook record.
      *
      * Arguments :
      * ---------
@@ -116,17 +127,20 @@ class PluginCNAM extends Plugin
      *
      * Return : None
      */
-    function action_addedit_cnam($template, $action)
+    function action_addedit_phone($template, $action)
     {
         global $DB;
 
+        if (!(check_permission(PERM_PHONEBOOK_WRITE)))
+            throw new Exception("You do not have the required permissions to add/edit phone book records!");
+
         try {
-            $query = $DB->create_query("cnam");
+            $query = $DB->create_query("phonebook");
 
             $query->where("id", "=", $_GET["id"]);
             $query->limit(1);
 
-            $cnam_data = array(
+            $pb_data = array(
                 "number"        => isset($_POST["number"])      ? $_POST["number"] : "",
                 "callerid"      => isset($_POST["callerid"])    ? $_POST["callerid"] : "",
                 "description"   => isset($_POST["description"]) ? $_POST["description"] : ""
@@ -140,9 +154,9 @@ class PluginCNAM extends Plugin
 
                 /* If all fields are valid, Insert the new call route in the database. */
                 if ($action == "add")
-                    $query->run_query_insert($cnam_data);
+                    $query->run_query_insert($pb_data);
                 else
-                    $query->run_query_update($cnam_data);
+                    $query->run_query_update($pb_data);
 
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
@@ -151,7 +165,7 @@ class PluginCNAM extends Plugin
             } elseif ($action == "edit") {
 
                 $res = $query->run_query_select("*");
-                $cnam_data = odbc_fetch_array($res);
+                $pb_data = odbc_fetch_array($res);
             }
 
         } catch (Exception $e) {
@@ -159,12 +173,12 @@ class PluginCNAM extends Plugin
             print_message($e->getmessage(), true);
         }
 
-        require($template->load("cnam_addedit.tpl"));
+        require($template->load("phonebook_addedit.tpl"));
     }
 
 
     /*--------------------------------------------------------------------------
-     * action_delete_cnam() : Delete an existing CNAM record.
+     * action_delete_phone() : Delete an existing phone book record.
      *
      * Arguments :
      * ---------
@@ -172,15 +186,19 @@ class PluginCNAM extends Plugin
      *
      * Return : None
      */
-    function action_delete_cnam($template)
+    function action_delete_phone($template)
     {
         global $DB;
-        $query = $DB->create_query("cnam");
+
+        if (!(check_permission(PERM_PHONEBOOK_WRITE)))
+            throw new Exception("You do not have the required permissions to delete phone book records!");
+
+        $query = $DB->create_query("phonebook");
 
         $id = $_GET["id"];
 
         if (!isset($id)) {
-            $message = "You did not select any CNAM record(s) to delete.";
+            $message = "You did not select any phone book record(s) to delete.";
             $url_ok = $this->get_tab_referrer();
 
             require($template->load("dialog_message.tpl", true));
@@ -202,9 +220,9 @@ class PluginCNAM extends Plugin
 
         } else {
 
-            $results = $query->run_query_select("description,number");
+            $results = $query->run_query_select("name,number");
 
-            require($template->load("cnam_delete.tpl"));
+            require($template->load("phonebook_delete.tpl"));
 
             odbc_free_result($results);
         }

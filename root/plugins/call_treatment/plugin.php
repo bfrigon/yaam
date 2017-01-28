@@ -20,10 +20,13 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     exit();
 }
 
+define("PERM_CT_WRITE_RULES", "ct_write_rules");
+define("PERM_CT_READ_RULES", "ct_read_rules");
+define("PERM_CT_RULES_ALL_USERS", "ct_rules_all_users");
 
 class PluginCallTreatment extends Plugin
 {
-    public $_dependencies = array("Tools");
+    public $dependencies = array("tools");
 
     private $_action_list = array();
 
@@ -37,18 +40,26 @@ class PluginCallTreatment extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
-        $this->register_tab("on_show_ct", "ct", "tools", "Call treatment", PERMISSION_LVL_USER);
+        $manager->register_tab($this, "on_show_ct", "ct", "tools", "Call treatment", PERM_CT_READ_RULES);
 
-        $this->register_action(
+        $manager->register_action(
+            $this,
             "phone_number_tools",
             "add",
-            "call_treatment.tools.ct",
+            "tools.ct",
             "Add call treatment rule",
             "blacklist",
             "Create a call treatment rule for this number",
-            PERMISION_LVL_USER);
+            PERM_CT_WRITE_RULES);
+
+        $manager->declare_permissions($this, array(
+            PERM_CT_WRITE_RULES,
+            PERM_CT_READ_RULES,
+            PERM_CT_RULES_ALL_USERS,
+        ));
+
 
         $this->_action_list = get_global_config_item("call_treatment", "actions");
     }
@@ -84,7 +95,15 @@ class PluginCallTreatment extends Plugin
 
             default:
 
+                if (!(check_permission(PERM_CT_READ_RULES)))
+                    throw new Exception("You do not have the required permissions to view call treatment rules!");
+
                 $query = $DB->create_query("call_treatment");
+
+                /* If user don't have permissions to view other users rules, restrict results to user extension */
+                if (!(check_permission(PERM_CT_RULES_ALL_USERS))) {
+                    $query->where("extension", "=", $_SESSION["extension"]);
+                }
 
                 /* Set search filters */
                 if (!empty($_GET["s"])) {
@@ -151,6 +170,9 @@ class PluginCallTreatment extends Plugin
     {
         global $DB;
 
+        if (!(check_permission(PERM_CT_WRITE_RULES)))
+            throw new Exception("You do not have the required permissions to add/edit call treatment rules!");
+
         try {
             $query = $DB->create_query("call_treatment");
 
@@ -158,7 +180,7 @@ class PluginCallTreatment extends Plugin
             $query->limit(1);
 
             $ct_data = array(
-                "extension"     => isset($_POST["extension"])   ? $_POST["extension"] : "",
+                "extension"     => isset($_POST["extension"])   ? $_POST["extension"] : $_SESSION["extension"],
                 "action"        => isset($_POST["ct_action"])   ? $_POST["ct_action"] : "",
                 "caller_num"    => isset($_POST["caller_num"])  ? $_POST["caller_num"] : "",
                 "caller_name"   => isset($_POST["caller_name"]) ? $_POST["caller_name"] : "",
@@ -172,7 +194,11 @@ class PluginCallTreatment extends Plugin
             if (isset($_POST["submit"])) {
 
                 /* Validate fields */
+                if (!(check_permission(PERM_CT_RULES_ALL_USERS)) &&
+                    (intval($ct_data["extension"]) != intval($_SESSION["extension"]))) {
 
+                    throw new Exception("You are not authorized to create rules for other extensions");
+                }
 
                 /* If all fields are valid, Insert the new call route in the database. */
                 if ($action == "add")
@@ -212,6 +238,10 @@ class PluginCallTreatment extends Plugin
     function action_delete_ct($template)
     {
         global $DB;
+
+        if (!(check_permission(PERM_CT_WRITE_RULES)))
+            throw new Exception("You do not have the required permissions to delete call treatment rules!");
+
         $query = $DB->create_query("call_treatment");
 
         $id = $_GET["id"];
@@ -239,7 +269,7 @@ class PluginCallTreatment extends Plugin
 
         } else {
 
-            $results = $query->run_query_select("extension,caller_num,caller_name,description");
+            $results = $query->run_query_select("description,caller_num,caller_name");
 
             require($template->load("ct_delete.tpl"));
 

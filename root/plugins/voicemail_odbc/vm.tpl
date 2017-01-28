@@ -25,18 +25,11 @@
         </item>
 
         <item type="separator" />
-
-        <item type="list" icon="unchecked">
-            <item type="button" action="select-all">All</item>
-            <item type="button" action="select-none">None</item>
-        </item>
-
         <item type="submit" action="delete" icon="delete" title="Delete selected message(s)">Delete</item>
         <item type="button" action="refresh" icon="reload" force-update>Refresh</item>
 
-        <item type="separator"></item>
-
         <!-- Navigation buttons -->
+        <item type="separator" />
         <item type="button" action="first-page" icon="first" title="Goto first page" />
         <item type="button" action="prev-page" icon="prev" title="Goto previous page" />
         <item type="page-list" prefix="Page " range="5" />

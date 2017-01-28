@@ -110,8 +110,6 @@ function format_unix_time($date)
 {
 
     $fmt = get_user_dateformat(DATE_FORMAT_DATETIME);
-//    $epoch = (long)floatval($date);
-
     return strftime($fmt, $date);
 }
 

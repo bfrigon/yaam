@@ -15,14 +15,12 @@
 //******************************************************************************
 class Plugin
 {
-    public $_dependencies = array();
-    public $_tabs = array();
-    public $_actions = array();
-    public $_tab_url = array();
+    private $_plugin_manager = null;
 
-    public $REQUEST_JS_ENABLED = false;
-    public $PLUGIN_DIR = '';
-    public $PLUGIN_NAME = '';
+    public $name = '';
+    public $dir = '';
+    public $dependencies = array();
+    public $tab_url = '';
 
 
     /*--------------------------------------------------------------------------
@@ -30,24 +28,22 @@ class Plugin
      *
      * Arguments
      * ---------
-     *  - name      : plugin name
-     *  - tabs      : List containing the registered tabs of all plugins.
-     *  - actions   : List containing the registered actions of all plugins.
+     *  - name    : Plugin name
+     *  - manager : Instance of the plugin manager.
      *
      * Returns : Nothing
      */
-    function Plugin($name, &$tabs, &$actions)
+    function Plugin($name, &$manager)
     {
-        $this->_tabs = &$tabs;
-        $this->_actions = &$actions;
+        $this->_plugin_manager = &$manager;
 
-        $this->PLUGIN_NAME = $name;
-        $this->PLUGIN_DIR = DOCUMENT_ROOT . "/plugins/$name";
+        $this->name = $name;
+        $this->dir = DOCUMENT_ROOT . "/plugins/$name";
 
         $tab_url = $_GET;
         unset($tab_url["output"]);
 
-        $this->_tab_url = $tab_url;
+        $this->tab_url = $tab_url;
     }
 
 
@@ -60,7 +56,7 @@ class Plugin
      *
      * Returns : Nothing
      */
-    function on_load()
+    function on_load(&$manager)
     {
 
     }
@@ -93,7 +89,7 @@ class Plugin
      */
     function get_tab_url($exclude_referrer=true)
     {
-        $url = $this->_tab_url;
+        $url = $this->tab_url;
 
         if ($exclude_referrer)
             unset($url["referrer"]);
@@ -156,65 +152,5 @@ class Plugin
             $params["path"] = $_GET["path"];
 
         return "?" . http_build_query($params);
-    }
-
-
-    /*--------------------------------------------------------------------------
-     * register_tab() : Create a new tab
-     *
-     * Arguments
-     * ---------
-     *  - callback    : Function to call when displaying the tab content
-     *  - id          : New tab id
-     *  - parent      : Parent tab
-     *  - caption     : Tab caption
-     *  - permissions : Required permission level to open the tab
-     *  - order       : Tab priority (lower first)
-     *
-     * Returns : Nothing
-     */
-    function register_tab($callback, $id, $parent, $caption, $req_plevel=1, $order=100)
-    {
-        if ($_SESSION["plevel"] < $req_plevel)
-            return;
-
-        if ($parent != NULL) {
-            if (!isset($this->_tabs[$parent]))
-                throw new Exception("Parent tab does not exist");
-
-            $tab = &$this->_tabs[$parent];
-
-            if (!isset($tab["childs"]))
-                $tab["childs"] = array();
-
-            $tab = &$tab["childs"][$id];
-
-        } else {
-            $tab = &$this->_tabs[$id];
-        }
-
-        $tab["id"] = $id;
-        $tab["callback"] = $callback;
-        $tab["plugin"] = $this->PLUGIN_NAME;
-        $tab["plevel"] = $req_plevel;
-        $tab["caption"] = $caption;
-        $tab["order"] = $order;
-    }
-
-    function register_action($type, $name, $path, $caption, $icon, $tooltip="", $req_level=PERMISSION_LVL_USER)
-    {
-        if (!(isset($this->_actions[$type])))
-            $this->_actions[$type] = array();
-
-        $action = array();
-        $action['type'] = $type;
-        $action['name'] = $name;
-        $action["path"] = $path;
-        $action["caption"] = $caption;
-        $action["tooltip"] = $tooltip;
-        $action["icon"] = $icon;
-        $action["req_level"] = $req_level;
-
-        $action = array_push($this->_actions[$type], $action);
     }
 }

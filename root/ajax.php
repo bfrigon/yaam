@@ -34,41 +34,30 @@ try {
     if (!isset($_SESSION["logged"]))
         throw new HTTPException(403);
 
-    if (!isset($_REQUEST["path"]) && !isset($_REQUEST["function"]))
-        throw new Exception("Path was not specified.");
+    if (!isset($_REQUEST["function"]))
+        throw new Exception("function was not specified.");
 
     /* load config, connect to database */
     init_session();
 
-
-    $manager = new PluginManager();
-
     /* Call plugin AJAX function */
-    if (isset($_REQUEST["function"])) {
-        $path = $_REQUEST["function"];
-        $path = explode("/", $path);
+    $path = $_REQUEST["function"];
+    $path = explode("/", $path);
 
-        $plugin_name = $path[count($path) - 2];
-        $ajax_function = "ajax_" . $path[count($path) - 1];
+    $plugin_name = $path[count($path) - 2];
+    $ajax_function = "ajax_" . $path[count($path) - 1];
 
-        $plugin = $manager->load($plugin_name);
+    /* Load the plugin containing the function */
+    $manager = new PluginManager();
+    $plugin = $manager->load($plugin_name);
 
-        if (!method_exists($plugin, $ajax_function))
-            throw new Exception("Cannot call ajax function in $plugin_name. No function named $ajax_function");
+    if (!method_exists($plugin, $ajax_function))
+        throw new Exception("Cannot call ajax function in $plugin_name. No function named $ajax_function");
 
-        $result = call_user_func(array($plugin, $ajax_function));
+    $result = call_user_func(array($plugin, $ajax_function));
 
-        if (is_array($result))
-            echo json_encode($result);
-
-    /* Print plugin page content */
-    } else {
-        $path = isset($_REQUEST["path"]) ? $_REQUEST["path"] : "";
-        $manager->show_tab_content($path);
-
-        printf("<script>$('#exec_time').html('%0.4f s');</script>", (microtime(true) - $DEBUG_TIME_START));
-
-    }
+    if (is_array($result))
+        echo json_encode($result);
 
 
 //*****************************************************************************
@@ -90,7 +79,6 @@ try {
         default:
             $e->print_error_page();
             break;
-
     }
 
 

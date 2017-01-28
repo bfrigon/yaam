@@ -1,9 +1,9 @@
-<div class="box dialog error">
+<div class="box dialog warning">
     <div>
-        You are about to delete the following CNAM record(s) :
+        You are about to delete the following phone number(s) :
 
         <foreach type="list" data-type="odbc" data-source="results">
-            [[description]] ([[number]])
+            [[name]] ([[number]])
         </foreach>
 
         <strong>This action cannot be reversed!</strong>

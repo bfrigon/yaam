@@ -1,13 +1,17 @@
 <div class="box form">
     <if type="is" name="action" value="add"><h1>Add user</h1></if>
     <if type="is" name="action" value="edit"><h1>Edit user</h1></if>
+    <if type="is" name="action" value="view"><h1>View user</h1></if>
 
     <form id="frm_add_user" method="post">
         <if type="is" name="action" value="add"><field name="user" type="text" caption="Username" value="[[$user_data@user]]" /></if>
         <if type="is" name="action" value="edit"><field name="user" type="view" caption="Username" value="[[$user_data@user]]" /></if>
 
         <field name="fullname" type="text" caption="Full name" value="[[$user_data@fullname]]" />
-        <field name="plevel" type="text" caption="Permissions level" placeholder="1" value="[[$user_data@plevel]]" />
+
+        <if type="perm" value="user_set_permission">
+            <field name="pgroups" type="text" caption="Permissions" value="[[$user_data@pgroups]]" />
+        </if>
 
         <h2>Account settings</h2>
         <field name="extension" type="text" caption="Extension" placeholder="(e.g. 100)" value="[[$user_data@extension]]">
@@ -36,8 +40,14 @@
         <field name="password" type="text" caption="Password" value="[[$user_data@password]]" />
 
         <toolbar class="center v_spacing">
-            <item type="submit" name="submit" icon="save">Save</item>
-            <item type="button" action="cancel" icon="cancel">Cancel</item>
+            <if type="perm" value="user_write">
+                <item type="submit" name="submit" icon="save">Save</item>
+                <item type="button" action="cancel" icon="cancel">Cancel</item>
+            </if>
+            <if type="perm" not value="user_write">
+                <item type="button" action="cancel" icon="ok">Ok</item>
+            </if>
+
         </toolbar>
     </form>
 </div>

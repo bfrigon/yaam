@@ -1,33 +1,21 @@
 <div class="box form">
-<h1>Originate call</h1>
-<form id="frm_orig">
-    <label for="chan">Channel :</label>
-    <!-- class="is|"$h_chan"|highlight" -->
-    <input name="chan" type="text" value="[[$f_chan]]"/><br />
+    <h1>Originate call</h1>
+    <form id="frm_originate" method="post">
 
-    <label for="exten">Extension :</label>
-    <!-- class="is|"$h_chan"|highlight" -->
-    <input name="exten" type="text" value="[[$f_exten]]"/><br />
+        <if type="perm" value="originate_from_other_ext">
+            <field name="ext" type="text" caption="Extension" placeholder="From (e.g. 100)" value="[[$ext]]" />
+        </if>
+        <field name="number" type="text" caption="Phone number" placeholder="To" value="[[$number]]" />
 
-    <label for="context">Context :<span class="small">"Default" if empty.</span></label>
-    <input name="context" type="text" value="[[$f_context]]"/><br />
+        <h2>Caller ID override</h2>
+        <field name="caller_num" type="text" caption="Number" placeholder="Default" value="[[$caller_num]]" />
+        <field name="caller_name" type="text" caption="Name" placeholder="Default" value="[[$caller_name]]" />
 
-    <div class="clear"><br /></div>
-    <h2>Outbound caller id</h2>
-
-    <label for="cid_name">Name :</label>
-    <input name="cid_name" type="text" value="[[$f_cid_name]]"/><br />
-
-    <label for="cid_num">Number :</label>
-    <input name="cid_num" type="text" value="[[$f_cid_num]]"/><br />
-
-    <div class="toolbar center v_spacing">
-        <ul>
-            <li><button type="submit" id="originate_btnok"><img src="images/blank.png" class="icon16-call" />Originate</button></li>
-            <li><a class="refresh" href="?path=Tools.tools.originate"><img src="images/blank.png" class="icon16-clear" />Clear</a></li>
-        </ul>
-    </div>
-
-    <div class="clear"><br /></div>
-</form>
+        <toolbar class="center v_spacing">
+            <item type="submit" icon="call">Call</item>
+            <item type="button" action="cancel" icon="cancel">Cancel</item>
+        </toolbar>
+    </form>
 </div>
+
+

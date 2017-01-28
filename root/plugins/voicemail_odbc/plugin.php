@@ -21,10 +21,14 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+define("PERM_VOICEMAIL", "voicemail");
+define("PERM_VOICEMAIL_ALL_USERS", "voicemail_all_users");
+
+
 class PluginVoicemailOdbc extends Plugin
 {
-    public $_dependencies = array();
-    public $_conflicts = array("voicemail");
+    public $dependencies = array();
+    public $conflicts = array("voicemail");
 
 
     /*--------------------------------------------------------------------------
@@ -36,13 +40,17 @@ class PluginVoicemailOdbc extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
-        $this->register_tab("on_show", "vm", null, "Voicemail", PERMISSION_LVL_USER);
+        $manager->register_tab($this, "on_show", "vm", null, "Voicemail", PERM_VOICEMAIL);
+
+        $manager->declare_permissions($this, array(
+            PERM_VOICEMAIL,
+            PERM_VOICEMAIL_ALL_USERS,
+        ));
 
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = '25';
-
     }
 
 
@@ -81,6 +89,9 @@ class PluginVoicemailOdbc extends Plugin
     {
         global $DB;
 
+        if (!(check_permission(PERM_VOICEMAIL)))
+            throw new Exception("You do not have the required permissions to access voicemail!");
+
         $folders = array(
             "inbox" => "Inbox",
             "old" => "Old",
@@ -91,7 +102,7 @@ class PluginVoicemailOdbc extends Plugin
 
 
         /* If current user has 'admin' or 'vm-admin' access, allow access other users mailbox */
-        if ($_SESSION["plevel"] >= PERMISSION_LVL_MANAGER) {
+        if (check_permission(PERM_VOICEMAIL_ALL_USERS)) {
 
             $vbox_user = isset($_GET["user"]) ? $_GET["user"] : $_SESSION["vbox_user"];
             $vbox_context = isset($_GET["context"]) ? $_GET["context"] : $_SESSION["vbox_context"];
@@ -120,7 +131,7 @@ class PluginVoicemailOdbc extends Plugin
         $query->orderby_desc("origtime");
 
 
-        $query->where("context", "=", $vbox_context);
+        $query->where("mailboxcontext", "=", $vbox_context);
         $query->where("mailboxuser", "=", $vbox_user);
         $query->where("dir", "LIKE", "%/$current_folder");
 
@@ -148,6 +159,9 @@ class PluginVoicemailOdbc extends Plugin
     function action_delete_message($template)
     {
         global $DB;
+
+        if (!(check_permission(PERM_VOICEMAIL)))
+            throw new Exception("You do not have the required permissions to access voicemail!");
 
         if (!isset($_GET["confirm"])) {
 
@@ -188,6 +202,9 @@ class PluginVoicemailOdbc extends Plugin
     function action_view_message($template)
     {
         global $DB;
+
+        if (!(check_permission(PERM_VOICEMAIL)))
+            throw new Exception("You do not have the required permissions to access voicemail!");
 
         try {
 
@@ -267,6 +284,11 @@ class PluginVoicemailOdbc extends Plugin
     {
 
         global $DB;
+
+        if (!(check_permission(PERM_VOICEMAIL)))
+            throw new Exception("You do not have the required permissions to access voicemail!");
+
+
         $query = $DB->create_query("voicemessages");
 
         $id = $_GET["id"];

@@ -20,6 +20,7 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     exit();
 }
 
+define("PERM_VIEW_STATUS_PANEL", "view_status_panel");
 
 class PluginStatusPanel extends Plugin
 {
@@ -33,7 +34,7 @@ class PluginStatusPanel extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
 
         if (!isset($_SESSION["statuspanel_widgets"]))
@@ -42,7 +43,11 @@ class PluginStatusPanel extends Plugin
         if (!isset($_SESSION["statuspanel_disk_info"]))
             $_SESSION["statuspanel_disk_info"] = "/;/var/log";
 
-        $this->register_tab("on_show", "status", null, "Status", PERMISSION_LVL_USER, 1);
+        $manager->register_tab($this, "on_show", "status", null, "Status", PERM_VIEW_STATUS_PANEL, 1);
+
+        $manager->declare_permissions($this, array(
+            PERM_VIEW_STATUS_PANEL
+        ));
     }
 
 

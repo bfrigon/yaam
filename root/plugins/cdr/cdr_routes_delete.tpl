@@ -1,4 +1,4 @@
-<div class="box dialog error">
+<div class="box dialog warning">
     <div>
         You are about to delete the following route(s) :
 

@@ -19,20 +19,17 @@ define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
 
-define("FORCE_RECOMPILE_TEMPLATE", true);
+define("FORCE_RECOMPILE_TEMPLATE", false);
 define("TEMPLATE_ENGINE_DEBUG", true);
 
-define("YAAM_VERSION", "0.2.305");
+define("YAAM_VERSION", "0.3.308");
 
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);
 define("DATE_FORMAT_DATETIME", 2);
 
-define("PERMISSION_LVL_ADMIN", 1000);
-define("PERMISSION_LVL_MANAGER", 500);
-define("PERMISSION_LVL_USER", 1);
-define("PERMISSION_LVL_DISABLED", 0);
-
+define("PERM_ADMIN", "admin");
+define("PERM_NONE", "");
 
 require(DOCUMENT_ROOT . "/include/class_odbc_exception.php");
 require(DOCUMENT_ROOT . "/include/class_http_exception.php");
@@ -57,27 +54,15 @@ function load_global_config()
 {
     global $CONFIG;
 
-    $default_cfg = array("general" => array(
-        "db_dsn" => "",
-        "db_user" => "",
-        "db_pass" => "",
-        "ami_host" => "localhost",
-        "ami_port" => 5038,
-        "ami_user" => "",
-        "ami_pass" => "",
-        "plugins" => ""
-    ));
-
     if (!file_exists(YAAM_CONFIG_FILE))
         throw new Exception("Configuration file " . YAAM_CONFIG_FILE . " does not exist.");
 
-    if (($config = parse_ini_file(YAAM_CONFIG_FILE, true)) === false)
+    if (($CONFIG = parse_ini_file(YAAM_CONFIG_FILE, true)) === false) {
         throw new Exception(
             "Can't open config file! (" . YAAM_CONFIG_FILE . "). \r\n
             Make sure the permissions are set correctly."
         );
-
-    $CONFIG = array_merge($default_cfg, $config);
+    }
 }
 
 
@@ -131,7 +116,7 @@ function load_user_config()
 
             /* Skip these config item as they are defined in the user table */
             case "pwhash":
-            case "plevel":
+            case "pgroups":
             case "user":
             case "dial_string":
             case "did":
@@ -185,7 +170,7 @@ function save_user_config()
 
             /* Skip these config item as they are defined in the user table */
             case "pwhash":
-            case "plevel":
+            case "pgroups":
             case "user":
             case "dial_string":
             case "fullname":
@@ -223,6 +208,29 @@ function save_user_config()
 
 
 /*--------------------------------------------------------------------------
+ * check_permission() : Check if the user has the required permissions
+ *
+ * Arguments
+ * ---------
+ *  req_perm : Required permissions
+ *
+ * Returns : True if user is allowed
+ */
+function check_permission($req_perm)
+{
+    /* No permissions are required */
+    if (empty($req_perm))
+        return true;
+
+    /* 'admin' user has access to everything */
+    if ($_SESSION["user"] == "admin")
+        return true;
+
+    return in_array($req_perm, $_SESSION["pgroups"]);
+}
+
+
+/*--------------------------------------------------------------------------
  * init_session() : Initialize session (load config, connect to database)
  *
  * Arguments
@@ -239,37 +247,11 @@ function init_session()
     load_global_config();
 
     /* Connect to the database */
-    $dsn = get_global_config_item("general", "db_dsn");
-    $user = get_global_config_item("general", "db_user");
-    $pwd = get_global_config_item("general", "db_pass");
+    $dsn = get_global_config_item("odbc", "database");
+    $user = get_global_config_item("odbc", "user");
+    $pwd = get_global_config_item("odbc", "secret");
+
     $DB = new ODBCDatabase($dsn, $user, $pwd);
-}
-
-
-/*--------------------------------------------------------------------------
- * get_url_contents() : Read the content of a remote url.
- *
- * Arguments :
- *  - $url     : Url to read
- *  - $agent   ; User agent string to send to the remote server
- *  - $timeout : Request timeout (default 5 sec.)
- *
- * Returns   : The contents of the url.
- */
-function get_url_contents($url, $agent=NULL, $timeout=5)
-{
-    $curl = curl_init();
-
-    if ($agent == NULL)
-        $agent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16";
-
-    curl_setopt($curl, CURLOPT_USERAGENT, $agent);
-    curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
-
-    return curl_exec($curl);
 }
 
 
@@ -333,7 +315,7 @@ function get_user_dateformat($type=null)
             switch ($type) {
                 case DATE_FORMAT_MYSQL:      return "%m/%d/%Y";
                 case DATE_FORMAT_DATEPICKER: return "M/D/YYYY";
-                case DATA_FORMAT_DATETIME:   return "%m/%d/%Y %R";
+                case DATE_FORMAT_DATETIME:   return "%m/%d/%Y %R";
             }
     }
 

@@ -21,6 +21,9 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+define("PERM_ORIGINATE_CALL", "originate_call");
+define("PERM_ORIGINATE_FROM_OTHER_EXT", "originate_from_other_ext");
+
 class PluginTools extends Plugin
 {
 
@@ -34,21 +37,27 @@ class PluginTools extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
 
-        $this->register_tab(null, "tools", null, "Tools", PERMISSION_LVL_USER, 200);
-        $this->register_tab("on_show_profile", "profile", "tools", "Edit profile", PERMISSION_LVL_USER);
-        $this->register_tab("on_show_originate", "originate", "tools", "Click-2-dial", PERMISSION_LVL_USER);
+        $manager->register_tab($this, null, "tools", null, "Tools", PERM_NONE, 200);
+        $manager->register_tab($this, "on_show_profile", "profile", "tools", "Edit profile", PERM_NONE);
+        $manager->register_tab($this, "on_show_originate", "originate", "tools", "Click-2-dial", PERM_ORIGINATE_CALL);
 
-        $this->register_action(
+        $manager->register_action(
+            $this,
             "phone_number_tools",
             "dial",
-            "tools.tools.originate",
+            "tools.originate",
             "Click to dial",
             "call",
             "Call this number",
-            PERMISION_LVL_USER);
+            PERM_ORIGINATE_CALL);
+
+        $manager->declare_permissions($this, array(
+            PERM_ORIGINATE_CALL,
+            PERM_ORIGINATE_FROM_OTHER_EXT,
+        ));
     }
 
 
@@ -113,6 +122,8 @@ class PluginTools extends Plugin
 
                 $query->run_query_update($user_data);
 
+                $_SESSION["fullname"] = $user_data["fullname"];
+
                 /* Save user config */
                 $_SESSION["date_format"] = $_POST["date_format"];
                 $_SESSION["ui_theme"] = $_POST["ui_theme"];
@@ -147,85 +158,36 @@ class PluginTools extends Plugin
      */
     function on_show_originate($template, $tab_path, $action)
     {
-
-
-
-        require($template->load("originate.tpl"));
-    }
-
-
-
-/*
-
-
-    function do_originate($template, $tab_path, $action, $uri)
-    {
-        global $CONFIG;
+        if (!(check_permission(PERM_ORIGINATE_CALL)))
+            throw new Exception("You do not have the required permissions to originate a call!");
 
         try {
 
-            $f_chan = isset($_POST['chan']) ? $_POST['chan'] : $_SESSION['user_chan'];
-            $f_exten = isset($_POST['exten']) ? $_POST['exten'] : "";
-            $f_context = isset($_POST['context']) ? $_POST['context'] : "";
-            $f_cid_num = isset($_POST['cid_num']) ? $_POST['cid_num'] : "";
-            $f_cid_name = isset($_POST['cid_name']) ? $_POST['cid_name'] : "";
-            $h_chan = false;
-            $h_exten = false;
+            $ext = (isset($_POST["ext"])) ? $_POST["ext"] : $_SESSION["extension"];
+            $number = (isset($_POST["number"])) ? $_POST["number"] : "";
+            $caller_num = (isset($_POST["caller_num"])) ? $_POST["caller_num"] : "";
+            $caller_name = (isset($_POST["caller_name"])) ? $_POST["caller_name"] : "";
 
-            if (!function_exists("ami_connect"))
-                throw new Exception("Extension php-ami is not installed");
+            if (isset($_GET["number"]) && empty($number))
+                $number = $_GET["number"];
 
-            if (count($_POST) > 0) {
 
-                if (empty($f_chan)) {
-                    $h_chan = true;
-                    throw new Exception('The destination channel is missing.');
-                }
+            if (isset($_POST["submit"])) {
 
-                if (empty($f_exten)) {
-                    $h_exten = true;
-                    throw new Exception('The destination extension is missing.');
+                if (!(check_permission(PERM_ORIGINATE_FROM_OTHER_EXT))
+                    && (intval($_SESSION["extension"]) != intval($ext))) {
+
+                    throw new exception("You do not have the required permissions to originate a call from another extension than your own!");
                 }
 
 
-                if (empty($context))
-                    $context = "default";
 
-                $cid = NULL;
-                $priority = "1";
-                $exten = $f_exten;
-                $context = $f_context;
-
-                if (!empty($f_cid_num) || !empty($f_cid_name))
-                    $cid = "$f_cid_name <$f_cid_num>";
-
-                if (strstr($exten, ",") != 0)
-                    list($exten, $priority) = explode(",", $f_exten, 2);
-
-                if (empty($context))
-                    $context = "default";
-
-
-
-                if (($conn = @ami_connect($CONFIG['ami_host'], $CONFIG['ami_user'], $CONFIG['ami_pass'], $CONFIG['ami_port'])) == NULL)
-                    throw new Exception("Cannot connect to the Asterisk manager interface.");
-
-                if (@ami_originate($conn, $f_chan, $context, $exten, $priority, true, $cid)) {
-
-                    $date = date(DATE_RFC2822);
-                    print_message("Originate call succeded.<br />\"$f_chan\" -> \"$context/$exten/$priority\" <br />at $date");
-
-                } else {
-                    throw new Exception("Originate call failed!<br />" . ami_lasterror());
-                }
             }
         } catch (Exception $e) {
 
             print_message($e->getmessage(), true);
         }
 
-        require($template->load('originate.tpl'));
+        require($template->load("originate.tpl"));
     }
-*/
-
 }

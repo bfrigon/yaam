@@ -47,7 +47,7 @@ class TemplateEngine
         if (is_null($plugin))
             $this->_template_dir = dirname(__FILE__) . "/../templates";
         else
-            $this->_template_dir = $plugin->PLUGIN_DIR;
+            $this->_template_dir = $plugin->dir;
 
         $this->_cache_dir = dirname(__FILE__) . "/../cache";
     }
@@ -582,15 +582,27 @@ class TemplateEngine
      *  - handle      : File handle to the template output.
      *  - data_type   : Type of the Current data source (odbc, dict).
      *  - data_source : Current data source object.
+     *  - close_tag   : If true, processes the child nodes and closes the if
+     *                  statement, otherwize, it leave it open.
      *
      * Returns : None
      */
-    private function process_tag_if($node_if, $handle, $data_type=null, $data_source=null)
+    private function process_tag_if($node_if, $handle, $data_type=null, $data_source=null, $close_tag=true)
     {
 
-        $type = strtolower($node_if->getAttribute("type"));
-        $name = $node_if->getAttribute("name");
-        $value = $this->get_attribute_shortcode($node_if, "value", "", $data_type, $data_source);
+
+        /* stand-alone if tag */
+        if ($node_if->nodeName == "if") {
+            $type = strtolower($node_if->getAttribute("type"));
+            $name = $node_if->getAttribute("name");
+            $value = $node_if->getAttribute("value");
+
+        /* if contained in another tag */
+        } else {
+            $type = strtolower($node_if->getAttribute("if"));
+            $name = $node_if->getAttribute("if-name");
+            $value = $node_if->getAttribute("if-value");
+        }
 
         /* Required attribute */
         if (empty($type))
@@ -602,25 +614,31 @@ class TemplateEngine
             /* Permission check */
             case "permission":
             case "perm":
-                fwrite($handle, "<?php if (\$_SESSION['plevel'] >= $value): ?>");
+                $op = ($node_if->hasAttribute("not") ? "!" : "");
+                fwrite($handle, "<?php if ({$op}check_permission(\"$value\")): ?>");
                 break;
 
             /* Check if variable Boolean */
             case "boolean":
             case "bool":
-                fwrite($handle, "<?php if (\$$name === true): ?>");
+                $op = ($node_if->hasAttribute("not") ? "false" : "true");
+
+                fwrite($handle, "<?php if (\$$name === $op): ?>");
                 break;
 
-            case "is":
+            case "string":
             default:
-                fwrite($handle, "<?php if (\$$name == '$value'): ?>");
+                $op = ($node_if->hasAttribute("not") ? "!=" : "==");
+
+                fwrite($handle, "<?php if (\$$name $op \"$value\"): ?>");
                 break;
+        }
 
-       }
+        if ($node_if->nodeName == "if" && $close_tag) {
+            $this->process_node($handle, $node_if, false, true, $data_type, $data_source);
 
-        $this->process_node($handle, $node_if, false, true, $data_type, $data_source);
-
-        fwrite($handle, "<?php endif; ?>");
+            fwrite($handle, "<?php endif; ?>");
+        }
     }
 
 
@@ -930,7 +948,7 @@ class TemplateEngine
         fwrite($handle, "<div class=\"clear\"></div>");
         fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><ul>");
 
-        $this->process_toolbar_items($node_tag, $handle, $data_type, $data_source);
+        $this->process_toolbar_tag_childs($node_tag, $handle, $data_type, $data_source);
 
         fwrite($handle, "</ul><div class=\"clear\"></div>");
         fwrite($handle, "</div><div class=\"clear\"></div>");
@@ -938,7 +956,7 @@ class TemplateEngine
 
 
     /*--------------------------------------------------------------------------
-     * process_toolbar_items() : Process nodes "item" in "toolbar" tag.
+     * process_toolbar_tag_childs() : Process child nodes of the "toolbar" tag.
      *
      * Arguments
      * ---------
@@ -949,283 +967,359 @@ class TemplateEngine
      *
      * Returns : None
      */
-    private function process_toolbar_items($node_list, $handle, $data_type=null, $data_source=null)
+    private function process_toolbar_tag_childs($node_list, $handle, $data_type=null, $data_source=null)
     {
 
         foreach ($node_list->childNodes as $node_item) {
 
 
-            if ($node_item->nodeName == "group") {
+            switch ($node_item->nodeName) {
+                case "group":
+                    $id = $node_item->getAttribute("id");
 
+                    fwrite($handle, "</ul><ul");
+
+                    if (!empty($id))
+                        fwrite($handle, " id=\"$id\"");
+
+                    fwrite($handle, ">");
+
+
+                    $this->process_toolbar_tag_childs($node_item, $handle, $data_type, $data_source);
+
+                    fwrite($handle, "</ul><ul>");
+                    break;
+
+                /* Allow if tags */
+                case "if":
+                    $this->process_tag_if($node_item, $handle, $data_type, $data_source, false);
+
+                    $this->process_toolbar_tag_childs($node_item, $handle, $data_type, $data_source);
+
+                    fwrite($handle, "<?php endif; ?>");
+                    break;
+
+                /* Allow action-list tags */
+                case "action-list":
+                case "action":
+                    $this->process_tag_action_list($node_item, $handle, $data_type, $data_source);
+                    break;
+
+                /* Toolbar item */
+                case "item":
+                    $this->process_toolbar_items($node_item, $handle, $data_type, $data_source);
+                    break;
+            }
+        }
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_toolbar_items() : Process "item" inside "toolbar" tags.
+     *
+     * Arguments
+     * ---------
+     *  - node_list   : The node containing "item" tags.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_toolbar_items($node_item, $handle, $data_type=null, $data_source=null)
+    {
+        $item_type = $node_item->getAttribute("type");
+        switch ($item_type) {
+
+            // -----------------------------------------------
+            //  Buttons
+            // -----------------------------------------------
+            case "button":
+                $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
+
+                fwrite($handle, "<li class=\"$li_class\">");
+
+                $this->process_tag_icon($node_item, $handle, $data_type, $data_source);
+
+                fwrite($handle, "</li>\r\n");
+                break;
+
+            // -----------------------------------------------
+            //  Submit button
+            // -----------------------------------------------
+            case "submit":
+                $icon = $node_item->getAttribute("icon");
                 $id = $node_item->getAttribute("id");
+                $name = $node_item->getAttribute("name");
+                $value = $node_item->getAttribute("value");
+                $action = $node_item->getAttribute("action");
+                $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
+                $caption = $this->process_shortcode($node_item->textContent, $data_type, $data_source);
 
-                fwrite($handle, "</ul><ul");
+                $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
+                $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
+
+
+                fwrite($handle, "<li class=\"$li_class\">\n");
+                fwrite($handle, "<button class=\"$btn_class\" type=\"submit\"");
 
                 if (!empty($id))
                     fwrite($handle, " id=\"$id\"");
 
-                fwrite($handle, ">");
+                if (!empty($name)) {
+                    fwrite($handle, " name=\"$name\" value=\"$value\"");
+
+                } else if (!empty($action)) {
+                    fwrite($handle, " name=\"action\" value=\"$action\"");
+                }
+
+                if (!empty($title))
+                    fwrite($handle, " title=\"$title\"");
+
+                fwrite($handle, ">\n");
 
 
-                $this->process_toolbar_items($node_item, $handle, $data_type, $data_source);
+                if (!empty($icon)) {
 
-                fwrite($handle, "</ul><ul>");
-            }
+                    $icon_class = $node_item->getAttribute("icon-class");
+                    if (empty($icon_class))
+                        $icon_class = "icon16";
+
+                    fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
+                }
+
+                fwrite($handle, $caption);
+                fwrite($handle, "</button></li>\n");
+
+                break;
+
+            // -----------------------------------------------
+            //  text box
+            // -----------------------------------------------
+            case "text":
+            case "date":
+                $name = $node_item->getAttribute("name");
+                $id = $node_item->getAttribute("id");
+                $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
+                $placeholder = $this->get_attribute_shortcode($node_item, "placeholder", "", $data_type, $data_source);
+
+                fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
+
+                if ($item_type == "date")
+                    fwrite($handle, " class=\"dateinput\"");
+
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id\"");
+
+                if (!empty($placeholder))
+                    fwrite($handle, " placeholder=\"$placeholder\"");
+
+                if (!empty($title))
+                    fwrite($handle, " title=\"$title\"");
+
+                if ($node_item->hasAttribute("value")) {
+                    $value = $this->get_attribute_shortcode($node_item, "value", "", $data_type, $data_source);
+                    fwrite($handle, " value=\"$value\"");
+
+                } else {
+                    fwrite($handle, " value=\"<?php echo isset(\$_REQUEST['$name']) ? \$_REQUEST['$name'] : ''; ?>\"");
+                }
+
+                if ($node_item->hasAttribute("width"))
+                    fwrite($handle, " style=\"width: " . $node_item->getAttribute("width") . ";\"");
+
+                fwrite($handle, " /></li>\n");
+                break;
+
+            // -----------------------------------------------
+            //  separator
+            // -----------------------------------------------
+            case "separator":
+                fwrite($handle, "<li class=\"separator\"></li>");
+                break;
+
+            // -----------------------------------------------
+            //  label
+            // -----------------------------------------------
+            case "label":
+                fwrite($handle, "<li class=\"text\">");
+                $this->process_node($handle, $node_item, false, true);
+
+                fwrite($handle, "</li>");
+                break;
+
+            // -----------------------------------------------
+            //  Dropdown page list
+            // -----------------------------------------------
+            case "page-list":
+                $var_counter = $this->get_unique_varname();
+
+                $range = max(intval($node_item->getAttribute("range")), 1);
+                $prefix = $node_item->getAttribute("prefix");
+                $suffix = $node_item->getAttribute("suffix");
+
+                $params = array("page" => "$var_counter");
+                $href = $this->func_build_tab_url($params, true);
+
+                fwrite($handle, "<li class=\"dropdown\">\n");
+                fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\n");
+                fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
+
+                fwrite($handle, "<ul>\n");
+                fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\n");
+                fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\n");
+                fwrite($handle, "<?php } ?>\n");
+                fwrite($handle, "</ul></li>\n");
+                break;
+
+            // -----------------------------------------------
+            //  Dropdown list
+            // -----------------------------------------------
+            case "list":
+                $node_caption = $node_item->getElementsByTagName("caption")->item(0);
+                $icon = $node_item->getAttribute("icon");
+                $caption =!empty($node_caption) ? $node_caption->textContent : "";
+
+                $a_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
 
 
-            /* Ignore other tags */
-            if ($node_item->nodeName != "item")
-                continue;
+                fwrite($handle, "<li class=\"dropdown\" ");
+
+                if ($node_item->hasAttribute("width"))
+                    fwrite($handle, "style=\"width: " . $node_item->getAttribute('width') . ";\"");
+
+                fwrite($handle, ">\r\n<a href=\"#\" tabindex=\"1\" class=\"$a_class\">");
+
+                if (!empty($icon)) {
+
+                    $icon_class = $node_item->getAttribute("icon-class");
+                    if (empty($icon_class))
+                        $icon_class = "icon16";
+
+                    fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
+                }
+
+                fwrite($handle, $this->process_shortcode($caption));
+                fwrite($handle, "</a>\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
+
+                fwrite($handle, "<ul>\n");
 
 
-            $item_type = $node_item->getAttribute("type");
-            switch ($item_type) {
+                $node_row = $node_item->getElementsByTagName("row")->item(0);
+                $node_ifempty = $node_item->getElementsByTagName("if-empty")->item(0);
+                $data_source = $node_item->getAttribute("data-source");
+                $data_type = strtolower($node_item->getAttribute("data-type"));
 
-                // -----------------------------------------------
-                //  Buttons
-                // -----------------------------------------------
-                case "button":
-                    $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
+                if (!empty($node_row) && !empty($data_source)) {
 
-                    fwrite($handle, "<li class=\"$li_class\">");
-
-                    $this->process_tag_icon($node_item, $handle, $data_type, $data_source);
-
-                    fwrite($handle, "</li>\r\n");
-                    break;
-
-                // -----------------------------------------------
-                //  Submit button
-                // -----------------------------------------------
-                case "submit":
-                    $icon = $node_item->getAttribute("icon");
-                    $id = $node_item->getAttribute("id");
-                    $name = $node_item->getAttribute("name");
-                    $value = $node_item->getAttribute("value");
-                    $action = $node_item->getAttribute("action");
-                    $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
-                    $caption = $this->process_shortcode($node_item->textContent, $data_type, $data_source);
-
-                    $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
-                    $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
-
-
-                    fwrite($handle, "<li class=\"$li_class\">\n");
-                    fwrite($handle, "<button class=\"$btn_class\" type=\"submit\"");
-
-                    if (!empty($id))
-                        fwrite($handle, " id=\"$id\"");
-
-                    if (!empty($name)) {
-                        fwrite($handle, " name=\"$name\" value=\"$value\"");
-
-                    } else if (!empty($action)) {
-                        fwrite($handle, " name=\"action\" value=\"$action\"");
+                    if (!empty($node_ifempty)) {
+                        fwrite($handle, "<?php if (empty(\$$data_source)): ?>\n");
+                        $this->process_toolbar_tag_childs($node_ifempty, $handle);
+                        fwrite($handle, "<?php else: ?>\n");
                     }
 
-                    if (!empty($title))
-                        fwrite($handle, " title=\"$title\"");
+                    if ($data_source[0] != "$")
+                        $data_source = "\$$data_source";
 
-                    fwrite($handle, ">\n");
+                    switch ($data_type) {
 
+                        /* hashtable array */
+                        case "dict":
+                            $var_value = $this->get_unique_varname();
+                            $var_key = $this->get_unique_varname();
 
-                    if (!empty($icon)) {
+                            fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n");
 
-                        $icon_class = $node_item->getAttribute("icon-class");
-                        if (empty($icon_class))
-                            $icon_class = "icon16";
+                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
 
-                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
+                            fwrite($handle, "<?php endforeach; ?>\n");
+                            break;
+
+                        /* ODBC query result */
+                        case "odbc":
+
+                            fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
+
+                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, $data_source);
+
+                            fwrite($handle, "<?php endwhile; ?>\n");
+
+                            break;
+
+                        /* Ordinary array */
+                        case "array":
+                            $var_value = $this->get_unique_varname();
+                            fwrite($handle, "<?php foreach($data_source as $var_value): ?>\n");
+
+                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, array($data_source, $var_value));
+
+                            fwrite($handle, "<?php endforeach; ?>\n");
+                            break;
+
+                        /* Invalid data type */
+                        default:
+                            break;
+
                     }
 
-                    fwrite($handle, $caption);
-                    fwrite($handle, "</button></li>\n");
+                    if (!empty($node_empty))
+                        fwrite($handle, "<?php endif; ?>\n");
 
-                    break;
+                } else if (empty($node_row)) {
 
-                // -----------------------------------------------
-                //  text box
-                // -----------------------------------------------
-                case "text":
-                case "date":
-                    $name = $node_item->getAttribute("name");
-                    $id = $node_item->getAttribute("id");
-                    $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
-                    $placeholder = $this->get_attribute_shortcode($node_item, "placeholder", "", $data_type, $data_source);
+                    $this->process_toolbar_tag_childs($node_item, $handle);
+                }
 
-                    fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
-
-                    if ($item_type == "date")
-                        fwrite($handle, " class=\"dateinput\"");
-
-                    if (!empty($id))
-                        fwrite($handle, " id=\"$id\"");
-
-                    if (!empty($placeholder))
-                        fwrite($handle, " placeholder=\"$placeholder\"");
-
-                    if (!empty($title))
-                        fwrite($handle, " title=\"$title\"");
-
-                    if ($node_item->hasAttribute("value")) {
-                        $value = $this->get_attribute_shortcode($node_item, "value", "", $data_type, $data_source);
-                        fwrite($handle, " value=\"$value\"");
-
-                    } else {
-                        fwrite($handle, " value=\"<?php echo isset(\$_REQUEST['$name']) ? \$_REQUEST['$name'] : ''; ?>\"");
-                    }
-
-                    if ($node_item->hasAttribute("width"))
-                        fwrite($handle, " style=\"width: " . $node_item->getAttribute("width") . ";\"");
-
-                    fwrite($handle, " /></li>\n");
-                    break;
-
-                // -----------------------------------------------
-                //  separator
-                // -----------------------------------------------
-                case "separator":
-                    fwrite($handle, "<li class=\"separator\"></li>");
-                    break;
-
-                // -----------------------------------------------
-                //  label
-                // -----------------------------------------------
-                case "label":
-                    fwrite($handle, "<li class=\"text\">");
-                    $this->process_node($handle, $node_item, false, true);
-
-                    fwrite($handle, "</li>");
-                    break;
-
-                // -----------------------------------------------
-                //  Dropdown page list
-                // -----------------------------------------------
-                case "page-list":
-                    $var_counter = $this->get_unique_varname();
-
-                    $range = max(intval($node_item->getAttribute("range")), 1);
-                    $prefix = $node_item->getAttribute("prefix");
-                    $suffix = $node_item->getAttribute("suffix");
-
-                    $params = array("page" => "$var_counter");
-                    $href = $this->func_build_tab_url($params, true);
-
-                    fwrite($handle, "<li class=\"dropdown\">\n");
-                    fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\n");
-                    fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
-
-                    fwrite($handle, "<ul>\n");
-                    fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\n");
-                    fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\n");
-                    fwrite($handle, "<?php } ?>\n");
-                    fwrite($handle, "</ul></li>\n");
-                    break;
-
-                // -----------------------------------------------
-                //  Dropdown list
-                // -----------------------------------------------
-                case "list":
-                    $node_caption = $node_item->getElementsByTagName("caption")->item(0);
-                    $icon = $node_item->getAttribute("icon");
-                    $caption =!empty($node_caption) ? $node_caption->textContent : "";
-
-                    $a_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
-
-
-                    fwrite($handle, "<li class=\"dropdown\" ");
-
-                    if ($node_item->hasAttribute("width"))
-                        fwrite($handle, "style=\"width: " . $node_item->getAttribute('width') . ";\"");
-
-                    fwrite($handle, ">\r\n<a href=\"#\" tabindex=\"1\" class=\"$a_class\">");
-
-                    if (!empty($icon)) {
-
-                        $icon_class = $node_item->getAttribute("icon-class");
-                        if (empty($icon_class))
-                            $icon_class = "icon16";
-
-                        fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
-                    }
-
-                    fwrite($handle, $this->process_shortcode($caption));
-                    fwrite($handle, "</a>\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
-
-                    fwrite($handle, "<ul>\n");
-
-
-                    $node_row = $node_item->getElementsByTagName("row")->item(0);
-                    $node_ifempty = $node_item->getElementsByTagName("if-empty")->item(0);
-                    $data_source = $node_item->getAttribute("data-source");
-                    $data_type = strtolower($node_item->getAttribute("data-type"));
-
-                    if (!empty($node_row) && !empty($data_source)) {
-
-                        if (!empty($node_ifempty)) {
-                            fwrite($handle, "<?php if (empty(\$$data_source)): ?>\n");
-                            $this->process_toolbar_items($node_ifempty, $handle);
-                            fwrite($handle, "<?php else: ?>\n");
-                        }
-
-                        if ($data_source[0] != "$")
-                            $data_source = "\$$data_source";
-
-                        switch ($data_type) {
-
-                            /* hashtable array */
-                            case "dict":
-                                $var_value = $this->get_unique_varname();
-                                $var_key = $this->get_unique_varname();
-
-                                fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n");
-
-                                $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
-
-                                fwrite($handle, "<?php endforeach; ?>\n");
-                                break;
-
-                            /* ODBC query result */
-                            case "odbc":
-
-                                fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
-
-                                $this->process_toolbar_items($node_row, $handle, $data_type, $data_source);
-
-                                fwrite($handle, "<?php endwhile; ?>\n");
-
-                                break;
-
-                            /* Ordinary array */
-                            case "array":
-                                $var_value = $this->get_unique_varname();
-                                fwrite($handle, "<?php foreach($data_source as $var_value): ?>\n");
-
-                                $this->process_toolbar_items($node_row, $handle, $data_type, array($data_source, $var_value));
-
-                                fwrite($handle, "<?php endforeach; ?>\n");
-                                break;
-
-                            /* Invalid data type */
-                            default:
-                                break;
-
-                        }
-
-                        if (!empty($node_empty))
-                            fwrite($handle, "<?php endif; ?>\n");
-
-                    } else if (empty($node_row)) {
-
-                        $this->process_toolbar_items($node_item, $handle);
-                    }
-
-                    fwrite($handle, "</ul></li>\n");
-                    break;
-            }
+                fwrite($handle, "</ul></li>\n");
+                break;
         }
 
         fwrite($handle, "\n");
+    }
+
+
+
+
+
+    private function process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col=null)
+    {
+        $cell_type = ($node_row->nodeName == "row") ? "td" : "th";
+
+        if (!(is_null($var_hidden_col)))
+            fwrite($handle, "<?php $var_hidden_col=0; ?>");
+
+        $columns = $node_row->childNodes;
+        foreach ($columns as $node_column) {
+
+            $style = $node_column->getAttribute("style");
+            $type = $node_column->getAttribute("type");
+
+            if ($node_column->hasAttribute("if"))
+                $this->process_tag_if($node_column, $handle, $data_type, $data_source);
+
+
+            fwrite($handle, "<$cell_type style=\"$style\"");
+
+            if (!empty($type))
+                fwrite($handle, " class=\"column-$type\"");
+
+            fwrite($handle, ">");
+
+            $this->process_node($handle, $node_column, false, true, $data_type, $data_source);
+
+            fwrite($handle, "</$cell_type>\n");
+
+
+            if ($node_column->hasAttribute("if")) {
+
+                if (is_null($var_hidden_col))
+                    fwrite($handle, "<?php endif; ?>");
+                else
+                    fwrite($handle, "<?php else: $var_hidden_col++; endif; ?>");
+            }
+        }
+
+        return $columns->length;
     }
 
 
@@ -1265,6 +1359,9 @@ class TemplateEngine
         if (empty($data_type))
             $this->throw_compile_exception($node_tag, "The tag 'grid' requires a 'data-type' attribute.");
 
+        if (substr($data_source, 0, 1) != "$")
+            $data_source = "\$$data_source";
+
         fwrite($handle, "<table id=\"\" class=\"grid $class\">\n");
 
         /* Generate caption tag */
@@ -1274,31 +1371,23 @@ class TemplateEngine
             fwrite($handle, "</caption>\n");
         }
 
-        $var_count = $this->get_unique_varname();
-        fwrite($handle, "<?php $var_count=0 ?>");
+        $var_row_count = $this->get_unique_varname();
+        $var_hidden_col = $this->get_unique_varname();
+
+        fwrite($handle, "<?php $var_row_count=0; ?>");
+
 
         /* Generate grid header if present */
         if (!empty($node_header)) {
             fwrite($handle, "<thead><tr>");
 
-            foreach ($node_header->getElementsByTagName("column") as $node_column) {
-                $style = $node_column->getAttribute("style");
-                $type = $node_column->getAttribute("type");
-
-                fwrite($handle, "<th style=\"$style\" class=\"column-$type\">");
-
-                $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
-
-                fwrite($handle, "</th>\n");
-            }
+            $this->process_tag_grid_row($node_header, $handle, $data_type, $data_source, $var_hidden_col);
 
             fwrite($handle, "</tr></thead>\n");
         }
 
         fwrite($handle, "<tbody>");
 
-        if (substr($data_source, 0, 1) != "$")
-            $data_source = "\$$data_source";
 
         /* Insert rows iteration code */
         switch ($data_type) {
@@ -1312,54 +1401,39 @@ class TemplateEngine
                 break;
         }
 
+
         /* Insert grid rows */
-        fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
+        fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
 
-        $columns = $node_row->getElementsByTagName("column");
-        $num_columns = $columns->length;
-
-
-        foreach ($columns as $node_column) {
-            fwrite($handle, "<td");
-
-            $type = $node_column->getAttribute("type");
-            if (!empty($type))
-                fwrite($handle, " class=\"column-$type\"");
-
-            $style = $node_column->getAttribute("style");
-            if (!empty($style))
-                fwrite($handle, " style=\"$style\"");
-
-            fwrite($handle, ">");
-
-            $this->process_node($handle, $node_column, false, true, $data_type, $data_source);
-            fwrite($handle, "</td>");
-
-        } while(($node_column = $node_column->nextSibling) != null);
+        $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col);
 
         fwrite($handle, "</tr>");
 
         switch ($data_type) {
             case "odbc":
-                fwrite($handle, "<?php $var_count++; endwhile; ?>");
+                fwrite($handle, "<?php $var_row_count++; endwhile; ?>");
                 break;
         }
 
+
+        /* Insert if-empty row */
         if (!empty($node_empty)) {
-            fwrite($handle, "<?php if ($var_count==0):?>");
-            fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
-            fwrite($handle, "<td colspan=\"$num_columns\">");
+            fwrite($handle, "<?php if ($var_row_count==0):?>");
+            fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<td colspan=\"<?php echo ($num_columns-$var_hidden_col) ?>  \">");
 
             $this->process_node($handle, $node_empty, false, false);
 
-            fwrite($handle, "</td>\n</tr>\n<?php $var_count++; endif; ?>\n");
+            fwrite($handle, "</td>\n</tr>\n<?php $var_row_count++; endif; ?>\n");
         }
 
+
+        /* Insert row filler code */
         if ($min_rows) {
-            fwrite($handle, "<?php while($var_count < $min_rows): ?>");
-            fwrite($handle, "<tr class=\"<?php echo !($var_count & 1) ? '':'alt' ?>\">");
-            fwrite($handle, str_repeat("<td>&nbsp;</td>", $num_columns));
-            fwrite($handle, "</tr><?php $var_count++; endwhile; ?>");
+            fwrite($handle, "<?php while($var_row_count < $min_rows): ?>");
+            fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<?php echo str_repeat('<td>&nbsp;</td>', ($num_columns-$var_hidden_col)) ?>");
+            fwrite($handle, "</tr><?php $var_row_count++; endwhile; ?>");
         }
 
         fwrite($handle, "</tbody>");
@@ -1369,16 +1443,7 @@ class TemplateEngine
         if (!empty($node_footer)) {
             fwrite($handle, "<tfoot><tr>\n");
 
-            foreach ($node_footer->getElementsByTagName("column") as $node_column) {
-                $style = $node_column->getAttribute("style");
-                $type = $node_column->getAttribute("type");
-
-                fwrite($handle, "<th style=\"$style\" class=\"column-$type\">");
-
-                $this->process_node($handle, $node_column, false, false, $data_type, $data_source);
-
-                fwrite($handle, "</th>\n");
-            }
+            $this->process_tag_grid_row($node_footer, $handle, $data_type, $data_source);
 
             fwrite($handle, "</tr></tfoot>\n");
         }

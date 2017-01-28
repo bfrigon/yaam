@@ -6,14 +6,14 @@
         <item type="submit" icon="search" title="Search user"></item>
         <item type="button" action="clear" icon="clear" title="Clear search query"></item>
 
-        <item type="separator" />
-
-        <item type="button" action="add" icon="useradd" title="Add a new user">New</item>
-        <item type="submit" action="delete" icon="userdelete" title="Delete selected user(s)">Delete</item>
-
-        <item type="separator"></item>
+        <if type="perm" value="user_write">
+            <item type="separator" />
+            <item type="button" action="add" icon="useradd" title="Add a new user">New</item>
+            <item type="submit" action="delete" icon="userdelete" title="Delete selected user(s)">Delete</item>
+        </if>
 
         <!-- Navigation buttons -->
+        <item type="separator"></item>
         <item type="button" action="first-page" icon="first" title="Goto first page" />
         <item type="button" action="prev-page" icon="prev" title="Goto previous page" />
         <item type="page-list" prefix="Page " range="5" />
@@ -29,7 +29,6 @@
             <column style="width: 80px">Extension</column>
             <column style="width: 110px">DID</column>
             <column style="width: 110px">Voicemail box</column>
-            <column style="width: 130px">Permissions</column>
             <column style="width: 80px" type="actions"></column>
         </header>
 
@@ -40,10 +39,14 @@
             <column>[[extension]]</column>
             <column>[[did | format_phone]]</column>
             <column>[[vbox_context]] @ [[vbox_user]]</column>
-            <column>[[plevel]]</column>
             <column type="actions">
-                <icon action="edit" icon="edit" title="Edit user profile" params="user=[[user]]" />
-                <icon action="delete" icon="delete" title="Delete user" params="user=[[user]]" />
+                <if type="perm" value="user_write">
+                    <icon action="edit" icon="edit" title="Edit user profile" params="user=[[user]]" />
+                    <icon action="delete" icon="delete" title="Delete user" params="user=[[user]]" />
+                </if>
+                <if type="perm" not value="user_write">
+                    <icon action="view" icon="folder" title="View user profile" params="user=[[user]]" />
+                </if>
             </column>
         </row>
 

@@ -7,14 +7,14 @@
         <item type="submit" icon="search" title="Search"></item>
         <item type="button" action="clear" icon="clear" title="Clear filters"></item>
 
-        <item type="separator" />
-
-        <item type="button" action="add" icon="add" title="Add a call route">New</item>
-        <item type="submit" action="delete" icon="delete" title="Delete selected call route(s)">Delete</item>
-
-        <item type="separator" />
+        <if type="perm" value="cdr_write_routes">
+            <item type="separator" />
+            <item type="button" action="add" icon="add" title="Add a call route">New</item>
+            <item type="submit" action="delete" icon="delete" title="Delete selected call route(s)">Delete</item>
+        </if>
 
         <!-- Navigation buttons -->
+        <item type="separator" />
         <item type="button" action="first-page" icon="first" title="Goto first page" />
         <item type="button" action="prev-page" icon="prev" title="Goto previous page" />
         <item type="page-list" prefix="Page " range="5" />
@@ -39,10 +39,11 @@
             <column>[[cost|format_money:%.4i]] $</column>
             <column>[[min]]</column>
             <column>[[increment]]</column>
-
             <column type="actions">
-                <icon action="edit" icon="edit" title="Edit call route" params="id=[[id]]" />
-                <icon action="delete" icon="delete" title="Delete call route" params="id=[[id]]" />
+                <if type="perm" value="cdr_write_routes">
+                    <icon action="edit" icon="edit" title="Edit call route" params="id=[[id]]" />
+                    <icon action="delete" icon="delete" title="Delete call route" params="id=[[id]]" />
+                </if>
             </column>
         </row>
     </datagrid>

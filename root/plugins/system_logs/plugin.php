@@ -21,6 +21,8 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+define("PERM_LOGS_VIEW", "logs_view");
+
 class PluginSystemLogs extends Plugin
 {
     /*--------------------------------------------------------------------------
@@ -32,15 +34,18 @@ class PluginSystemLogs extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
+        $manager->register_tab($this, null, "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
+        $manager->register_tab($this, "on_show", "ast", "logs", "Asterisk server", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show", "sys", "logs", "System (syslog)", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show", "kern", "logs", "Kernel", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show", "dmesg", "logs", "Boot log", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show", "auth", "logs", "Authentication", PERM_LOGS_VIEW);
 
-        $this->register_tab(null, "logs", NULL, "System logs", PERMISSION_LVL_ADMIN,2);
-        $this->register_tab("on_show", "ast", "logs", "Asterisk server", PERMISSION_LVL_ADMIN);
-        $this->register_tab("on_show", "sys", "logs", "System (syslog)", PERMISSION_LVL_ADMIN);
-        $this->register_tab("on_show", "kern", "logs", "Kernel", PERMISSION_LVL_ADMIN);
-        $this->register_tab("on_show", "dmesg", "logs", "Boot log", PERMISSION_LVL_ADMIN);
-        $this->register_tab("on_show", "auth", "logs", "Authentication", PERMISSION_LVL_ADMIN);
+        $manager->declare_permissions($this, array(
+            PERM_LOGS_VIEW
+        ));
     }
 
 
@@ -57,6 +62,9 @@ class PluginSystemLogs extends Plugin
      */
     function on_show($template, $tab_path, $action)
     {
+        if (!(check_permission(PERM_LOGS_VIEW)))
+            throw new Exception("You do not have the permissions to view the logs!");
+
         $log_basename = preg_replace("_.*/_", "", isset($_REQUEST["file"]) ? $_REQUEST["file"] : "");
 
         switch ($tab_path) {

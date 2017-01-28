@@ -30,13 +30,9 @@ try
     /* Load config, connect to database */
     init_session();
 
-    /* Load plugins */
+    /* Load all plugins */
     $PLUGINS = new PluginManager();
-    $plugin_list = explode(";", $CONFIG["general"]["plugins"]);
-
-    foreach($plugin_list as $name)
-        $PLUGINS->load($name);
-
+    $PLUGINS->load();
     $PLUGINS->sort_tabs();
 
 
@@ -125,7 +121,7 @@ try
         <div id="userinfo">
             Logged as: <?=$_SESSION['user']?>&nbsp;
             (<span id="userinfo_fullname"><?=$_SESSION['fullname']?></span>)&nbsp;-&nbsp;
-            <a href="?path=Tools.tools.profile">Edit profile</a>&nbsp;|&nbsp;
+            <a href="?path=tools.tools.profile">Edit profile</a>&nbsp;|&nbsp;
             <a href="login.php?logout=true">Logout</a>
         </div>
         <div class="clear"></div>

@@ -20,11 +20,15 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     exit();
 }
 
+define("PERM_CDR_VIEW", "cdr_view");
+define("PERM_CDR_VIEW_ALL_USERS", "cdr_view_all_users");
+define("PERM_CDR_READ_ROUTES", "cdr_read_routes");
+define("PERM_CDR_WRITE_ROUTES", "cdr_write_routes");
+
 
 class PluginCdr extends Plugin
 {
-    public $_dependencies = array("Tools");
-
+    public $dependencies = array("tools");
 
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
@@ -35,13 +39,20 @@ class PluginCdr extends Plugin
      *
      * Return : None
      */
-    function on_load()
+    function on_load(&$manager)
     {
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = "25";
 
-        $this->register_tab("on_show_cdr", "cdr", null, "Call log", PERMISSION_LVL_USER);
-        $this->register_tab("on_show_routes", "cdr_routes", "tools", "Call routes", PERMISSION_LVL_ADMIN);
+        $manager->register_tab($this, "on_show_cdr", "cdr", null, "Call log", PERM_CDR_VIEW);
+        $manager->register_tab($this, "on_show_routes", "cdr_routes", "tools", "Call routes", PERM_CDR_READ_ROUTES);
+
+        $manager->declare_permissions($this, array(
+            PERM_CDR_VIEW,
+            PERM_CDR_VIEW_ALL_USERS,
+            PERM_CDR_READ_ROUTES,
+            PERM_CDR_WRITE_ROUTES,
+        ));
     }
 
 
@@ -60,6 +71,9 @@ class PluginCdr extends Plugin
     {
         global $DB;
 
+        if (!(check_permission(PERM_CDR_VIEW)))
+            throw new Exception("You do not have the required permissions to view the CDR!");
+
         $query = $DB->create_query("cdr");
 
         $query->orderby_desc("calldate");
@@ -68,8 +82,8 @@ class PluginCdr extends Plugin
         if (!get_global_config_item("cdr", "unanswered_calls", False))
             $query->where("disposition", "=", "answered");
 
-        /* If user don't have manager permissions, restrict the CDR result to the user extension */
-        if (($_SESSION["plevel"]) < PERMISSION_LVL_MANAGER) {
+        /* If user don't have permissions to view other user's cdr records, restrict the result to the user extension */
+        if (!(check_permission(PERM_CDR_VIEW_ALL_USERS))) {
 
             $user_ext = $_SESSION["extension"];
             $user_did = $_SESSION["did"];
@@ -203,6 +217,9 @@ class PluginCdr extends Plugin
 
             default:
 
+                if (!(check_permission(PERM_CDR_READ_ROUTES)))
+                    throw new Exception("You do not have the required permissions to view call routes!");
+
                 $query = $DB->create_query("cdr_routes");
 
                 /* Set search filters */
@@ -252,6 +269,10 @@ class PluginCdr extends Plugin
     {
         global $DB;
 
+        if (!(check_permission(PERM_CDR_WRITE_ROUTE)))
+            throw new Exception("You do not have the required permissions to add/edit call routes!");
+
+
         try {
             $query = $DB->create_query("cdr_routes");
 
@@ -285,6 +306,8 @@ class PluginCdr extends Plugin
 
                 $res = $query->run_query_select("*");
                 $rte_data = odbc_fetch_array($res);
+
+                odbc_free_result($res);
             }
 
         } catch (Exception $e) {
@@ -308,38 +331,49 @@ class PluginCdr extends Plugin
     function action_delete_route($template)
     {
         global $DB;
-        $query = $DB->create_query("cdr_routes");
 
-        $id = $_GET["id"];
+        try {
 
-        if (!isset($id)) {
-            $message = "You did not select any routes to delete.";
-            $url_ok = $this->get_tab_referrer();
+            if (!(check_permission(PERM_CDR_WRITE_ROUTE)))
+                throw new Exception("You do not have the required permissions to delete call routes!");
 
-            require($template->load("dialog_message.tpl", true));
-            return;
-        }
+            $query = $DB->create_query("cdr_routes");
 
-        if (is_array($id)) {
-            $query->where_in("id", $id);
-        } else {
-            $query->where("id", "=", $id);
-        }
+            $id = $_GET["id"];
 
-        if (isset($_GET["confirm"])) {
-            $query->run_query_delete();
+            if (!isset($id)) {
+                $message = "You did not select any routes to delete.";
+                $url_ok = $this->get_tab_referrer();
 
-            /* Redirect to the previous location */
-            $this->redirect($this->get_tab_referrer());
-            return;
+                require($template->load("dialog_message.tpl", true));
+                return;
+            }
 
-        } else {
+            if (is_array($id)) {
+                $query->where_in("id", $id);
+            } else {
+                $query->where("id", "=", $id);
+            }
+
+            if (isset($_GET["confirm"])) {
+                $query->run_query_delete();
+
+                /* Redirect to the previous location */
+                $this->redirect($this->get_tab_referrer());
+                return;
+
+            }
 
             $results = $query->run_query_select("name");
 
             require($template->load("cdr_routes_delete.tpl"));
 
             odbc_free_result($results);
+
+        } catch (Exception $e) {
+
+            print_message($e->getmessage(), true);
+
         }
     }
 }

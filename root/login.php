@@ -57,12 +57,14 @@ try {
         $_SESSION["logged"] = true;
         $_SESSION["pwhash"] = odbc_result($result, "pwhash");
         $_SESSION["fullname"] = odbc_result($result, "fullname");
-        $_SESSION["plevel"] = intval(odbc_result($result, "plevel"));
         $_SESSION["vbox_context"] = odbc_result($result, "vbox_context");
         $_SESSION["vbox_user"] = odbc_result($result, "vbox_user");
         $_SESSION["dial_string"] = odbc_result($result, "dial_string");
         $_SESSION["did"] = odbc_result($result, "did");
         $_SESSION["extension"] = odbc_result($result, "extension");
+
+        $pgroups = strtolower(odbc_result($result, "pgroups"));
+        $_SESSION["pgroups"] = array_map("trim", explode(",", $pgroups));
 
         /* Read user configuration data from user_config table */
         load_user_config();
