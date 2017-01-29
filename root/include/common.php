@@ -19,16 +19,15 @@ define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
 
-define("FORCE_RECOMPILE_TEMPLATE", false);
+define("FORCE_RECOMPILE_TEMPLATE", true);
 define("TEMPLATE_ENGINE_DEBUG", true);
 
-define("YAAM_VERSION", "0.3.308");
+define("YAAM_VERSION", "0.3.309");
 
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);
 define("DATE_FORMAT_DATETIME", 2);
 
-define("PERM_ADMIN", "admin");
 define("PERM_NONE", "");
 
 require(DOCUMENT_ROOT . "/include/class_odbc_exception.php");

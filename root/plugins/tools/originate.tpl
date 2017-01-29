@@ -1,4 +1,4 @@
-<div class="box form">
+<div class="box dialog">
     <h1>Originate call</h1>
     <form id="frm_originate" method="post">
 

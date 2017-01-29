@@ -1,4 +1,4 @@
-<div class="box form">
+<div class="box dialog">
     <if type="is" name="action" value="add"><h1>Add call route</h1></if>
     <if type="is" name="action" value="edit"><h1>Edit call route</h1></if>
 

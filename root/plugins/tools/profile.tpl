@@ -1,4 +1,4 @@
-<div class="box form">
+<div class="box dialog">
     <h1>Edit profile - [[$_SESSION@user]]</h1>
     <form id="frm_edit_profile" method="post">
 

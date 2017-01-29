@@ -125,6 +125,8 @@ class PluginUsers extends Plugin
                 /* Select the users matching the filters. */
                 $results = $query->run_query_select("*");
 
+
+
                 require($template->load("users.tpl"));
 
                 odbc_free_result($results);
@@ -156,20 +158,32 @@ class PluginUsers extends Plugin
             $query->where("user", "=", $_GET["user"]);
             $query->limit(1);
 
+
             $user_data = array(
                 "fullname"     => isset($_POST["fullname"])     ? $_POST["fullname"] : "",
                 "extension"    => isset($_POST["extension"])    ? $_POST["extension"] : "",
                 "dial_string"  => isset($_POST["dial_string"])  ? $_POST["dial_string"] : "",
-                "pgroups"      => isset($_POST["pgroups"])      ? $_POST["pgroups"] : "",
                 "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",
                 "vbox_user"    => isset($_POST["vbox_user"])    ? $_POST["vbox_user"] : "",
                 "did"          => isset($_POST["did"])          ? $_POST["did"] : "",
             );
 
+            /* Get the list of available permissions */
+            $perm_list = $this->manager->get_permissions_list();
+
+
             /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {
                 if (!(check_permission(PERM_USER_WRITE)))
                     throw new exception("You do not have the required permissions to add/edit users!");
+
+                /* Build user permission list */
+                if (check_permission(PERM_USER_SET_PERMISSION)) {
+
+                    $pgroups = isset($_POST["pgroups"]) ? $_POST["pgroups"] : "";
+
+                    $user_data["pgroups"] = implode(",", $_POST["pgroups"]);
+                }
 
                 /* Validate fields */
                 if ($action == "add") {
@@ -218,6 +232,8 @@ class PluginUsers extends Plugin
 
                 $res = $query->run_query_select("*");
                 $user_data = odbc_fetch_array($res);
+
+                $user_data["pgroups"] = array_map("trim", explode(",", strtolower($user_data["pgroups"])));
             }
 
         } catch (Exception $e) {

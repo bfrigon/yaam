@@ -1,4 +1,4 @@
-<div class="box form">
+<div class="box dialog">
     <h1>Message</h1>
     <field name="mailbox" type="view" caption="Mailbox" value="[[$mailbox]]" />
     <field name="date" type="view" caption="Date" value="[[$msgdate | format_unix_time]]" />

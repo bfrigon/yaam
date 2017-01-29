@@ -1,4 +1,4 @@
-<div class="box form">
+<div class="box dialog">
     <if type="is" name="action" value="add"><h1>Add user</h1></if>
     <if type="is" name="action" value="edit"><h1>Edit user</h1></if>
     <if type="is" name="action" value="view"><h1>View user</h1></if>
@@ -10,7 +10,7 @@
         <field name="fullname" type="text" caption="Full name" value="[[$user_data@fullname]]" />
 
         <if type="perm" value="user_set_permission">
-            <field name="pgroups" type="text" caption="Permissions" value="[[$user_data@pgroups]]" />
+            <field name="pgroups" type="listbox" caption="Permissions" data-type="array" data-source="perm_list" value="$user_data@pgroups" />
         </if>
 
         <h2>Account settings</h2>
@@ -28,11 +28,11 @@
 
 
         <h2>Voicemail</h2>
-        <field name="vbox_context" type="text" caption="Voicemail context" placeholder="(e.g. local)" value="[[$user_data@vbox_context]]">
+        <field name="vbox_context" type="text" caption="Context" placeholder="(e.g. local)" value="[[$user_data@vbox_context]]">
             <help>Voicemail box context the user belongs to. (e.g. local)</help>
         </field>
 
-        <field name="vbox_user" type="text" caption="Voicemail user" placeholder="(e.g. 100)" value="[[$user_data@vbox_user]]">
+        <field name="vbox_user" type="text" caption="Mailbox" placeholder="(e.g. 100)" value="[[$user_data@vbox_user]]">
             <help>Voicemail box id of the user. (e.g. 100).</help>
         </field>
 

@@ -15,8 +15,7 @@
 //******************************************************************************
 class Plugin
 {
-    private $_plugin_manager = null;
-
+    public $manager = null;
     public $name = '';
     public $dir = '';
     public $dependencies = array();
@@ -35,7 +34,7 @@ class Plugin
      */
     function Plugin($name, &$manager)
     {
-        $this->_plugin_manager = &$manager;
+        $this->manager = &$manager;
 
         $this->name = $name;
         $this->dir = DOCUMENT_ROOT . "/plugins/$name";

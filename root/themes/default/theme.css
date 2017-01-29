@@ -472,7 +472,7 @@ body {
 
 
 /* -------------------------------------------------------------------------------------------
-   Forms/Dialog
+   Forms fields
 */
 .box {
     background-color: #E6DCCF;
@@ -490,8 +490,8 @@ body {
     color: white;
     text-align: center;
     font-size: 1em;
-    padding: 5px;
-    margin: 0px 0px 8px 0px;
+    padding: 6px;
+    margin: 0px 0px 10px 0px;
 }
 
 .box h2 {
@@ -504,52 +504,68 @@ body {
     padding-bottom: 4px;
 }
 
-.box .toolbar {
-    margin: 15px 0px;
-}
-
-
-
-/* -------------------------------------------------------------------------------------------
-   Forms fields
-*/
-.box.form {
-    width: 400px;
+.box.dialog {
+    display: table;
     margin: 40px auto;
+    padding: 15px;
 }
 
-.box.form label {
-    display: inline-block;
-    width: 130px;
+.box.dialog h1 {
+    margin: -10px -10px 10px -10px;
+}
+
+.box.dialog .field {
+    display: table-row;
+
+}
+
+.box.dialog .field > label {
+    display: table-cell;
     text-align: right;
-    font-weight: bold;
+    padding: 0px 5px 0px 20px;
+    min-width: 80px;
 }
 
-.box.form input[type="text"],
-.box.form input[type="password"],
-.box.form select {
+.box.dialog.small .field > label {
+    min-width: auto;
+    padding: 0px 5px;
+}
+
+.box.dialog .input {
+    display: table-cell;
+}
+
+.box.dialog .field input[type="text"],
+.box.dialog .field input[type="password"],
+.box.dialog .field .listbox,
+.box.dialog .field select {
     width: 220px;
     padding: 4px 2px;
     border: solid 1px #B2ACA1;
     background-color: white;
-    margin: 0px 10px 5px 10px;
     color: black;
+    margin-bottom: 5px;
 
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     border-radius: 3px;
 }
 
-.box.form input[readonly] {
+.box.dialog.small .field > input[type="text"],
+.box.dialog.small .field > input[type="password"],
+.box.dialog.small .field > .listbox,
+.box.dialog.small .field > select {
+    width: 160px;
+}
+
+.box.dialog .field input[readonly] {
     background-color: #ddd;
 }
 
-
-.box.form select {
+.box.dialog .field select {
     -webkit-appearance: button;
-    -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
     -webkit-padding-end: 20px;
-    -webkit-padding-start: 2px;
+    -webkit-padding-start: 4px;
     -webkit-user-select: none;
 
     background-image: url(images/dropdown.png);
@@ -561,50 +577,6 @@ body {
     white-space: nowrap;
 }
 
-
-.box.form .highlight {
-    border: solid 2px red;
-    background-color: #FFD0D0;
-}
-
-.box input[type="text"].highlight,
-.box input[type="password"].highlight {
-    border: solid 2px red;
-    background-color: #FFD0D0;
-}
-
-
-/* -------------------------------------------------------------------------------------------
-   Dialog box widgets
-*/
-.box.dialog label {
-    width: 80px;
-}
-
-.box.dialog {
-    margin: 20px auto;
-    width: 250px;
-    padding: 15px;
-
-    -webkit-box-shadow:0 4px 10px #8b8b8b;
-    -moz-box-shadow:0 4px 10px #8b8b8b;
-    box-shadow:0 4px 10px #8b8b8b;
-}
-
-.box.dialog input[type="text"],
-.box.dialog input[type="password"] {
-    width: 160px;
-    padding: 4px 2px;
-    border: solid 1px #B2ACA1;
-    background-color: white;
-    margin: 0px 10px 5px 10px;
-
-    -moz-border-radius: 3px;
-    -webkit-border-radius: 3px;
-    border-radius: 3px;
-}
-
-
 .box.dialog.error,
 .box.dialog.warning,
 .box.dialog.info {
@@ -612,7 +584,7 @@ body {
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
     border-radius: 5px;
-    padding: 10px 10px 10px 40px;
+    padding: 10px 40px 10px 40px;
     min-height: 40px;
 }
 
@@ -637,9 +609,6 @@ body {
     border: 1px solid #0000FF;
 }
 
-.box.dialog .toolbar {
-    margin-top: 30px;
-}
 
 .box.dialog .list {
     list-style-position: inside;
@@ -653,10 +622,42 @@ body {
 
 
 /* -------------------------------------------------------------------------------------------
+   listbox
+*/
+
+.listbox {
+    overflow: auto;
+    display: block;
+    height: 100px;
+    border: solid 1px #B2ACA1;
+    background-color: white;
+    color: black;
+}
+
+.listbox label {
+    display: block;
+}
+
+
+.listbox input[type="checkbox"]
+{
+    vertical-align: middle;
+    position: relative;
+    bottom: 1px;
+}
+
+.listbox label.checked {
+    background-color: #b2aca1;
+}
+
+
+/* -------------------------------------------------------------------------------------------
    Tooltip popup
 */
 a.tooltip {
     outline: none;
+
+    margin-left: 10px;
 }
 
 .tooltip:hover {

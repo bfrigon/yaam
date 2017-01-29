@@ -18,7 +18,7 @@ class PluginManager
     public $_plugins = array();
     public $_tabs = array();
     public $_actions = array();
-    public $_perm_table = array(PERM_ADMIN);
+    public $_perm_table = array();
 
 
     /*--------------------------------------------------------------------------

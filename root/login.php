@@ -97,24 +97,23 @@ try {
 
     <?php if (!empty($error_msg)) print_message($error_msg, true); ?>
 
-    <div class="box dialog">
+    <div class="box dialog small">
         <form id="login" method="post">
 
-        <label for="user">Username</label>
-        <input type="text" name="user" value="<?=$f_user?>">
-        <div class="clear"><br /></div>
+            <div class="field">
+                <label for="user">Username :</label>
+                <input type="text" name="user" value="<?=$f_user?>">
+            </div>
+            <div class="field">
+                <label for="pass">Password :</label>
+                <input type="password" name="pass">
+            </div>
 
-        <label for="pass">Password</label>
-        <input type="password" name="pass">
-        <div class="clear"><br /></div>
-
-        <div class="toolbar center v_spacing">
-            <ul>
-                <li><button type="submit">Login</button></li>
-            </ul>
-        </div>
-        <div class="clear"><br /></div>
-
+            <div class="toolbar center v_spacing">
+                <ul>
+                    <li><button type="submit">Login</button></li>
+                </ul>
+            </div>
         </form>
     </div>
 </body>
