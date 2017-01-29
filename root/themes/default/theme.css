@@ -310,25 +310,26 @@ body {
     vertical-align: middle;
 }
 
+.icon16-blank       {background-position: 0px 0px;}
 .icon16-userdelete  {background-position: -16px 0px;}
 .icon16-useradd     {background-position: -32px 0px;}
 .icon16-stop        {background-position: -48px 0px;}
 .icon16-save        {background-position: -64px 0px;}
 .icon16-reload      {background-position: -80px 0px;}
-.icon16-newmsg      {background-position: -96px 0px;}
-.icon16-pdf         {background-position: -112px 0px;}
+.icon16-copy        {background-position: -96px 0px;}
+.icon16-star        {background-position: -112px 0px;}
 .icon16-move        {background-position: -128px 0px;}
 .icon16-remove      {background-position: -144px 0px;}
 
 .icon16-warning     {background-position: 0px -16px;}
 .icon16-ok          {background-position: -16px -16px;}
 .icon16-play        {background-position: -32px -16px;}
-.icon16-chpwd       {background-position: -48px -16px;}
+.icon16-lock        {background-position: -48px -16px;}
 .icon16-add         {background-position: -64px -16px;}
 .icon16-folder      {background-position: -80px -16px;}
 .icon16-flag        {background-position: -96px -16px;}
 .icon16-fatal       {background-position: -112px -16px;}
-.icon16-excel       {background-position: -128px -16px;}
+.icon16-paste       {background-position: -128px -16px;}
 .icon16-error       {background-position: -144px -16px;}
 
 .icon16-edit        {background-position: 0px -32px;}
@@ -380,6 +381,8 @@ body {
 .icon16-download2   {background-position: -32px -96px;}
 .icon16-message     {background-position: -48px -96px;}
 .icon16-tag         {background-position: -64px -96px;}
+.icon16-crop        {background-position: -80px -96px;}
+.icon16-cut         {background-position: -96px -96px;}
 
 
 
@@ -393,12 +396,79 @@ body {
     vertical-align: middle;
 }
 
-.icon12-blacklist   {background-position: 0px 0px;}
-.icon12-call        {background-position: -12px 0px;}
-.icon12-clock       {background-position: -24px 0px;}
-.icon12-help        {background-position: -36px 0px;}
-.icon12-message     {background-position: -48px 0px;}
-.icon12-warning     {background-position: -60px 0px;}
+.icon12-blank       {background-position: 0px 0px;}
+.icon12-userdelete  {background-position: -12px 0px;}
+.icon12-useradd     {background-position: -24px 0px;}
+.icon12-stop        {background-position: -36px 0px;}
+.icon12-save        {background-position: -48px 0px;}
+.icon12-reload      {background-position: -60px 0px;}
+.icon12-copy        {background-position: -72px 0px;}
+.icon12-star        {background-position: -84px 0px;}
+.icon12-move        {background-position: -96px 0px;}
+.icon12-remove      {background-position: -108px 0px;}
+
+.icon12-warning     {background-position: 0px -12px;}
+.icon12-ok          {background-position: -12px -12px;}
+.icon12-play        {background-position: -24px -12px;}
+.icon12-lock        {background-position: -36px -12px;}
+.icon12-add         {background-position: -48px -12px;}
+.icon12-folder      {background-position: -60px -12px;}
+.icon12-flag        {background-position: -72px -12px;}
+.icon12-fatal       {background-position: -84px -12px;}
+.icon12-paste       {background-position: -96px -12px;}
+.icon12-error       {background-position: -108px -12px;}
+
+.icon12-edit        {background-position: 0px -24px;}
+.icon12-download    {background-position: -12px -24px;}
+.icon12-delete      {background-position: -24px -24px;}
+.icon12-checked     {background-position: -36px -24px;}
+.icon12-unchecked   {background-position: -48px -24px;}
+.icon12-outbound    {background-position: -60px -24px;}
+.icon12-inbound     {background-position: -72px -24px;}
+.icon12-cancel      {background-position: -84px -24px;}
+.icon12-search      {background-position: -96px -24px;}
+.icon12-prev        {background-position: -108px -24px;}
+
+.icon12-next        {background-position: 0px -36px;}
+.icon12-first       {background-position: -12px -36px;}
+.icon12-last        {background-position: -24px -36px;}
+.icon12-searchdoc   {background-position: -36px -36px;}
+.icon12-down        {background-position: -48px -36px;}
+.icon12-left        {background-position: -60px -36px;}
+.icon12-right       {background-position: -72px -36px;}
+.icon12-up          {background-position: -84px -36px;}
+.icon12-clear       {background-position: -96px -36px;}
+.icon12-repeat      {background-position: -108px -36px;}
+
+.icon12-pause       {background-position: 0px -48px;}
+.icon12-record      {background-position: -12px -48px;}
+.icon12-upload      {background-position: -24px -48px;}
+.icon12-settings    {background-position: -36px -48px;}
+.icon12-vol-down    {background-position: -48px -48px;}
+.icon12-vol-up      {background-position: -60px -48px;}
+.icon12-number      {background-position: -72px -48px;}
+.icon12-home        {background-position: -84px -48px;}
+.icon12-call        {background-position: -96px -48px;}
+.icon12-feature     {background-position: -108px -48px;}
+
+.icon12-local       {background-position: 0px -60px;}
+.icon12-private     {background-position: -12px -60px;}
+.icon12-unknown     {background-position: -24px -60px;}
+.icon12-system      {background-position: -36px -60px;}
+.icon12-originate   {background-position: -48px -60px;}
+.icon12-voicemail   {background-position: -60px -60px;}
+.icon12-alarm       {background-position: -72px -60px;}
+.icon12-clock       {background-position: -84px -60px;}
+.icon12-calandar    {background-position: -96px -60px;}
+.icon12-blacklist   {background-position: -108px -60px;}
+
+.icon12-help        {background-position: 0px -72px;}
+.icon12-map         {background-position: -12px -72px;}
+.icon12-download2   {background-position: -24px -72px;}
+.icon12-message     {background-position: -36px -72px;}
+.icon12-tag         {background-position: -48px -72px;}
+.icon12-crop        {background-position: -60px -72px;}
+.icon12-cut         {background-position: -72px -72px;}
 
 
 /* -------------------------------------------------------------------------------------------
