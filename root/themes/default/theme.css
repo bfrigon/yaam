@@ -621,6 +621,12 @@ body {
 }
 
 
+.box.dialog.message {
+    height: 100px;
+}
+
+
+
 /* -------------------------------------------------------------------------------------------
    listbox
 */
@@ -1039,17 +1045,17 @@ div.toolbar .spacer {
 */
 
 
-#log_container {
+.log-viewer {
     background-color : #F2EEE7;
     color: #555;
     height: 480px;
 }
 
-.log-error {
+.log-viewer .error {
     color: red;
 }
 
-.log-warning {
+.log-viewer .warning {
     color: #8A4B08;
 }
 

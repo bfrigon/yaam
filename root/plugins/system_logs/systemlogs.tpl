@@ -11,8 +11,8 @@
     <item type="button" icon="reload" action="refresh">Refresh</item>
 </toolbar>
 
-<div class="box scroll" id="log_container">
-    <div id="log_content">
+<div class="box scroll log-viewer">
+    <div class="log-content">
         [[$log_filename | dumpfile]]
     </div>
 </div>
@@ -21,13 +21,14 @@
 //<![CDATA[
 
     $(document).ready(function () {
-        $("#log_content").contents().filter(function(){return this.nodeType !== 1;}).each(function() {
+
+        $(".log-content").contents().filter(function(){return this.nodeType !== 1;}).each(function() {
 
             if ($(this).text().match(/error|fatal|panic/i)) {
-                $(this).wrap("<span class=\"log-error\" />");
+                $(this).wrap("<span class=\"error\" />");
 
             } else if ($(this).text().match(/warning/i)) {
-                $(this).wrap("<span class=\"log-warning\" />");
+                $(this).wrap("<span class=\"warning\" />");
             }
         });
     });

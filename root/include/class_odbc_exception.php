@@ -14,6 +14,11 @@
 //
 //******************************************************************************
 
+if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
+    header("Location:../index.php");
+    exit();
+}
+
 class OdbcException extends Exception
 {
     protected $state = "";

@@ -37,6 +37,7 @@ require(DOCUMENT_ROOT . "/include/class_query_builder.php");
 require(DOCUMENT_ROOT . "/include/class_plugin_manager.php");
 require(DOCUMENT_ROOT . "/include/class_plugin.php");
 require(DOCUMENT_ROOT . "/include/class_template_engine.php");
+require(DOCUMENT_ROOT . "/include/class_ajam.php");
 require(DOCUMENT_ROOT . "/include/template_functions.php");
 
 
@@ -77,7 +78,7 @@ function load_global_config()
  *
  * Returns   : The setting value or default value if not found.
  */
-function get_global_config_item($section, $item, $default='')
+function get_global_config_item($section, $item, $default="")
 {
     global $CONFIG;
 
@@ -240,7 +241,7 @@ function check_permission($req_perm)
  */
 function init_session()
 {
-    global $CONFIG, $DB;
+    global $CONFIG, $DB, $MANAGER;
 
     /* Load configuration */
     load_global_config();
@@ -248,9 +249,18 @@ function init_session()
     /* Connect to the database */
     $dsn = get_global_config_item("odbc", "database");
     $user = get_global_config_item("odbc", "user");
-    $pwd = get_global_config_item("odbc", "secret");
+    $secret = get_global_config_item("odbc", "secret");
 
-    $DB = new ODBCDatabase($dsn, $user, $pwd);
+    $DB = new ODBCDatabase($dsn, $user, $secret);
+
+
+
+    $url = get_global_config_item("ajam", "url", "http://127.0.0.1:8088");
+    $user = get_global_config_item("ajam", "user", "");
+    $secret = get_global_config_item("ajam", "secret", "");
+
+    $MANAGER = new AJAM($user, $secret, $url);
+    $MANAGER->login();
 }
 
 
@@ -338,4 +348,22 @@ function get_dateformat_list()
         "MM/DD/YYYY" => "M/D/Y",
         "YYYY-MM-DD" => "Y-M-D",
     );
+}
+
+
+
+function get_extension_info($extension)
+{
+    global $DB;
+
+    $query = $DB->create_query("users");
+    $query->where("extension", "=", $extension);
+    $query->limit(1);
+
+    $results = $query->run_query_select("*");
+
+    if (!($row = @odbc_fetch_array($results)))
+        throw new Exception("Extension not found");
+
+    return $row;
 }

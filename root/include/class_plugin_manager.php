@@ -13,6 +13,12 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 //
 //******************************************************************************
+
+if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
+    header("Location:../index.php");
+    exit();
+}
+
 class PluginManager
 {
     public $_plugins = array();

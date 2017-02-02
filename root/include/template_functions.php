@@ -14,6 +14,11 @@
 //
 //******************************************************************************
 
+if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
+    header("Location:../index.php");
+    exit();
+}
+
 
 /*--------------------------------------------------------------------------
  * format_byte() : Return a formated byte representation.
@@ -125,46 +130,26 @@ function format_unix_time($date)
  */
 function dumpfile($filename)
 {
-    if ($hfile = @fopen($filename, 'r')) {
-        $i = 100;
+    if ($hfile = @gzopen($filename, "r")) {
+        $i = 0;
 
-        while (!feof($hfile)) {
-            $buffer = fgets($hfile, 4096);
-            echo htmlentities($buffer), '<br />';
+        while (!gzeof($hfile)) {
+            $buffer = gzgets($hfile, 4096);
+            echo htmlentities($buffer), "<br />";
 
-            if ($i < 0) {
-                break;
-            }
-
+            /* flush output every ~40k */
             $i++;
-        }
+            if ($i > 10) {
+                $i = 0;
 
-        fclose($hfile);
+                ob_flush();
+            }
+       }
+
+        gzclose($hfile);
     } else {
-        echo 'Permission denied.';
+        echo "Unable to open the file : '$filename'.";
     }
-}
-
-
-/*--------------------------------------------------------------------------
- * dumpgzfile() : Print the content of a gzipped file.
- *
- * Arguments
- * ---------
- *  - filename : File to dump.
- *
- * Returns : Nothing
- */
-function dumpgzfile($filename)
-{
-    $hfile = gzopen($filename, 'r');
-
-    while (!gzeof($hfile)) {
-        $buffer = gzgets($hfile, 4096);
-        echo htmlentities($buffer), '<br />';
-    }
-
-    gzclose($hfile);
 }
 
 
@@ -205,4 +190,16 @@ function get_action_list($name)
         return array();
 
     return $PLUGINS->_actions[$name];
+}
+
+
+function print_html_header($css="theme.css", $title="")
+{
+    print "<html>";
+    print "<head>";
+    print "<title>$title</title>";
+    print "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
+    print "<link id=\"css_theme\" rel=\"stylesheet\" type=\"text/css\" href=\"themes/{$_SESSION["ui_theme"]}/$css?v=" . YAAM_VERSION . "\" />";
+    print "</head>";
+    print "<body>";
 }

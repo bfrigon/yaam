@@ -13,6 +13,12 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 //
 //******************************************************************************
+
+if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
+    header("Location:../index.php");
+    exit();
+}
+
 class OdbcDatabase
 {
     private $_dsn;
@@ -46,6 +52,7 @@ class OdbcDatabase
             if (!($this->conn = @odbc_pconnect($dsn, $user, $pwd)))
                 throw new OdbcException($this->conn);
         }
+
     }
 
 
@@ -135,7 +142,7 @@ class OdbcDatabase
         $this->lastResults = $this->exec_query($query, $params);
 
         if (!(@odbc_fetch_row($this->lastResults)))
-            return NULL;
+            return null;
 
         return odbc_result($this->lastResults, $column);
 

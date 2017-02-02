@@ -17,6 +17,12 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 //
 //******************************************************************************
+
+if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
+    header("Location:../index.php");
+    exit();
+}
+
 class TemplateEngine
 {
     private $_template_dir;
@@ -626,6 +632,21 @@ class TemplateEngine
                 fwrite($handle, "<?php if (\$$name === $op): ?>");
                 break;
 
+            /* Check if variable exists */
+            case "isset":
+                $op = ($node_if->hasAttribute("not") ? "!" : "");
+
+                fwrite($handle, "<?php if ({$op}isset(\$$name)): ?>");
+                break;
+
+            /* Check if variable exists */
+            case "empty":
+                $op = ($node_if->hasAttribute("not") ? "!" : "");
+
+                fwrite($handle, "<?php if ({$op}empty(\$$name)): ?>");
+                break;
+
+            /* Compare string */
             case "string":
             default:
                 $op = ($node_if->hasAttribute("not") ? "!=" : "==");
@@ -1115,6 +1136,9 @@ class TemplateEngine
 
                 if (!empty($id))
                     fwrite($handle, " id=\"$id\"");
+
+                if (empty($name) && empty($action))
+                    $name = "submit";
 
                 if (!empty($name)) {
                     fwrite($handle, " name=\"$name\" value=\"$value\"");
@@ -1745,10 +1769,6 @@ class TemplateEngine
 
                     case "dumpfile":
                         $output = "dumpfile($output)";
-                        break;
-
-                    case "dumpgzfile":
-                        $output = "dumpgzfile($output)";
                         break;
 
                     case "format_unix_time":

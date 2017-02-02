@@ -1,6 +1,6 @@
 <?php
 //******************************************************************************
-// Plugins/Voicemail-odbc/plugin.php - Voicemail(ODBC) plugin
+// Plugins/Voicemail_odbc/plugin.php - Voicemail(ODBC) plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
 // Author  : Benoit Frigon <benoit@frigon.info>
@@ -13,7 +13,6 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 //
 //******************************************************************************
-
 
 if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     header("Location:../index.php");

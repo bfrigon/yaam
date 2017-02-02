@@ -18,7 +18,6 @@
 //
 //******************************************************************************
 
-
 if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     header("Location:../index.php");
     exit();
@@ -161,6 +160,7 @@ class PluginUsers extends Plugin
 
             $user_data = array(
                 "fullname"     => isset($_POST["fullname"])     ? $_POST["fullname"] : "",
+                "cid_name"     => isset($_POST["cid_name"])     ? $_POST["cid_name"] : "",
                 "extension"    => isset($_POST["extension"])    ? $_POST["extension"] : "",
                 "dial_string"  => isset($_POST["dial_string"])  ? $_POST["dial_string"] : "",
                 "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",

@@ -9,6 +9,10 @@
 
         <field name="fullname" type="text" caption="Full name" value="[[$user_data@fullname]]" />
 
+        <field name="cid_name" type="text" caption="Caller ID name" value="[[$user_data@cid_name]]">
+            <help>This is the caller ID name which is sent for outbound calls (Max. 15 characters)</help>
+        </field>
+
         <if type="perm" value="user_set_permission">
             <field name="pgroups" type="listbox" caption="Permissions" data-type="array" data-source="perm_list" value="$user_data@pgroups" />
         </if>
