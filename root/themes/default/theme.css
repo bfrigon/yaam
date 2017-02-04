@@ -508,6 +508,7 @@ body {
     display: table;
     margin: 40px auto;
     padding: 15px;
+    min-width: 250px;
 }
 
 .box.dialog h1 {
@@ -609,7 +610,6 @@ body {
     border: 1px solid #0000FF;
 }
 
-
 .box.dialog .list {
     list-style-position: inside;
     margin: 10px;
@@ -623,6 +623,28 @@ body {
 
 .box.dialog.message {
     height: 100px;
+}
+
+
+.box.viewer {
+    background-color : #F2EEE7;
+    color: #555;
+    height: 480px;
+}
+
+.box.viewer .error {
+    color: red;
+}
+
+.box.viewer .warning {
+    color: #8A4B08;
+}
+
+.code {
+    font-family: monospace;
+    font-size: 1.1em;
+    white-space: pre;
+
 }
 
 

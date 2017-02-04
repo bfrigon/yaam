@@ -16,8 +16,8 @@
         <field name="caller_name" type="text" caption="Name" placeholder="Default" value="[[$caller_name]]" />
 
         <toolbar class="center v_spacing">
-            <item type="submit" icon="call">Call</item>
-            <item type="button" action="cancel" icon="cancel">Cancel</item>
+            <item name="call" type="submit" icon="call">Call</item>
+            <item name="cancel" type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
     </form>
 </div>

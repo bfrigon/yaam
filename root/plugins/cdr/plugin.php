@@ -160,6 +160,7 @@ class PluginCdr extends Plugin
 
         /* Load the template */
         require($template->load("cdr.tpl"));
+        require("{$this->dir}/js_cdr.php");
 
         odbc_free_result($results);
     }

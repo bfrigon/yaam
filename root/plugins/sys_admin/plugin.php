@@ -21,9 +21,13 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 
 
 define("PERM_LOGS_VIEW", "logs_view");
+define("PERM_EXEC_COMMANDS", "exec_commands");
 
 class PluginSystemLogs extends Plugin
 {
+    public $dependencies = array("tools");
+
+
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
      *
@@ -36,20 +40,27 @@ class PluginSystemLogs extends Plugin
     function on_load(&$manager)
     {
         $manager->register_tab($this, null, "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
-        $manager->register_tab($this, "on_show", "ast", "logs", "Asterisk server", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show", "sys", "logs", "System (syslog)", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show", "kern", "logs", "Kernel", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show", "dmesg", "logs", "Boot log", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show", "auth", "logs", "Authentication", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show_syslog", "ast", "logs", "Asterisk server", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show_syslog", "sys", "logs", "System (syslog)", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show_syslog", "kern", "logs", "Kernel", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show_syslog", "dmesg", "logs", "Boot log", PERM_LOGS_VIEW);
+        $manager->register_tab($this, "on_show_syslog", "auth", "logs", "Authentication", PERM_LOGS_VIEW);
+
+        $manager->register_tab($this, "on_show_command", "command", "tools", "Run commands", PERM_EXEC_COMMANDS);
+
+
+
+
 
         $manager->declare_permissions($this, array(
-            PERM_LOGS_VIEW
+            PERM_LOGS_VIEW,
+            PERM_EXEC_COMMANDS,
         ));
     }
 
 
     /*--------------------------------------------------------------------------
-     * on_show() : Called when the tab content is requested.
+     * on_show_syslog() : Called when the tab content is requested.
      *
      * Arguments :
      * ---------
@@ -59,27 +70,29 @@ class PluginSystemLogs extends Plugin
      *
      * Return : None
      */
-    function on_show($template, $tab_path, $action)
+    function on_show_syslog($template, $tab_path, $action)
     {
         if (!(check_permission(PERM_LOGS_VIEW)))
             throw new Exception("You do not have the permissions to view the logs!");
 
         $log_basename = preg_replace("_.*/_", "", isset($_REQUEST["file"]) ? $_REQUEST["file"] : "");
 
-        switch ($tab_path) {
-            case "system_logs.logs.sys":
+        $path = explode(".", $tab_path);
+
+        switch ($path[2]) {
+            case "sys":
                 $log_filename = "/var/log/syslog";
                 break;
 
-            case "system_logs.logs.kern":
+            case "kern":
                 $log_filename = "/var/log/kern.log";
                 break;
 
-            case "system_logs.logs.dmesg":
+            case "dmesg":
                 $log_filename = "/var/log/dmesg";
                 break;
 
-            case "system_logs.logs.auth":
+            case "auth":
                 $log_filename = "/var/log/auth.log";
                 break;
 
@@ -99,5 +112,43 @@ class PluginSystemLogs extends Plugin
         $log_filename .= str_replace(basename($log_filename), "", $log_basename);
 
         require($template->load("systemlogs.tpl"));
+        require("{$this->dir}/js_highlight.php");
+    }
+
+
+
+    /*--------------------------------------------------------------------------
+     * on_show_command() : Called when the tab content is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *  - tab_path : Path to the current tab.
+     *  - action   : Requested action.
+     *
+     * Return : None
+     */
+    function on_show_command($template, $tab_path, $action)
+    {
+        global $MANAGER;
+
+        if (!(check_permission(PERM_EXEC_COMMANDS)))
+            throw new Exception("You do not have the permissions to execute commands!");
+
+        if (isset($_POST["command"])) {
+
+            /* Send the command to the AMI */
+            $result = $MANAGER->send("command", array(
+                "command" => $_POST["command"]
+            ))[0];
+
+            $cmd_result = "";
+            if (isset($result["data"])) {
+                $cmd_result = $result["data"];
+            }
+        }
+
+
+        require($template->load("command.tpl"));
     }
 }

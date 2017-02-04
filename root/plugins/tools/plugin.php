@@ -174,7 +174,7 @@ class PluginTools extends Plugin
             if (isset($_GET["number"]) && empty($number))
                 $number = $_GET["number"];
 
-            if (isset($_POST["number"])) {
+            if (isset($_POST["call"])) {
 
                 if (!(check_permission(PERM_ORIGINATE_FROM_OTHER_EXT))
                     && (intval($_SESSION["extension"]) != intval($ext))) {
@@ -195,6 +195,7 @@ class PluginTools extends Plugin
         }
 
         require($template->load("originate.tpl"));
+        require("{$this->dir}/js_originate.php");
     }
 
 

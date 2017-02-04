@@ -94,7 +94,7 @@ class AJAM
      *
      * Returns : Array containing the response.
      */
-    public function send($action, $params)
+   public function send($action, $params)
     {
         $this->last_error = "";
         $action = strtolower($action);
@@ -114,23 +114,35 @@ class AJAM
 
 
         /* Extract all the lines from the raw response data */
-        $lines = preg_match_all("/(.+):\s+([^\r\n]+)|\r\n\r\n/", $data, $matches);
-
+        //$lines = preg_match_all("/(.+):\s+([^\r\n]+)|\r\n\r\n/", $data, $matches);
+        $lines = preg_split('/\n|\r\n?/', $data);
 
         $response = array();
         $packet = array();
         $packet_type = PACKET_HEADER;
 
-        for ($i=0; $i < $lines; $i++) {
-            $key = strtolower($matches[1][$i]);
-            $value = trim($matches[2][$i]);
+        foreach ($lines as $line) {
+            list($key, $value) = explode(":", $line, 2);
+
+            $key = strtolower($key);
+            $value = trim($value);
 
 
             /* If the line is empty, add the packet to the response and start a new one */
-            if (empty($key)) {
+            if (empty($line)) {
 
                 /* Don't add the header to the response */
                 if ($packet_type == PACKET_HEADER)
+                    continue;
+
+                /* Non-standard response for 'command' action. Include everything until --end command-- */
+                if ($action == "command") {
+                    $packet["data"] .= "\n";
+                    continue;
+                }
+
+                /* Ignore empty packets */
+                if (count($packet) == 0)
                     continue;
 
                 $response[] = $packet;
@@ -139,24 +151,54 @@ class AJAM
             } else {
 
                 if (empty($packet)) {
-                    if ($key == "response")
+                    if ($key == "response") {
                         $packet_type = PACKET_RESPONSE;
+                    }
 
-                    if ($key == "event")
+                    if ($key == "event") {
                         $packet_type = PACKET_EVENT;
+                    }
                 }
 
                 /* Store cookies */
                 if ($key == "set-cookie" and $packet_type == PACKET_HEADER)
                     $_SESSION["tmp_ajam_cookies"] = $value;
 
+                /* Non-standard response for 'command' action */
+                if (($action == "command") && ($packet_type != PACKET_HEADER)) {
+                    switch ($key) {
+                        case "response":
+                            if ($action == "command")
+                                $packet["data"] = "";
+
+                            /* fall-through */
+                        case "privilege":
+                            $packet[$key] = $value;
+                            break;
+
+                        case "--end command--":
+                            break;
+
+                        default:
+                            $packet["data"] .= "$line\n";
+                            break;
+                    }
+
+                    continue;
+                }
+
                 /* Add the line to the current packet */
-                if ($packet_type != PACKET_HEADER)
+                if ($packet_type != PACKET_HEADER) {
                     $packet[$key] = $value;
+                }
             }
 
             //print "Key='$key'  value='$value'<br>";
         }
+
+        /* Adds the last packet to the response, if non-empty */
+        if (count($packet) > 0)
+            $response[] = $packet;
 
         if (strtolower($response[0]["response"]) == "error") {
             $this->last_error = $response[0]["message"];

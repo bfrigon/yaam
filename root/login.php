@@ -35,8 +35,8 @@ try {
         exit();
     }
 
-    $f_user = (isset($_REQUEST["user"]) ? $_REQUEST["user"] : "");
-    $f_pass = (isset($_REQUEST["pass"]) ? $_REQUEST["pass"] : "");
+    $f_user = (isset($_REQUEST["user"]) ? strtolower($_POST["user"]) : "");
+    $f_pass = (isset($_REQUEST["pass"]) ? $_POST["pass"] : "");
 
     if (!empty($f_user)) {
         $result = $DB->exec_query(
