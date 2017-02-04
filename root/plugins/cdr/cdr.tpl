@@ -1,5 +1,5 @@
 <form id="frm_cdr_search" method="get">
-    <toolbar id="cdr_filters">
+    <toolbar id="toolbar_cdr_filters">
         <item type="label">Date :</item>
         <group id="cdr_date_filter">
             <item type="date" id="cdr_d_from" name="d_from" width="90px" placeholder="[[format_date]]" title="Filter calls by date"/>

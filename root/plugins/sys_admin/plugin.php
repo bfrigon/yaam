@@ -22,6 +22,8 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 
 define("PERM_LOGS_VIEW", "logs_view");
 define("PERM_EXEC_COMMANDS", "exec_commands");
+define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
+
 
 class PluginSystemLogs extends Plugin
 {
@@ -46,15 +48,14 @@ class PluginSystemLogs extends Plugin
         $manager->register_tab($this, "on_show_syslog", "dmesg", "logs", "Boot log", PERM_LOGS_VIEW);
         $manager->register_tab($this, "on_show_syslog", "auth", "logs", "Authentication", PERM_LOGS_VIEW);
 
-        $manager->register_tab($this, "on_show_command", "command", "tools", "Run commands", PERM_EXEC_COMMANDS);
-
-
-
+        $manager->register_tab($this, "on_show_command", "command", "tools", "Run command", PERM_EXEC_COMMANDS);
+        $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_STATUS_VIEW);
 
 
         $manager->declare_permissions($this, array(
             PERM_LOGS_VIEW,
             PERM_EXEC_COMMANDS,
+            PERM_CHANNEL_STATUS_VIEW,
         ));
     }
 
@@ -150,5 +151,37 @@ class PluginSystemLogs extends Plugin
 
 
         require($template->load("command.tpl"));
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * on_show_channels() : Called when the 'channel status' tab content is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *  - tab_path : Path to the current tab.
+     *  - action   : Requested action.
+     *
+     * Return : None
+     */
+    public function on_show_channels($template, $tab_path, $action)
+    {
+        global $MANAGER;
+
+        $channels = $MANAGER->send("Status", array());
+        $num_results = count($channels);
+
+        /* Set pager variables for the template. */
+        $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["rpp"])), 1);
+        $total_pages = max(1, ceil($num_results / $max_results));
+        $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
+        $row_start = ($current_page - 1) * $max_results;
+
+
+        $channels = array_slice($channels, $row_start, $max_results);
+
+
+        require($template->load("channels.tpl"));
     }
 }

@@ -22,7 +22,6 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 
 define("PERM_ORIGINATE_CALL", "originate_call");
 define("PERM_ORIGINATE_FROM_OTHER_EXT", "originate_from_other_ext");
-define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
 
 class PluginTools extends Plugin
 {
@@ -43,7 +42,6 @@ class PluginTools extends Plugin
         $manager->register_tab($this, null, "tools", null, "Tools", PERM_NONE, 200);
         $manager->register_tab($this, "on_show_profile", "profile", "tools", "Edit profile", PERM_NONE);
         $manager->register_tab($this, "on_show_originate", "originate", "tools", "Click-2-dial", PERM_ORIGINATE_CALL);
-        $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_STATUS_VIEW);
 
         $manager->register_action(
             $this,
@@ -306,27 +304,5 @@ class PluginTools extends Plugin
                 "error" => $e->getmessage()
             )));
         }
-    }
-
-
-    /*--------------------------------------------------------------------------
-     * on_show_channels() : Called when the 'channel status' tab content is requested.
-     *
-     * Arguments :
-     * ---------
-     *  - template : Instance of the template engine.
-     *  - tab_path : Path to the current tab.
-     *  - action   : Requested action.
-     *
-     * Return : None
-     */
-    public function on_show_channels($template, $tab_path, $action)
-    {
-        global $MANAGER;
-
-        $channels = $MANAGER->send("Status", array());
-
-        print_r($channels);
-
     }
 }

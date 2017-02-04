@@ -1352,9 +1352,19 @@ class TemplateEngine
     }
 
 
-
-
-
+    /*--------------------------------------------------------------------------
+     * process_tag_grid_row() : Process rows of a "datagrid" tag.
+     *
+     * Arguments
+     * ---------
+     *  - node_row       : Node to process.
+     *  - handle         : File handle to the template output.
+     *  - data_type      : Type of the current data source (odbc, dict).
+     *  - data_source    : Current data source object.
+     *  - var_hidden_col : Variable name for the total of hidden columns.
+     *
+     * Returns : None
+     */
     private function process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col=null)
     {
         $cell_type = ($node_row->nodeName == "row") ? "td" : "th";
@@ -1469,6 +1479,11 @@ class TemplateEngine
                 fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
                 break;
 
+            case "dict":
+                $var_array_row = $this->get_unique_varname();
+                fwrite($handle, "<?php foreach($data_source as $var_array_row): ?>\n");
+                break;
+
             /* invalid data type */
             default:
                 $this->throw_compile_exception($node_tag, "The tag 'grid' has an invalid data-type : $data_type");
@@ -1479,13 +1494,27 @@ class TemplateEngine
         /* Insert grid rows */
         fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
 
-        $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col);
+        switch ($data_type) {
+            case "odbc":
+                $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col);
+                break;
+
+            case "dict":
+                $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, array($data_source, $var_array_row), $var_hidden_col);
+                break;
+        }
 
         fwrite($handle, "</tr>");
 
+
+        /* Close rows iteration code */
         switch ($data_type) {
             case "odbc":
                 fwrite($handle, "<?php $var_row_count++; endwhile; ?>");
+                break;
+
+            case "dict":
+                fwrite($handle, "<?php $var_row_count++; endforeach; ?>");
                 break;
         }
 
@@ -1682,18 +1711,24 @@ class TemplateEngine
 
                         /* Dictionary array */
                         case "dict":
-                            switch (strtolower($token)) {
-                                case "key":
-                                    $output = $data_source[1];
-                                    break;
+                            if (count($data_source) == 3) {
 
-                                case "value":
-                                    $output = $data_source[2];
-                                    break;
+                                switch (strtolower($token)) {
+                                    case "key":
+                                        $output = $data_source[1];
+                                        break;
 
-                                default:
-                                    $output = "\$$token";
-                                    break;
+                                    case "value":
+                                        $output = $data_source[2];
+                                        break;
+
+                                    default:
+                                        $output = "\$$token";
+                                        break;
+                                }
+                            } else {
+
+                                $output = $data_source[1] . "['$token']";
                             }
                             break;
 
