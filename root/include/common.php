@@ -13,22 +13,39 @@
 // A copy of which is available from http://www.gnu.org/copyleft/lesser.html
 //
 //******************************************************************************
-$DEBUG_TIME_START = microtime(true);
 
 define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
+define("YAAM_VERSION", "0.3.314");
 
+
+/* --- DEBUG --- */
 define("FORCE_RECOMPILE_TEMPLATE", false);
-define("TEMPLATE_ENGINE_DEBUG", true);
+define("TEMPLATE_ENGINE_DEBUG", false);
 
-define("YAAM_VERSION", "0.3.312");
 
+/* --- Date format type --- */
 define("DATE_FORMAT_MYSQL", 0);
 define("DATE_FORMAT_DATEPICKER", 1);
 define("DATE_FORMAT_DATETIME", 2);
 
+
+/* --- Permissions --- */
 define("PERM_NONE", "");
+
+
+/* --- Asterisk channel states --- */
+define("AST_CHANNEL_STATE_DOWN", 0);
+define("AST_CHANNEL_STATE_DOWN_RESERVED", 1);
+define("AST_CHANNEL_STATE_OFF_HOOK", 2);
+define("AST_CHANNEL_STATE_DIGITS_DIALED", 3);
+define("AST_CHANNEL_STATE_REMOTE_RINGING", 4);
+define("AST_CHANNEL_STATE_RINGING", 5);
+define("AST_CHANNEL_STATE_UP", 6);
+define("AST_CHANNEL_STATE_BUSY", 7);
+
+
 
 require(DOCUMENT_ROOT . "/include/class_odbc_exception.php");
 require(DOCUMENT_ROOT . "/include/class_http_exception.php");
@@ -363,7 +380,7 @@ function get_extension_info($extension)
     $results = $query->run_query_select("*");
 
     if (!($row = @odbc_fetch_array($results)))
-        throw new Exception("Extension not found");
+        throw new Exception("Extension '$extension' does not exists!");
 
     return $row;
 }

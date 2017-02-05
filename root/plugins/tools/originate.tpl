@@ -17,7 +17,7 @@
 
         <toolbar class="center v_spacing">
             <item name="call" type="submit" icon="call">Call</item>
-            <item name="cancel" type="button" action="cancel" icon="cancel">Cancel</item>
+            <item id="frm_originate_cancel" name="cancel" type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
     </form>
 </div>

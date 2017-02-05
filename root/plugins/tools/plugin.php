@@ -20,8 +20,10 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+/* --- Plugin permissions --- */
 define("PERM_ORIGINATE_CALL", "originate_call");
 define("PERM_ORIGINATE_FROM_OTHER_EXT", "originate_from_other_ext");
+
 
 class PluginTools extends Plugin
 {
@@ -174,14 +176,7 @@ class PluginTools extends Plugin
 
             if (isset($_POST["call"])) {
 
-                if (!(check_permission(PERM_ORIGINATE_FROM_OTHER_EXT))
-                    && (intval($_SESSION["extension"]) != intval($ext))) {
-
-                    throw new exception("You do not have the required permissions to originate a call from another extension than your own!");
-                }
-
-                if ($this->do_originate_call($ext, $number, $caller_num, $caller_name, $timeout) == false)
-                    throw new Exception("Failed to originate call on Ext. $ext");
+                $this->do_originate_call($ext, $number, $caller_num, $caller_name, $timeout);
 
                 $date = date(DATE_RFC2822);
                 print_message("Originate call succeded.<br />\"$ext\" -> \"$number\" on $date");
@@ -197,15 +192,42 @@ class PluginTools extends Plugin
     }
 
 
-
+    /*--------------------------------------------------------------------------
+     * do_originate_call() : Send the originate call request to AMI for each channels
+     *                       associated with the extension.
+     *
+     * Arguments :
+     * ---------
+     *  - from_ext    : Extension to originate the call from.
+     *  - number      : Number to call when the user pick up.
+     *  - caller_num  : CallerID number override
+     *  - caller_name : CallerID name override
+     *  - timeout     : Time to wait before the user pick up.
+     *  - unique_id   : Unique ID to set on channels opened by the originate request.
+     *
+     * Return : Nothing
+     */
     private function do_originate_call($from_ext, $number, $caller_num="", $caller_name="", $timeout=30, $unique_id=null)
     {
         global $MANAGER;
+
+        if (empty($from_ext))
+            throw new exception("Missing the extension to originate the call from!");
+
+        if (empty($number))
+            throw new exception("Missing the number to call!");
+
+        if (!(check_permission(PERM_ORIGINATE_FROM_OTHER_EXT))
+            && (intval($_SESSION["extension"]) != intval($from_ext))) {
+
+            throw new exception("You do not have the required permissions to originate a call from another extension than your own!");
+        }
 
         $ext_info = get_extension_info($from_ext);
         $channels = explode("&", $ext_info["dial_string"]);
 
         $i = 0;
+
         foreach($channels as $channel) {
 
             $params = array(
@@ -222,15 +244,15 @@ class PluginTools extends Plugin
             if (!(is_null($unique_id)))
                 $params["ChannelId"] = sprintf("%s%d", $unique_id, $i++);
 
-            $MANAGER->send("Originate", $params);
+            if ($MANAGER->send("Originate", $params) === false) {
+                throw new Exception("Failed to originate call on Ext. $ext. " . $MANAGER->last_error);
+            }
         }
-
-        return true;
     }
 
 
     /*--------------------------------------------------------------------------
-     * on_show_originate() : Called when the 'originate' tab content is requested.
+     * ajax_originate() : Ajax function for originating call.
      *
      * Arguments :
      * ---------
@@ -245,21 +267,21 @@ class PluginTools extends Plugin
         global $MANAGER;
 
         try {
-            $number = $_GET["number"];
-            $ext = $_GET["ext"];
-            $caller_num = $_GET["caller_num"];
-            $caller_name = $_GET["caller_name"];
+            $ext = (isset($_POST["ext"])) ? $_POST["ext"] : $_SESSION["extension"];
+            $number = (isset($_POST["number"])) ? $_POST["number"] : "";
+            $caller_num = (isset($_POST["caller_num"])) ? $_POST["caller_num"] : "";
+            $caller_name = (isset($_POST["caller_name"])) ? $_POST["caller_name"] : "";
             $timeout = intval(get_global_config_item("click2dial", "timeout", 30));
-            $unique_id = (isset($_GET["uniqueid"]) ? $_GET["uniqueid"] : $MANAGER->gen_unique_id());
+            $unique_id = (isset($_POST["uniqueid"]) ? $_POST["uniqueid"] : $MANAGER->gen_unique_id());
 
 
-            $action = $_GET["action"];
+
+            $action = $_POST["action"];
 
 
             switch ($action) {
+                /* Initiate the origination */
                 case "call":
-                    $MANAGER->discard_events();
-
                     $this->do_originate_call($ext, $number, $caller_num, $caller_name, $timeout, $unique_id);
 
                     print json_encode(array(
@@ -269,39 +291,87 @@ class PluginTools extends Plugin
                     ));
                     break;
 
+
+                /* Returns the status of the origination */
                 case "progress":
                     $response = array();
+                    $response["channels"] = array();
+                    $response["answered"] = 0;
+                    $response["message"] = "";
+                    $response["status"] = "ringing";
 
                     $channels = $MANAGER->send("status", array());
                     foreach ($channels as $channel) {
 
+                        /* Filter out channels that were not originated from this request */
                         if (substr($channel["uniqueid"], 0, -1) != $unique_id)
                             continue;
 
+                        $chan_state = $channel["channelstate"];
+                        $chan_name = $channel["channel"];
+                        $response["channels"][] = $chan_name;
 
-                        $response[] = $channel;
+                        if ($chan_state == AST_CHANNEL_STATE_UP || $chan_state == AST_CHANNEL_STATE_OFF_HOOK) {
+                            $response["answered"]++;
+                        }
                     }
 
-                    $response["status"] = "ok";
+                    /* Originate call failed, all channels has timed out */
+                    if (count($response["channels"]) == 0) {
+                        $response["message"] = "Extension $ext did not pick up. Timed out.";
+                        $response["status"] = "error";
+                    }
 
-
+                    /* Originate call was successful, at least one extension picked up */
+                    if ($response["answered"] > 0) {
+                        $response["message"] = "Extension $ext picked up. Done.";
+                        $response["status"] = "done";
+                    }
 
                     print json_encode($response);
                     break;
 
-                case "cancel":
+
+                /* Hangup channels that were not picked up, but still ringing */
+                case "hangup":
+                    $response["status"] = "ok";
+
+                    $channels = $MANAGER->send("status", array());
+                    foreach($channels as $channel) {
+
+                        /* Filter out channels that were not originated from this request */
+                        if (substr($channel["uniqueid"], 0, -1) != $unique_id)
+                            continue;
+
+                        $chan_state = $channel["channelstate"];
+                        $chan_name = $channel["channel"];
+
+                        /* Hangup remaining channels that were not picked up */
+                        if ($chan_state != AST_CHANNEL_STATE_UP && $chan_state != AST_CHANNEL_STATE_OFF_HOOK) {
+
+                            $request = $MANAGER->send("hangup", array(
+                                "channel" => $chan_name,
+                            ));
+
+                            if ($request === false)
+                                throw new Exception("Unable to hangup channel '$chan_name'");
+                        }
+                    }
+
+                    print json_encode($response);
+
                     break;
 
 
                 default:
-                    throw new Exception("Invalid action");
+                    throw new Exception("Invalid action for ajax method 'originate' ($action)");
             }
 
         } catch (Exception $e) {
 
             print(json_encode(array(
                 "status" => "error",
-                "error" => $e->getmessage()
+                "message" => $e->getmessage()
             )));
         }
     }

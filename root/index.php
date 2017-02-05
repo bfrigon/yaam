@@ -14,9 +14,10 @@
 //
 //******************************************************************************
 
-require("include/common.php");
-
+$DEBUG_TIME_START = microtime(true);
 $TEMPLATE_ENGINE_DEBUGINFO = "";
+
+require("include/common.php");
 
 try
 {
