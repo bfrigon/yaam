@@ -1,7 +1,3 @@
-<if type="isset" name="ajax_url">
-    <iframe class="box dialog message" src="[[$ajax_url]]"></iframe>
-</if>
-
 <div class="box dialog">
     <h1>Originate call</h1>
     <form id="frm_originate" method="post">

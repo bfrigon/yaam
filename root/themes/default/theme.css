@@ -383,6 +383,18 @@ body {
 .icon16-tag         {background-position: -64px -96px;}
 .icon16-crop        {background-position: -80px -96px;}
 .icon16-cut         {background-position: -96px -96px;}
+.icon16-globe       {background-position: -112px -96px;}
+.icon16-hand        {background-position: -128px -96px;}
+.icon16-call-info   {background-position: -144px -96px;}
+
+.icon16-phone       {background-position: 0px -112px;}
+.icon16-hangup      {background-position: -16px -112px;}
+.icon16-alert       {background-position: -32px -112px;}
+.icon16-alarm2      {background-position: -48px -112px;}
+.icon16-sms         {background-position: -64px -112px;}
+.icon16-listen      {background-position: -80px -112px;}
+.icon16-music       {background-position: -96px -112px;}
+.icon16-list        {background-position: -112px -112px;}
 
 
 
@@ -469,6 +481,18 @@ body {
 .icon12-tag         {background-position: -48px -72px;}
 .icon12-crop        {background-position: -60px -72px;}
 .icon12-cut         {background-position: -72px -72px;}
+.icon12-globe       {background-position: -112px -72px;}
+.icon12-hand        {background-position: -128px -72px;}
+.icon12-call-info   {background-position: -144px -72px;}
+
+.icon12-phone       {background-position: 0px -84px;}
+.icon12-hangup      {background-position: -12px -84px;}
+.icon12-alert       {background-position: -24px -84px;}
+.icon12-alarm2      {background-position: -36px -84px;}
+.icon12-sms         {background-position: -48px -84px;}
+.icon12-listen      {background-position: -60px -84px;}
+.icon12-music       {background-position: -72px -84px;}
+.icon12-list        {background-position: -84px -84px;}
 
 
 /* -------------------------------------------------------------------------------------------

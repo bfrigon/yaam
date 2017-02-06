@@ -20,9 +20,12 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+/* --- Plugin permissions --- */
 define("PERM_PHONEBOOK_READ", "phonebook_read");
 define("PERM_PHONEBOOK_WRITE", "phonebook_write");
+define("PERM_PHONEBOOK_WRITE_GLOBAL", "phonebook_write_global");
 define("PERM_PHONEBOOK_ALL_USERS", "phonebook_all_users");
+
 
 class PluginPhonebook extends Plugin
 {
@@ -43,6 +46,7 @@ class PluginPhonebook extends Plugin
         $manager->declare_permissions($this, array(
             PERM_PHONEBOOK_READ,
             PERM_PHONEBOOK_WRITE,
+            PERM_PHONEBOOK_WRITE_GLOBAL,
             PERM_PHONEBOOK_ALL_USERS,
         ));
     }
@@ -82,6 +86,7 @@ class PluginPhonebook extends Plugin
                     throw new Exception("You do not have the required permissions to view the phone book!");
 
                 $query = $DB->create_query("phonebook");
+                $query->orderby_asc("extension");
 
                 /* Set search filters */
                 if (!empty($_GET["s"])) {
@@ -89,6 +94,18 @@ class PluginPhonebook extends Plugin
 
                     $query->where("description", "LIKE", "%$search%");
                 }
+
+
+                /* Restrict results to records owned by the user or global phonebook records */
+                if (!(check_permission(PERM_PHONEBOOK_ALL_USERS))) {
+                    $query->group_where_begin();
+
+                    $query->where("extension", "=", $_SESSION["extension"]);
+                    $query->or_where("extension", "=", "");
+
+                    $query->group_where_close();
+                }
+
 
                 /* Get the number of cdr entries matching the filters. */
                 $results = $query->run_query_select("COUNT(*) as row_count");
@@ -107,6 +124,9 @@ class PluginPhonebook extends Plugin
 
                 /* Select the users matching the filters. */
                 $results = $query->run_query_select("*");
+
+                /* Set template variables */
+                $speed_dial_prefix = get_global_config_item("phonebook", "speed_dial_prefix", "");
 
                 /* Load the template */
                 require($template->load("phonebook.tpl"));
@@ -139,16 +159,45 @@ class PluginPhonebook extends Plugin
             $query->where("id", "=", $_GET["id"]);
             $query->limit(1);
 
-            $pb_data = array(
-                "number"        => isset($_POST["number"])      ? $_POST["number"] : "",
-                "callerid"      => isset($_POST["callerid"])    ? $_POST["callerid"] : "",
-                "description"   => isset($_POST["description"]) ? $_POST["description"] : ""
-            );
+            $pb_data = array();
+
+            if ($action == "add") {
+
+                $pb_data["extension"]  = (isset($_POST["extension"])  ? $_POST["extension"]  : $_SESSION["extension"]);
+                $pb_data["number"]     = (isset($_POST["number"])     ? $_POST["number"]     : "");
+                $pb_data["name"]       = (isset($_POST["name"])       ? $_POST["name"]       : "");
+                $pb_data["notes"]      = (isset($_POST["notes"])      ? $_POST["notes"]      : "");
+                $pb_data["speed_dial"] = (isset($_POST["speed_dial"]) ? $_POST["speed_dial"] : "");
+            } else {
+
+                $res = $query->run_query_select("*");
+
+                $pb_data["extension"]  = (isset($_POST["extension"])  ? $_POST["extension"]  : odbc_result($res, "extension"));
+                $pb_data["number"]     = (isset($_POST["number"])     ? $_POST["number"]     : odbc_result($res, "number"));
+                $pb_data["name"]       = (isset($_POST["name"])       ? $_POST["name"]       : odbc_result($res, "name"));
+                $pb_data["notes"]      = (isset($_POST["notes"])      ? $_POST["notes"]      : odbc_result($res, "notes"));
+                $pb_data["speed_dial"] = (isset($_POST["speed_dial"]) ? $_POST["speed_dial"] : odbc_result($res, "speed_dial"));
+            }
 
             /* If data has been submited, validate it and update the database. */
             if (isset($_POST["submit"])) {
 
                 /* Validate fields */
+                if ((!(check_permission(PERM_PHONEBOOK_WRITE_GLOBAL)))
+                    && (empty($pb_data["extension"]))) {
+
+                    throw new exception("You do not have the required permissions to add/edit global phonebook records!");
+                }
+
+                if ((!(check_permission(PERM_PHONEBOOK_ALL_USERS)))
+                    && (intval($_SESSION["extension"]) != intval($pb_data["extension"]))
+                    && (!empty($pb_data["extension"]))) {
+
+                    throw new exception("You do not have the required permissions to add/edit phonebook records for other users!");
+                }
+
+                if (empty($pb_data["number"]))
+                    throw new exception("Phone number is required!");
 
 
                 /* If all fields are valid, Insert the new call route in the database. */
@@ -160,17 +209,15 @@ class PluginPhonebook extends Plugin
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
                 return;
-
-            } elseif ($action == "edit") {
-
-                $res = $query->run_query_select("*");
-                $pb_data = odbc_fetch_array($res);
             }
 
         } catch (Exception $e) {
 
             print_message($e->getmessage(), true);
         }
+
+        /* Set template variables */
+        $speed_dial_prefix = get_global_config_item("phonebook", "speed_dial_prefix", "");
 
         require($template->load("phonebook_addedit.tpl"));
     }
@@ -210,6 +257,10 @@ class PluginPhonebook extends Plugin
             $query->where("id", "=", $id);
         }
 
+        if (!(check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))) {
+            $query->where("extension", "=", $_SESSION["extension"]);
+        }
+
         if (isset($_GET["confirm"])) {
             $query->run_query_delete();
 
@@ -225,5 +276,17 @@ class PluginPhonebook extends Plugin
 
             odbc_free_result($results);
         }
+    }
+
+
+    function is_editable($extension)
+    {
+        if (check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))
+            return true;
+
+        if (empty($extension) && (!(check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))))
+            return false;
+
+        return check_permission(PERM_PHONEBOOK_WRITE);
     }
 }

@@ -26,6 +26,7 @@
     <datagrid class="expand" id="ct_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
             <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
+            <column style="width: 100px">Speed dial</column>
             <column if="perm" if-value="phonebook_all_users" style="width: 80px">Owner (ext.)</column>
             <column style="width: 140px">Name</column>
             <column style="width: 120px">Number</column>
@@ -35,15 +36,31 @@
 
         <row>
             <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
-            <column if="perm" if-value="phonebook_all_users">[[extension]]</column>
+
+            <column>
+                <if not type="empty" name="speed_dial">
+                    [[$speed_dial_prefix]][[speed_dial]]
+                    <icon if="empty" if-name="extension" icon="globe" />
+                </if>
+            </column>
+
+            <column if="perm" if-value="phonebook_all_users">
+                <if type="empty" name="extension">Global</if>
+                [[extension]]
+            </column>
+
             <column>[[name]]</column>
-            <column>[[number]]</column>
+
+            <column>[[number | format_phone]]</column>
+
             <column>[[notes]]</column>
+
             <column type="actions">
-                <if type="perm" value="phonebook_write">
+                <if type="function" name="is_editable" value="[[extension]]">
                     <icon action="edit" icon="edit" title="Edit phone number" params="id=[[id]]" />
                     <icon action="delete" icon="delete" title="Delete phone number" params="id=[[id]]" />
                 </if>
+
                 <action-list type="icon" name="phone_number_tools">
                     <param name="number" value="number" />
                 </action-list>

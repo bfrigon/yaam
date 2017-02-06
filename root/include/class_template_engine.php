@@ -395,23 +395,25 @@ class TemplateEngine
      *
      * Returns : None
      */
-    private function process_tag_action_list($node_action, $handle, $data_type=null, $data_source=null)
+    private function process_tag_action_list($node_tag, $handle, $data_type=null, $data_source=null)
     {
-        $type = strtolower($node_action->getAttribute("type"));
-        $name = strtolower($node_action->getAttribute("name"));
-        $class = $node_action->getAttribute("class");
-        $keep_uri = $this->get_attribute_boolean($node_action, "keep-uri", false);
-        $keep_referrer = $this->get_attribute_boolean($node_action, "keep-referrer", false);
+        $type = strtolower($node_tag->getAttribute("type"));
+        $name = strtolower($node_tag->getAttribute("name"));
+        $class = $node_tag->getAttribute("class");
+        $keep_uri = $this->get_attribute_boolean($node_tag, "keep-uri", false);
+        $keep_referrer = $this->get_attribute_boolean($node_tag, "keep-referrer", false);
 
         $var_action = $this->get_unique_varname();
 
         /* Required attributes */
         if (empty($type))
-            $this->throw_compile_exception($node_action, "The tag 'action-list' requires a 'type' attribute.");
+            $this->throw_compile_exception($node_tag, "The tag 'action-list' requires a 'type' attribute.");
 
         if (empty($name))
-            $this->throw_compile_exception($node_action, "The tag 'action-list' requires a 'name' attribute.");
+            $this->throw_compile_exception($node_tag, "The tag 'action-list' requires a 'name' attribute.");
 
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
 
         /* Build items href */
         $url_params = array();
@@ -419,7 +421,7 @@ class TemplateEngine
         $url_params["action"] = "{$var_action}[\"name\"]";
         $url_params["referrer"] = "\$this->get_tab_url(true)";
 
-        foreach ($node_action->getElementsByTagName("param") as $node_param) {
+        foreach ($node_tag->getElementsByTagName("param") as $node_param) {
 
             $param_name = $node_param->getAttribute("name");
             $param_value = $this->process_tokens($node_param->getAttribute("value"), $data_type, $data_source);
@@ -441,7 +443,7 @@ class TemplateEngine
 
             /* Icon list */
             default:
-                $icon_size = intval($node_action->getAttribute("icon-size"));
+                $icon_size = intval($node_tag->getAttribute("icon-size"));
                 if ($icon_size == 0)
                     $icon_size = 16;
 
@@ -455,6 +457,9 @@ class TemplateEngine
 
         fwrite($handle, "<?php endforeach; ?>\n");
         fwrite($handle, "</span>");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -470,26 +475,26 @@ class TemplateEngine
      *
      * Returns : None
      */
-    private function process_tag_form($node_form, $handle, $data_type=null, $data_source=null)
+    private function process_tag_form($node_tag, $handle, $data_type=null, $data_source=null)
     {
-        $method = strtolower($node_form->getAttribute("method"));
+        $method = strtolower($node_tag->getAttribute("method"));
 
-        $element = $node_form->ownerDocument->createElement("input");
+        $element = $node_tag->ownerDocument->createElement("input");
         $element->setAttribute("type", "hidden");
         $element->setAttribute("name", "path");
         $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
 
-        $node_form->appendChild($element);
+        $node_tag->appendChild($element);
 
-        $element = $node_form->ownerDocument->createElement("input");
+        $element = $node_tag->ownerDocument->createElement("input");
         $element->setAttribute("type", "hidden");
         $element->setAttribute("name", "referrer");
         $element->setAttribute("value", "<?php echo \$this->get_tab_url(true) ?>");
 
-        $node_form->appendChild($element);
+        $node_tag->appendChild($element);
 
 
-        $this->process_node($handle, $node_form, true, true, $data_type, $data_source);
+        $this->process_node($handle, $node_tag, true, true, $data_type, $data_source);
     }
 
 
@@ -505,13 +510,13 @@ class TemplateEngine
      *
      * Returns : None
      */
-    private function process_tag_foreach($node_foreach, $handle, $data_type=null, $data_source=null)
+    private function process_tag_foreach($node_tag, $handle, $data_type=null, $data_source=null)
     {
         /* Get tag attributes */
-        $data_source = (is_null($data_source)) ? $node_foreach->getAttribute("data-source") : $data_source;
-        $data_type = strtolower((is_null($data_type)) ? $node_foreach->getAttribute("data-type") : $data_type);
-        $type = strtolower($node_foreach->getAttribute("type"));
-        $class = $node_foreach->getAttribute("class");
+        $data_source = (is_null($data_source)) ? $node_tag->getAttribute("data-source") : $data_source;
+        $data_type = strtolower((is_null($data_type)) ? $node_tag->getAttribute("data-type") : $data_type);
+        $type = strtolower($node_tag->getAttribute("type"));
+        $class = $node_tag->getAttribute("class");
 
         $prefix_html = "";
         $suffix_html = "";
@@ -519,10 +524,15 @@ class TemplateEngine
 
         /* Required attributes */
         if (empty($data_type))
-            $this->throw_compile_exception($node_foreach, "The tag 'foreach' requires a 'data-type' attribute.");
+            $this->throw_compile_exception($node_tag, "The tag 'foreach' requires a 'data-type' attribute.");
 
         if (empty($data_source))
-            $this->throw_compile_exception($node_foreach, "The tag 'foreach' requires a 'data-source' attribute.");
+            $this->throw_compile_exception($node_tag, "The tag 'foreach' requires a 'data-source' attribute.");
+
+
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
+
 
         if ($type == "list") {
             fwrite($handle, "<ul class=\"list $class\">");
@@ -544,7 +554,7 @@ class TemplateEngine
 
                 fwrite($handle, "<?php foreach($data_source as $var_key => $var_value): ?>\n$prefix_html\n");
 
-                $this->process_node($handle, $node_foreach, false, true, $data_type, array($data_source, $var_key, $var_value));
+                $this->process_node($handle, $node_tag, false, true, $data_type, array($data_source, $var_key, $var_value));
 
                 fwrite($handle, "$suffix_html<?php endforeach; ?>");
                 break;
@@ -554,7 +564,7 @@ class TemplateEngine
 
                 fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n$prefix_html\n");
 
-                $this->process_node($handle, $node_foreach, false, true, $data_type, $data_source);
+                $this->process_node($handle, $node_tag, false, true, $data_type, $data_source);
 
                 fwrite($handle, "$suffix_html<?php endwhile; ?>");
                 break;
@@ -564,7 +574,7 @@ class TemplateEngine
                 $var_value = $this->get_unique_varname();
                 fwrite($handle, "<?php foreach($data_source as $var_value): ?>\n$prefix_html\n");
 
-                $this->process_node($handle, $node_foreach, false, true, $data_type, array($data_source, $var_value));
+                $this->process_node($handle, $node_tag, false, true, $data_type, array($data_source, $var_value));
 
                 fwrite($handle, "$suffix_html<?php endforeach; ?>");
                 break;
@@ -576,6 +586,9 @@ class TemplateEngine
 
         if ($type == "list")
             fwrite($handle, "</ul>");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -593,70 +606,104 @@ class TemplateEngine
      *
      * Returns : None
      */
-    private function process_tag_if($node_if, $handle, $data_type=null, $data_source=null, $close_tag=true)
+    private function process_tag_if($node_tag, $handle, $data_type=null, $data_source=null, $close_tag=true)
     {
 
 
         /* stand-alone if tag */
-        if ($node_if->nodeName == "if") {
-            $type = strtolower($node_if->getAttribute("type"));
-            $name = $node_if->getAttribute("name");
-            $value = $node_if->getAttribute("value");
+        if ($node_tag->nodeName == "if") {
+            $type = strtolower($node_tag->getAttribute("type"));
+            $name = $node_tag->getAttribute("name");
+            $value = $node_tag->getAttribute("value");
 
         /* if contained in another tag */
         } else {
-            $type = strtolower($node_if->getAttribute("if"));
-            $name = $node_if->getAttribute("if-name");
-            $value = $node_if->getAttribute("if-value");
+            $type = strtolower($node_tag->getAttribute("if"));
+            $name = $node_tag->getAttribute("if-name");
+            $value = $node_tag->getAttribute("if-value");
+
         }
 
-        /* Required attribute */
+        /* Check required attribute */
         if (empty($type))
-            $this->throw_compile_exception($node_if, "The tag 'if' requires a 'type' attribute.");
-
+            $this->throw_compile_exception($node_tag, "The tag 'if' requires a 'type' attribute.");
 
         switch ($type) {
+            case "function":
+            case "boolean":
+            case "bool":
+            case "isset":
+            case "empty":
+            case "is_null":
+            case "string":
+                if (empty($name) && $node_tag->nodeName == "if") {
+                    $this->throw_compile_exception($node_tag, "The 'if' tag requires an 'if-name' attribute for '$type' type");
+                } else if (empty($name)) {
+                    $this->throw_compile_exception($node_tag, "The if=$type attribute requires an 'if-name' attribute");
+                }
+                break;
+
+            case "permission":
+            case "perm":
+            case "function":
+                if (empty($value) && $node_tag->nodeName == "if") {
+                    $this->throw_compile_exception($node_tag, "The 'if' tag requires an 'if-value' attribute for '$type' type");
+                } else if (empty($value)) {
+                    $this->throw_compile_exception($node_tag, "The if=$type attribute requires an 'if-value' attribute");
+                }
+                break;
+        }
+
+        switch ($type) {
+
+            /* Return value of a function */
+            case "function":
+                $params = $this->process_shortcode($value, $data_type, $data_source, false);
+                $op = ($node_tag->hasAttribute("not") ? "!" : "");
+
+                fwrite($handle, "<?php if({$op}\$this->$name($params)): ?>\n");
+                break;
+
 
             /* Permission check */
             case "permission":
             case "perm":
-                $op = ($node_if->hasAttribute("not") ? "!" : "");
-                fwrite($handle, "<?php if ({$op}check_permission(\"$value\")): ?>");
+                $op = ($node_tag->hasAttribute("not") ? "!" : "");
+
+                fwrite($handle, "<?php if ({$op}check_permission(\"$value\")): ?>\n");
                 break;
 
             /* Check if variable Boolean */
             case "boolean":
             case "bool":
-                $op = ($node_if->hasAttribute("not") ? "false" : "true");
+                $op = ($node_tag->hasAttribute("not") ? "false" : "true");
+                $name = $this->process_tokens($name, $data_type, $data_source);
 
-                fwrite($handle, "<?php if (\$$name === $op): ?>");
+                fwrite($handle, "<?php if ($name === $op): ?>\n");
                 break;
 
             /* Check if variable exists */
             case "isset":
-                $op = ($node_if->hasAttribute("not") ? "!" : "");
-
-                fwrite($handle, "<?php if ({$op}isset(\$$name)): ?>");
-                break;
-
-            /* Check if variable exists */
             case "empty":
-                $op = ($node_if->hasAttribute("not") ? "!" : "");
+            case "is_null":
+                $op = ($node_tag->hasAttribute("not") ? "!" : "");
+                $name = $this->process_tokens($name, $data_type, $data_source);
 
-                fwrite($handle, "<?php if ({$op}empty(\$$name)): ?>");
+                fwrite($handle, "<?php if ({$op}$type($name)): ?>\n");
                 break;
 
             /* Compare string */
             case "string":
             default:
-                $op = ($node_if->hasAttribute("not") ? "!=" : "==");
+                $op = ($node_tag->hasAttribute("not") ? "!=" : "==");
+                $name = $this->process_tokens($name, $data_type, $data_source);
 
-                fwrite($handle, "<?php if (\$$name $op \"$value\"): ?>");
+                fwrite($handle, "<?php if ($name $op \"$value\"): ?>\n");
                 break;
         }
 
-        if ($node_if->nodeName == "if" && $close_tag) {
-            $this->process_node($handle, $node_if, false, true, $data_type, $data_source);
+        if ($node_tag->nodeName == "if" && $close_tag) {
+            $this->process_node($handle, $node_tag, false, true, $data_type, $data_source);
 
             fwrite($handle, "<?php endif; ?>");
         }
@@ -690,6 +737,10 @@ class TemplateEngine
         $force = $this->get_attribute_boolean($node_tag, "force-update", false);
 
         $btn_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
+
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
+
 
         if (empty($href) && (!empty($params) || !empty($action))) {
 
@@ -787,6 +838,9 @@ class TemplateEngine
 
         if (!empty($href))
             fwrite($handle, "</a>");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -812,7 +866,11 @@ class TemplateEngine
         $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source, false);
         $placeholder = $this->get_attribute_shortcode($node_tag, "placeholder", "", $data_type, $data_source);
 
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
+
         fwrite($handle, "<div class=\"field\"><label for=\"$name\">$caption :</label><div class=\"input\">");
+
 
         switch ($type) {
 
@@ -985,11 +1043,14 @@ class TemplateEngine
             fwrite($handle, "<a href=\"#\" class=\"tooltip\">");
             fwrite($handle, "<img src=\"images/blank.png\" class=\"icon16 icon16-help\" />");
             fwrite($handle, "<span><img class=\"callout\" src=\"images\blank.png\" />");
-            fwrite($handle, $node_help->textContent);
+            fwrite($handle, $this->process_shortcode($node_help->textContent, $data_type, $data_source));
             fwrite($handle, "</span></a>\n");
         }
 
         fwrite($handle, "</div></div>");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -1007,9 +1068,10 @@ class TemplateEngine
      */
     private function process_tag_toolbar($node_tag, $handle, $data_type=null, $data_source=null)
     {
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
+
         $id = $node_tag->getAttribute("id");
-        if (empty($id))
-            $id = "{$this->tab_id}_toolbar";
 
         $class = $node_tag->getAttribute("class");
         if (empty($class))
@@ -1023,7 +1085,10 @@ class TemplateEngine
 
         fwrite($handle, "</ul><div class=\"clear\"></div>");
         fwrite($handle, "</div><div class=\"clear\"></div>");
-    }
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
+   }
 
 
     /*--------------------------------------------------------------------------
@@ -1426,6 +1491,9 @@ class TemplateEngine
         $node_caption = $node_tag->getElementsByTagName("caption")->item(0);
         $node_footer = $node_tag->getElementsByTagName("footer")->item(0);
 
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, null, null);
+
         /* Required child node */
         if (empty($node_row))
             $this->throw_compile_exception($node_tag, "The tag 'grid' requires a row element.");
@@ -1552,6 +1620,9 @@ class TemplateEngine
         }
 
         fwrite($handle, "</table>\n");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -1639,6 +1710,10 @@ class TemplateEngine
         if (empty($name))
             $this->throw_compile_exception($node_tag, "The tag 'callback' requires a 'name' attribute.");
 
+
+        if ($node_tag->hasAttribute("if"))
+            $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
+
         fwrite($handle, "\r\n<?php ");
 
         if (!empty($return)) {
@@ -1653,6 +1728,9 @@ class TemplateEngine
         }
 
         fwrite($handle, "\$this->$name($params); ?>");
+
+        if ($node_tag->hasAttribute("if"))
+            fwrite($handle, "<?php endif; ?>");
     }
 
 
@@ -1670,6 +1748,9 @@ class TemplateEngine
      */
     private function process_tokens($tokens, $data_type=null, $data_source=null)
     {
+        if (empty(trim($tokens)))
+            return "";
+
         /* Split the tokens */
         $tokens =  preg_split("/[\s|]+/", $tokens);
 
