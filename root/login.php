@@ -77,44 +77,6 @@ try {
     $error_msg = $e->getmessage();
 }
 
-/*------------------------------------------------------------------------------------------------*/
-?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-<head>
-    <title>Asterisk Manager</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-
-    <link rel="stylesheet" type="text/css" href="themes/default/theme.css" />
-</head>
-
-<body>
-    <div style="margin: 20px auto; text-align: center">
-        <img src="images/ast_logo.png" alt="Asterisk"/>
-        <p>Y.A.A.M (v<?=YAAM_VERSION?>)</p>
-    </div>
-
-    <?php if (!empty($error_msg)) print_message($error_msg, true); ?>
-
-    <div class="box dialog small">
-        <form id="login" method="post">
-
-            <div class="field">
-                <label for="user">Username :</label>
-                <input type="text" name="user" value="<?=$f_user?>">
-            </div>
-            <div class="field">
-                <label for="pass">Password :</label>
-                <input type="password" name="pass">
-            </div>
-
-            <div class="toolbar center v_spacing">
-                <ul>
-                    <li><button type="submit">Login</button></li>
-                </ul>
-            </div>
-        </form>
-    </div>
-</body>
-</html>
+/* Display page template */
+$template = new TemplateEngine(null);
+require($template->load("login.tpl", true, true));

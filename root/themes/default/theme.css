@@ -307,6 +307,7 @@ body {
     height: 16px;
     border: 0;
     margin: 0;
+    margin-right: 4px;
     vertical-align: middle;
 }
 
@@ -405,6 +406,7 @@ body {
     height: 12px;
     border: 0;
     margin: 0;
+    margin-right: 3px;
     vertical-align: middle;
 }
 
@@ -555,10 +557,6 @@ body {
 .box.dialog.small .field > label {
     min-width: auto;
     padding: 0px 5px;
-}
-
-.box.dialog .input {
-    display: table-cell;
 }
 
 .box.dialog .field input[type="text"],
@@ -802,7 +800,8 @@ div.toolbar > ul img[class*="icon16"] {
     margin-right: 4px;
 }
 
-div.toolbar > ul .icon-only img[class*="icon16"] {
+div.toolbar > ul .icon-only img[class*="icon16"],
+div.toolbar > ul .icon-only img[class*="icon12"] {
     margin-right: 0px;
 }
 
@@ -814,6 +813,8 @@ div.toolbar > ul > li > button.disabled {
     color: gray;
 }
 
+div.toolbar > ul li a.disabled img[class*="icon12"],
+div.toolbar > ul li button.disabled img[class*="icon12"],
 div.toolbar > ul li a.disabled img[class*="icon16"],
 div.toolbar > ul li button.disabled img[class*="icon16"] {
     opacity: 0.3;
@@ -1076,7 +1077,12 @@ div.toolbar .spacer {
 }
 
 .grid .column-icon {
-    width: 17px;
+    width: 16px;
+    padding: 2px;
+}
+
+.grid .column-icon img {
+    margin-right: 0px;
 }
 
 .grid .data {
@@ -1125,80 +1131,6 @@ div.toolbar .spacer {
     float: right;
     width: 550px;
 }
-
-
-/* -------------------------------------------------------------------------------------------
-   Tool : Reverse lookup
-*/
-
-
-.map #map_viewport {
-    height: 480px;
-    background-color: #E6DCCF;
-    border: 1px solid #B2ACA1;
-    display: block;
-}
-
-.map #map_viewport img#static {
-    display: none;
-}
-
-.map .results {
-    display: none;
-    width: 250px;
-    min-height: 140px;
-    color: black;
-}
-
-.map .results h1 {
-    font-size: 1.3em;
-    font-weight: bold;
-    border-bottom: 1px solid #99938A;
-    vertical-align: middle;
-    padding: 4px;
-    margin-bottom: 4px;
-}
-
-.map .results h2 {
-    font-size: 1.1em;
-    font-weight: normal;
-    font-weight: bold;
-    color: black;
-    margin-bottom: 10px;
-}
-
-.map .results label {
-    clear: both;
-    float: left;
-    width: 70px;
-    font-weight: bold;
-}
-.map .results span {
-    float: left;
-    margin-bottom: 10px;
-}
-
-
-
-.map.static .results {
-    display: block;
-    float: right;
-}
-
-.map.static #map_viewport {
-    float: left;
-    overflow: hidden;
-    padding: 0px;
-
-    width: 450px;
-    height: 450px;
-}
-
-.map.static #map_viewport img#static {
-    display: block;
-}
-
-
 
 
 
@@ -1263,22 +1195,9 @@ div.toolbar .spacer {
 }
 
 
-
-
-
-#player-gui {
-    background-color: #EEE6DD;
-
-}
-
-
-
-
-
-
-
-
-
+/* -------------------------------------------------------------------------------------------
+   Date picket
+*/
 .date-picker {
     width: 170px;
     height: 25px;

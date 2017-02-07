@@ -21,10 +21,10 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 
 class PluginManager
 {
-    public $_plugins = array();
-    public $_tabs = array();
-    public $_actions = array();
-    public $_perm_table = array();
+    public $plugins = array();
+    public $tabs = array();
+    public $actions = array();
+    public $permissions = array();
 
 
     /*--------------------------------------------------------------------------
@@ -57,7 +57,7 @@ class PluginManager
 
             /* Check if that plugin is already loaded */
             if ($this->plugin_loaded($plugin_name)) {
-                $plugin = $this->_plugins[$plugin_name];
+                $plugin = $this->plugins[$plugin_name];
                 continue;
             }
 
@@ -90,7 +90,7 @@ class PluginManager
 
             /* Create a new instance of the plugin */
             $plugin = new $plugin_class($plugin_name, $this);
-            $this->_plugins[$plugin_name] = $plugin;
+            $this->plugins[$plugin_name] = $plugin;
 
             /* Load plugin dependencies */
             foreach($plugin->dependencies as $dep) {
@@ -138,7 +138,7 @@ class PluginManager
      */
     function plugin_loaded($name)
     {
-        return isset($this->_plugins[$name]);
+        return isset($this->plugins[$name]);
     }
 
 
@@ -153,7 +153,7 @@ class PluginManager
      */
     function sort_tabs()
     {
-        uasort($this->_tabs, array("PluginManager", "cmp_tab"));
+        uasort($this->tabs, array("PluginManager", "cmp_tab"));
     }
 
 
@@ -195,7 +195,7 @@ class PluginManager
         if (!isset($path_item[1]))
             throw new Exception("Page not found ($path)");
 
-        $tab = $this->_tabs[$path_item[1]];
+        $tab = $this->tabs[$path_item[1]];
 
         if (isset($path_item[2]))
             $tab = &$tab["childs"][$path_item[2]];
@@ -244,10 +244,10 @@ class PluginManager
             return;
 
         if ($parent != NULL) {
-            if (!isset($this->_tabs[$parent]))
+            if (!isset($this->tabs[$parent]))
                 throw new Exception("Parent tab does not exist");
 
-            $tab = &$this->_tabs[$parent];
+            $tab = &$this->tabs[$parent];
 
             if (!isset($tab["childs"]))
                 $tab["childs"] = array();
@@ -255,7 +255,7 @@ class PluginManager
             $tab = &$tab["childs"][$id];
 
         } else {
-            $tab = &$this->_tabs[$id];
+            $tab = &$this->tabs[$id];
         }
 
         $tab["id"] = $id;
@@ -290,8 +290,8 @@ class PluginManager
         if (!(check_permission($perm)))
             return;
 
-        if (!(isset($this->_actions[$type])))
-            $this->_actions[$type] = array();
+        if (!(isset($this->actions[$type])))
+            $this->actions[$type] = array();
 
         $action = array();
         $action['type'] = $type;
@@ -303,7 +303,7 @@ class PluginManager
         $action["req_level"] = $req_level;
         $action["perm"] = $perm;
 
-        $this->_actions[$type][] = $action;
+        $this->actions[$type][] = $action;
     }
 
 
@@ -321,7 +321,7 @@ class PluginManager
         if (!(is_array($perms)))
             throw new Exception("Invalid argument for 'declare_permission' in '{$plugin->name}'. 'perms' expected an array.");
 
-        $this->_perm_table = array_merge($this->_perm_table, $perms);
+        $this->permissions = array_merge($this->permissions, $perms);
     }
 
 
@@ -336,6 +336,21 @@ class PluginManager
      */
     function get_permissions_list()
     {
-        return $this->_perm_table;
+        return $this->permissions;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * get_tabs() : Get the list of available tabs
+     *
+     * Arguments
+     * ---------
+     *  None
+     *
+     * Returns : Array containing the tab list
+     */
+    function get_tabs()
+    {
+        return $this->tabs;
     }
 }

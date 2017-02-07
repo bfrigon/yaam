@@ -182,24 +182,21 @@ function print_progressbar($caption, $value, $percentage=-1, $critical=false)
 }
 
 
+/*--------------------------------------------------------------------------
+ * get_action_list() : Get a list of available actions registred in a category
+ *
+ * Arguments
+ * ---------
+ *  - name : Category name
+ *
+ * Returns : Nothing
+ */
 function get_action_list($name)
 {
     global $PLUGINS;
 
-    if (!(isset($PLUGINS->_actions[$name])))
+    if (!(isset($PLUGINS->actions[$name])))
         return array();
 
-    return $PLUGINS->_actions[$name];
-}
-
-
-function print_html_header($css="theme.css", $title="")
-{
-    print "<html>";
-    print "<head>";
-    print "<title>$title</title>";
-    print "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
-    print "<link id=\"css_theme\" rel=\"stylesheet\" type=\"text/css\" href=\"themes/{$_SESSION["ui_theme"]}/$css?v=" . YAAM_VERSION . "\" />";
-    print "</head>";
-    print "<body>";
+    return $PLUGINS->actions[$name];
 }

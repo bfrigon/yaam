@@ -65,35 +65,44 @@ class TemplateEngine
      * Arguments
      * ---------
      *  - template_name : Template file to load (relative to the template directory)
-     *  - use_global : Force loading from global template directory.
+     *  - use_global    : Force loading from global template directory.
+     *  - top_level     : If false, the template is a part of another template.
      *
-     * Returns : Filename of the compiled template
+     * Returns : Filename of the compiled template.
      */
-    function load($template_name, $use_global=false)
+    function load($template_name, $use_global=false, $top_level=false)
     {
+        try {
 
-        if ($use_global)
-            $template_file = DOCUMENT_ROOT . "/templates/$template_name";
-        else
-            $template_file = $this->_template_dir . "/$template_name";
+            if ($use_global)
+                $template_file = DOCUMENT_ROOT . "/templates/$template_name";
+            else
+                $template_file = $this->_template_dir . "/$template_name";
 
 
-        $cache_file = $this->_cache_dir . "/" . md5($template_file) . ".php";
+            $cache_file = $this->_cache_dir . "/" . md5($template_file) . ".php";
 
-        if (($template_mtime = @filemtime($template_file)) === False)
-            throw new Exception("Can't load the template file ($template_file)");
+            if (($template_mtime = @filemtime($template_file)) === False)
+                throw new Exception("Can't load the template file ($template_file)");
 
-        /* Force re-compiling the template if enabled */
-        if (FORCE_RECOMPILE_TEMPLATE)
-            $template_mtime = time();
+            /* Force re-compiling the template if enabled */
+            if (FORCE_RECOMPILE_TEMPLATE)
+                $template_mtime = time();
 
-        if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
+            if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
+                return $cache_file;
+
+            /* (re)-compile the template */
+            $this->compile($template_file, $cache_file, $top_level);
+
             return $cache_file;
 
-        /* (re)-compile the template */
-        $this->compile($template_file, $cache_file);
+        } catch (Exception $e) {
+            if ($top_level == false)
+                throw $e;
 
-        return $cache_file;
+            die("Template engine error: " . $e->getmessage());
+        }
     }
 
 
@@ -102,14 +111,15 @@ class TemplateEngine
      *
      * Arguments
      * ---------
-     *  - template_file : Source template file(relative to the template directory)
-     *  - cache_file    : Compiled template file
+     *  - template_file     : Source template file(relative to the template directory)
+     *  - cache_file        : Compiled template file
+     *  - process_top_level : Process top-level elements <doctype>, <html>, <head>, <body>
      *
-     * Returns : Filename of the compiled template
+     * Returns : Filename of the compiled template.
      */
-    private function compile($template_file, $cache_file)
+    private function compile($template_file, $cache_file, $top_level=false)
     {
-        global $TEMPLATE_ENGINE_DEBUGINFO;
+        global $DEBUGINFO_TEMPLATE_ENGINE;
 
         $compile_start = microtime(true);
 
@@ -127,11 +137,17 @@ class TemplateEngine
             throw new Exception("Cannot compile template! <br/>
                 The cache directory does not exists or does not have write permissions.");
 
-        $this->process_node($handle, $dom_input, false, true);
+        /* Insert code that prevents the cache file from being executed directly */
+        fwrite($handle, "<?php\n");
+        fwrite($handle, "if(realpath(__FILE__) == realpath(\$_SERVER[\"SCRIPT_FILENAME\"]))\n");
+        fwrite($handle, "    die();\n");
+        fwrite($handle, "?>\n\n");
 
-        $compile_time = microtime(true) - $compile_start;
+        $this->process_node($handle, $dom_input, false, true, null, null, $top_level);
 
-        $TEMPLATE_ENGINE_DEBUGINFO .= sprintf("Compiled : %s to %s - compile time: %0.4f s<br />",
+        $compile_time = (microtime(true) - $compile_start) * 1000;
+
+        $DEBUGINFO_TEMPLATE_ENGINE .= sprintf("Compiled : %s to %s - compile time: %0.1f ms<br />",
             $template_file, $cache_file, $compile_time);
 
         fclose($handle);
@@ -228,7 +244,12 @@ class TemplateEngine
      */
     private function func_build_tab_url($params, $keep_uri, $no_referrer=false)
     {
-        $output = "<?php echo \$this->build_tab_url(";
+        if (is_null($this->_plugin)) {
+            $output = "?<?php echo http_build_query(";
+        } else {
+            $output = "<?php echo \$this->build_tab_url(";
+        }
+
 
         if (is_null($params)) {
             $output .= "null, ";
@@ -243,8 +264,14 @@ class TemplateEngine
             $output .= "), ";
         }
 
-        $output .= ($keep_uri ? "true" : "false") . ", ";
-        $output .= ($no_referrer ? "true" : "false") . ") ?>";
+
+        if (is_null($this->_plugin)) {
+            $output .= ") ?>";
+        } else {
+            $output .= ($keep_uri ? "true" : "false") . ", ";
+            $output .= ($no_referrer ? "true" : "false") . ") ?>";
+        }
+
         return $output;
     }
 
@@ -254,16 +281,17 @@ class TemplateEngine
      *
      * Arguments
      * ---------
-     *  - handle      : File handle to the template output.
-     *  - node        : Node to process.
-     *  - outer       : Include the node in the output. If false, only process child nodes.
-     *  - recursive   : Process all child nodes recursivly.
-     *  - data_type   : Type of the Current data source (odbc, dict).
-     *  - data_source : Current data source object.
+     *  - handle            : File handle to the template output.
+     *  - node              : Node to process.
+     *  - outer             : Include the node in the output. If false, only process child nodes.
+     *  - recursive         : Process all child nodes recursivly.
+     *  - data_type         : Type of the Current data source (odbc, dict).
+     *  - data_source       : Current data source object.
+     *  - process_top_level : Process top-level elements <doctype>, <html>, <head>, <body>
      *
      * Returns : None
      */
-    private function process_node($handle, $node, $outer=true, $recursive=true, $data_type=null, $data_source=null)
+    private function process_node($handle, $node, $outer=true, $recursive=true, $data_type=null, $data_source=null, $process_top_level=false)
     {
 
         if ($outer) {
@@ -348,8 +376,23 @@ class TemplateEngine
                                     fwrite($handle, $child->ownerDocument->saveHTML($child));
                                     break;
 
+                                case "head":
+                                    if ($process_top_level == false)
+                                        break;
+
+                                    $html = $node->ownerDocument->saveXML($child);
+
+                                    $html = $this->process_shortcode($html, $data_type, $data_source);
+                                    fwrite($handle, $html);
+                                    break;
+
+                                case "html":
+                                case "body":
+                                    $this->process_node($handle, $child, $process_top_level, true, $data_type, $data_source, $process_top_level);
+                                    break;
+
                                 default:
-                                    $this->process_node($handle, $child, true, true, $data_type, $data_source);
+                                    $this->process_node($handle, $child, true, true, $data_type, $data_source, $process_top_level);
                                     break;
                             }
                             break;
@@ -365,7 +408,9 @@ class TemplateEngine
                             break;
 
                         case XML_DOCUMENT_TYPE_NODE:
-                            fwrite($handle, $child->ownerDocument->saveXML($child));
+                            if ($process_top_level)
+                                fwrite($handle, $child->ownerDocument->saveXML($child));
+
                             break;
                     }
                 } else {
@@ -419,7 +464,10 @@ class TemplateEngine
         $url_params = array();
         $url_params["path"] = "{$var_action}[\"path\"]";
         $url_params["action"] = "{$var_action}[\"name\"]";
-        $url_params["referrer"] = "\$this->get_tab_url(true)";
+
+        if (!(is_null($this->_plugin)))
+            $url_params["referrer"] = "\$this->get_tab_url(true)";
+
 
         foreach ($node_tag->getElementsByTagName("param") as $node_param) {
 
@@ -477,22 +525,21 @@ class TemplateEngine
      */
     private function process_tag_form($node_tag, $handle, $data_type=null, $data_source=null)
     {
-        $method = strtolower($node_tag->getAttribute("method"));
+        if (!(is_null($this->_plugin))) {
+            $element = $node_tag->ownerDocument->createElement("input");
+            $element->setAttribute("type", "hidden");
+            $element->setAttribute("name", "path");
+            $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
 
-        $element = $node_tag->ownerDocument->createElement("input");
-        $element->setAttribute("type", "hidden");
-        $element->setAttribute("name", "path");
-        $element->setAttribute("value", "<?php echo \$_GET[\"path\"] ?>");
+            $node_tag->appendChild($element);
 
-        $node_tag->appendChild($element);
+            $element = $node_tag->ownerDocument->createElement("input");
+            $element->setAttribute("type", "hidden");
+            $element->setAttribute("name", "referrer");
+            $element->setAttribute("value", "<?php echo \$this->get_tab_url(true) ?>");
 
-        $element = $node_tag->ownerDocument->createElement("input");
-        $element->setAttribute("type", "hidden");
-        $element->setAttribute("name", "referrer");
-        $element->setAttribute("value", "<?php echo \$this->get_tab_url(true) ?>");
-
-        $node_tag->appendChild($element);
-
+            $node_tag->appendChild($element);
+        }
 
         $this->process_node($handle, $node_tag, true, true, $data_type, $data_source);
     }
@@ -513,8 +560,8 @@ class TemplateEngine
     private function process_tag_foreach($node_tag, $handle, $data_type=null, $data_source=null)
     {
         /* Get tag attributes */
-        $data_source = (is_null($data_source)) ? $node_tag->getAttribute("data-source") : $data_source;
-        $data_type = strtolower((is_null($data_type)) ? $node_tag->getAttribute("data-type") : $data_type);
+        $data_source = $this->process_tokens($node_tag->getAttribute("data-source"), null, null);
+        $data_type = $node_tag->getAttribute("data-type");
         $type = strtolower($node_tag->getAttribute("type"));
         $class = $node_tag->getAttribute("class");
 
@@ -725,6 +772,7 @@ class TemplateEngine
     private function process_tag_icon($node_tag, $handle, $data_type=null, $data_source=null)
     {
         $icon = $this->get_attribute_shortcode($node_tag, "icon", "", $data_type, $data_source);
+        $icon_size = intval($node_tag->getAttribute("icon-size"));
         $action = $this->get_attribute_shortcode($node_tag, "action", "", $data_type, $data_source);
         $title = $this->get_attribute_shortcode($node_tag, "title", "", $data_type, $data_source);
         $params = $this->get_attribute_shortcode($node_tag, "params", "", $data_type, $data_source, false);
@@ -766,7 +814,11 @@ class TemplateEngine
                         break;
 
                     case "cancel":
-                        $href = "<?php echo \$this->get_tab_referrer() ?>";
+                        if (is_null($this->_plugin))
+                            $url_params["referrer"] = "\$_GET['referrer']";
+                        else
+                            $href = "<?php echo \$this->get_tab_referrer() ?>";
+
                         $btn_class .= " action-cancel ";
                         break;
 
@@ -808,7 +860,7 @@ class TemplateEngine
                     default:
                         $url_params["action"] = "'$action'";
 
-                        if ($keep_referrer)
+                        if ($keep_referrer || is_null($this->_plugin))
                             $url_params["referrer"] = "\$_GET['referrer']";
                         else
                             $url_params["referrer"] = "\$this->get_tab_url(true)";
@@ -823,13 +875,13 @@ class TemplateEngine
             $btn_class .= " force-update ";
 
         if (!empty($href))
-            fwrite($handle, "<a id=\"$id\" href=\"$href\" class=\"$btn_class\" tabindex=\"1\" title=\"$title\" >");
+            fwrite($handle, "<a id=\"$id\" href=\"$href\" class=\"link $btn_class\" tabindex=\"1\" title=\"$title\" >");
 
         if (!empty($icon)) {
+            if ($icon_size == 0)
+                $icon_size = 16;
 
-            $icon_class = $node_tag->getAttribute("icon-class");
-            if (empty($icon_class))
-                $icon_class = "icon16";
+            $icon_class = "icon$icon_size";
 
             fwrite($handle, "<img src=\"images/blank.png\" class=\"$icon_class $icon_class-$icon\" />");
         }
@@ -869,7 +921,7 @@ class TemplateEngine
         if ($node_tag->hasAttribute("if"))
             $this->process_tag_if($node_tag, $handle, $data_type, $data_source);
 
-        fwrite($handle, "<div class=\"field\"><label for=\"$name\">$caption :</label><div class=\"input\">");
+        fwrite($handle, "<div class=\"field\"><label for=\"$name\">$caption :</label>");
 
 
         switch ($type) {
@@ -1047,7 +1099,7 @@ class TemplateEngine
             fwrite($handle, "</span></a>\n");
         }
 
-        fwrite($handle, "</div></div>");
+        fwrite($handle, "</div>");
 
         if ($node_tag->hasAttribute("if"))
             fwrite($handle, "<?php endif; ?>");
@@ -1078,13 +1130,12 @@ class TemplateEngine
             $class = "box";
 
 
-        fwrite($handle, "<div class=\"clear\"></div>");
         fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><ul>");
 
         $this->process_toolbar_tag_childs($node_tag, $handle, $data_type, $data_source);
 
         fwrite($handle, "</ul><div class=\"clear\"></div>");
-        fwrite($handle, "</div><div class=\"clear\"></div>");
+        fwrite($handle, "</div>");
 
         if ($node_tag->hasAttribute("if"))
             fwrite($handle, "<?php endif; ?>");
@@ -1727,7 +1778,11 @@ class TemplateEngine
             fwrite($handle, "$return = ");
         }
 
-        fwrite($handle, "\$this->$name($params); ?>");
+        if (is_null($this->_plugin)) {
+            fwrite($handle, "$name($params); ?>");
+        } else {
+            fwrite($handle, "\$this->$name($params); ?>");
+        }
 
         if ($node_tag->hasAttribute("if"))
             fwrite($handle, "<?php endif; ?>");
@@ -1760,16 +1815,21 @@ class TemplateEngine
                functions, except for "if".  */
             if ((substr($token, 0, 2) != "if") && empty($output)) {
 
-                if ($token[0] == "$") {
+                /* Single variable */
+                if (substr($token, 0, 1) == "$") {
 
                     if (strpos($token, "@") !== false) {
                         $token = explode("@", $token);
 
-                        $output = "{$token[0]}[" . implode("][", array_slice($token, 1)) . "]";
+                        $output = "{$token[0]}['" . implode("][", array_slice($token, 1)) . "']";
 
                     } else {
                         $output = $token;
                     }
+
+                /* Constant */
+                } else if (substr($token, 0, 1) == "#") {
+                    $output = substr($token, 1);
 
                 } else {
 
@@ -1825,6 +1885,8 @@ class TemplateEngine
 
                 switch ($params[0]) {
                     case 'if':
+
+
                         $output = "(({$params[1]}) ? {$params[2]} : {$params[3]})";
                         break;
 
