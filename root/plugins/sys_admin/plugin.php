@@ -25,9 +25,11 @@ define("PERM_EXEC_COMMANDS", "exec_commands");
 define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
 
 
-class PluginSystemLogs extends Plugin
+class PluginSystemAdmin extends Plugin
 {
     public $dependencies = array("tools");
+
+    private $_log_items = array();
 
 
     /*--------------------------------------------------------------------------
@@ -41,16 +43,23 @@ class PluginSystemLogs extends Plugin
      */
     function on_load(&$manager)
     {
-        $manager->register_tab($this, null, "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
-        $manager->register_tab($this, "on_show_syslog", "ast", "logs", "Asterisk server", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show_syslog", "sys", "logs", "System (syslog)", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show_syslog", "kern", "logs", "Kernel", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show_syslog", "dmesg", "logs", "Boot log", PERM_LOGS_VIEW);
-        $manager->register_tab($this, "on_show_syslog", "auth", "logs", "Authentication", PERM_LOGS_VIEW);
-
         $manager->register_tab($this, "on_show_command", "command", "tools", "Run command", PERM_EXEC_COMMANDS);
         $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_STATUS_VIEW);
 
+
+        $manager->register_tab($this, "on_show_log", "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
+
+        $log_items = get_global_config_item("sys_admin", "log_files", array());
+
+
+        /* Create a sub tab for each items */
+        foreach($log_items as $name => $files) {
+
+            $tab_name = strtolower(preg_replace("/[^a-zA-Z0-9]+/", "", $name));
+            $this->_log_items[$tab_name] = $files;
+
+            $manager->register_tab($this, "on_show_log", $tab_name, "logs", $name, PERM_LOGS_VIEW);
+        }
 
         $manager->declare_permissions($this, array(
             PERM_LOGS_VIEW,
@@ -61,7 +70,7 @@ class PluginSystemLogs extends Plugin
 
 
     /*--------------------------------------------------------------------------
-     * on_show_syslog() : Called when the tab content is requested.
+     * on_show_log() : Called when the tab content is requested.
      *
      * Arguments :
      * ---------
@@ -71,51 +80,46 @@ class PluginSystemLogs extends Plugin
      *
      * Return : None
      */
-    function on_show_syslog($template, $tab_path, $action)
+    function on_show_log($template, $tab_path, $action)
     {
         if (!(check_permission(PERM_LOGS_VIEW)))
             throw new Exception("You do not have the permissions to view the logs!");
 
-        $log_basename = preg_replace("_.*/_", "", isset($_REQUEST["file"]) ? $_REQUEST["file"] : "");
+
+        if (count($this->_log_items) == 0)
+            throw new Exception("No log file categories was configured in yaam.conf");
 
         $path = explode(".", $tab_path);
 
-        switch ($path[2]) {
-            case "sys":
-                $log_filename = "/var/log/syslog";
-                break;
+        $log_files = $this->_log_items[$path[2]];
+        if (empty($log_files))
+            throw new Exception("log file category does not exists");
 
-            case "kern":
-                $log_filename = "/var/log/kern.log";
-                break;
 
-            case "dmesg":
-                $log_filename = "/var/log/dmesg";
-                break;
-
-            case "auth":
-                $log_filename = "/var/log/auth.log";
-                break;
-
-            default:
-                $tab_id = "system_logs.logs.ast";
-                $log_filename = "/var/log/asterisk/messages";
-                break;
-        }
-
+        /* Get the files that matches the search filter */
         $log_list = array();
-        foreach (glob($log_filename . "*") as $path)
+        foreach (glob($log_files) as $path)
             $log_list[] = basename($path);
 
-        if (empty($log_basename))
-            $log_basename = basename($log_filename);
+        /* Check if the search filter found log files */
+        if (count($log_list) == 0)
+            throw new Exception("No files found in $log_files!");
 
-        $log_filename .= str_replace(basename($log_filename), "", $log_basename);
+        /* Do not allow directory traversal */
+        $log_file = preg_replace("_.*/_", "", isset($_REQUEST["file"]) ? $_REQUEST["file"] : $log_list[0]);
+
+
+        /* Do not allow to view other files that those specified by the search filter */
+        if (!(in_array($log_file, $log_list)))
+            throw new Exception("You cannot view files which does not match with the search filters!");
+
+
+        $log_dir = dirname($log_files);
+        $log_filename = "$log_dir/$log_file";
 
         require($template->load("systemlogs.tpl"));
         require("{$this->dir}/js_highlight.php");
     }
-
 
 
     /*--------------------------------------------------------------------------

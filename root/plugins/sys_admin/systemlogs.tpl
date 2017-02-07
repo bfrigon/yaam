@@ -1,7 +1,7 @@
 <toolbar id="filters">
     <item type="label">Log file :</item>
     <item type="list" width="250px" icon="move" data-type="array" data-source="log_list">
-        <caption>[[$log_basename]]</caption>
+        <caption>[[$log_file]]</caption>
         <row>
             <item type="button" params="file=[[value]]">[[value]]</item>
         </row>
