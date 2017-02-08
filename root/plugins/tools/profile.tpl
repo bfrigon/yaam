@@ -1,6 +1,6 @@
-<div class="box dialog">
-    <h1>Edit profile - [[$_SESSION@user]]</h1>
-    <form id="frm_edit_profile" method="post">
+<form id="frm_edit_profile" method="post">
+    <dialog>
+        <h1>Edit profile - [[$_SESSION@user]]</h1>
 
         <field name="user" type="view" caption="Username" value="[[$_SESSION@user]]" />
         <field name="fullname" type="text" caption="Full name" value="[[$_SESSION@fullname]]" />
@@ -21,5 +21,5 @@
         <toolbar class="center v_spacing">
             <item type="submit" icon="save">Save</item>
         </toolbar>
-    </form>
-</div>
+    </dialog>
+</form>

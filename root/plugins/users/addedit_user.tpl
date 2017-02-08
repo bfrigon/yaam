@@ -1,9 +1,9 @@
-<div class="box dialog">
-    <if type="is" name="action" value="add"><h1>Add user</h1></if>
-    <if type="is" name="action" value="edit"><h1>Edit user</h1></if>
-    <if type="is" name="action" value="view"><h1>View user</h1></if>
+<form id="frm_add_user" method="post">
+    <dialog>
+        <if type="is" name="action" value="add"><h1>Add user</h1></if>
+        <if type="is" name="action" value="edit"><h1>Edit user</h1></if>
+        <if type="is" name="action" value="view"><h1>View user</h1></if>
 
-    <form id="frm_add_user" method="post">
         <if type="is" name="action" value="add"><field name="user" type="text" caption="Username" value="[[$user_data@user]]" /></if>
         <if type="is" name="action" value="edit"><field name="user" type="view" caption="Username" value="[[$user_data@user]]" /></if>
 
@@ -53,5 +53,5 @@
             </if>
 
         </toolbar>
-    </form>
-</div>
+    </dialog>
+</form>

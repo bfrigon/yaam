@@ -538,13 +538,17 @@ body {
     min-height: 60px;
 }
 
+.box.dialog > .content {
+    display: table-cell;
+}
+
 .box.dialog h1 {
     margin: -10px -10px 10px -10px;
+    width: 100%;
 }
 
 .box.dialog .field {
     display: table-row;
-
 }
 
 .box.dialog .field > label {

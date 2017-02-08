@@ -17,11 +17,11 @@
 define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
-define("YAAM_VERSION", "0.3.318");
+define("YAAM_VERSION", "0.3.319");
 
 
 /* --- DEBUG --- */
-define("FORCE_RECOMPILE_TEMPLATE", false);
+define("FORCE_RECOMPILE_TEMPLATE", true);
 define("TEMPLATE_ENGINE_DEBUG", false);
 
 

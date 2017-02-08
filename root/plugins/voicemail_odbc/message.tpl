@@ -1,5 +1,6 @@
-<div class="box dialog">
+<dialog>
     <h1>Message</h1>
+
     <field name="mailbox" type="view" caption="Mailbox" value="[[$mailbox]]" />
     <field name="date" type="view" caption="Date" value="[[$msgdate | format_unix_time]]" />
     <field name="from_name" type="view" caption="From" value="[[$caller_name | lower | ucwords]]" />
@@ -16,4 +17,4 @@
     <toolbar class="center v_spacing">
         <item type="button" action="cancel" icon="left">Back</item>
     </toolbar>
-</div>
+</dialog>

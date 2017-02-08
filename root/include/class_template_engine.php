@@ -340,12 +340,12 @@ class TemplateEngine
                                     $this->process_tag_toolbar($child, $handle, $data_type, $data_source);
                                     break;
 
-                                case "field":
-                                    $this->process_tag_field($child, $handle, $data_type, $data_source);
-                                    break;
-
                                 case "if":
                                     $this->process_tag_if($child, $handle, $data_type, $data_source);
+                                    break;
+
+                                case "dialog":
+                                    $this->process_tag_dialog($child, $handle, $data_type, $data_source);
                                     break;
 
                                 case "grid":
@@ -361,10 +361,6 @@ class TemplateEngine
                                 case "noparse":
                                     $html = $node->ownerDocument->saveXML($child);
                                     fwrite($handle, $html);
-                                    break;
-
-                                case "clear":
-                                    fwrite($handle, "<div class=\"clear\"></div>");
                                     break;
 
                                 case "call":
@@ -425,6 +421,92 @@ class TemplateEngine
 
         if ($outer)
             fwrite($handle, "</{$node->nodeName}>");
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_toolbar_tag_childs() : Process child nodes of the "toolbar" tag.
+     *
+     * Arguments
+     * ---------
+     *  - node_list   : The node containing "item" tags.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_dialog_tag_childs($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+
+        foreach ($node_tag->childNodes as $node_child) {
+
+
+            switch ($node_child->nodeName) {
+                case "if":
+                    $this->process_tag_if($node_child, $handle, $data_type, $data_source, false);
+
+                    $this->process_dialog_tag_childs($node_child, $handle, $data_type, $data_source);
+
+                    fwrite($handle, "<?php endif; ?>\n");
+                    break;
+
+                case "field":
+                    $this->process_tag_field($node_child, $handle, $data_type, $data_source);
+                    break;
+
+                case "toolbar":
+                    $this->process_tag_toolbar($node_child, $handle, $data_type, $data_source);
+                    break;
+
+                case "message":
+                    fwrite($handle, "<div>");
+
+                    $this->process_node($handle, $node_child, false, true, $data_type, $data_source);
+
+                    fwrite($handle, "</div>");
+                    break;
+
+                case "h1":
+                case "h2":
+                    $this->process_node($handle, $node_child, true, true, $data_type, $data_source);
+                    break;
+
+                default:
+                    break;
+
+            }
+        }
+    }
+
+    /*--------------------------------------------------------------------------
+     * process_tag_dialog() : Process the template tag "dialog".
+     *
+     * Arguments
+     * ---------
+     *  - node_tag    : Node to process.
+     *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
+     *
+     * Returns : None
+     */
+    private function process_tag_dialog($node_tag, $handle, $data_type=null, $data_source=null)
+    {
+        $type = $node_tag->getAttribute("type");
+
+        switch ($type) {
+            case "error":
+            case "warning":
+                $class = $type;
+                break;
+        }
+
+        fwrite($handle, "<div class=\"box dialog $class\"><div class=\"content\">");
+
+        $this->process_dialog_tag_childs($node_tag, $handle, $data_type, $data_source);
+
+        fwrite($handle, "</div></div>");
     }
 
 

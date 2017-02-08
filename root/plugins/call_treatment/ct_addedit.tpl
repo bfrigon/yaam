@@ -1,8 +1,7 @@
-<div class="box dialog">
-    <if type="is" name="action" value="add"><h1>Add call treatment rule</h1></if>
-    <if type="is" name="action" value="edit"><h1>Edit call treatment rule</h1></if>
-
-    <form id="frm_addedit_ct" method="post">
+<form id="frm_addedit_ct" method="post">
+    <dialog>
+        <if type="is" name="action" value="add"><h1>Add call treatment rule</h1></if>
+        <if type="is" name="action" value="edit"><h1>Edit call treatment rule</h1></if>
 
         <field name="description" type="text" caption="Description" value="[[$ct_data@description]]" />
         <field name="ct_action" type="select" caption="Action" value="[[$ct_data@action]]" data-type="dict" data-source="action_list" />
@@ -19,5 +18,5 @@
             <item type="submit" name="submit" icon="save">Save</item>
             <item type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
-    </form>
-</div>
+    </dialog>
+</form>

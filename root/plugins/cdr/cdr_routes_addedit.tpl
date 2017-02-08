@@ -1,8 +1,7 @@
-<div class="box dialog">
-    <if type="is" name="action" value="add"><h1>Add call route</h1></if>
-    <if type="is" name="action" value="edit"><h1>Edit call route</h1></if>
-
-    <form id="frm_addedit_route" method="post">
+<form id="frm_addedit_route" method="post">
+    <dialog>
+        <if type="is" name="action" value="add"><h1>Add call route</h1></if>
+        <if type="is" name="action" value="edit"><h1>Edit call route</h1></if>
 
         <field name="name" type="text" caption="Route name" value="[[$rte_data@name]]" />
 
@@ -15,5 +14,5 @@
             <item type="submit" name="submit" icon="save">Save</item>
             <item type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>
-    </form>
-</div>
+    </dialog>
+</form>
