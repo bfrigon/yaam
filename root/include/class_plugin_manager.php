@@ -300,7 +300,6 @@ class PluginManager
         $action["caption"] = $caption;
         $action["tooltip"] = $tooltip;
         $action["icon"] = $icon;
-        $action["req_level"] = $req_level;
         $action["perm"] = $perm;
 
         $this->actions[$type][] = $action;

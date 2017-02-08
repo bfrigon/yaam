@@ -92,7 +92,8 @@ class PluginPhonebook extends Plugin
                 if (!empty($_GET["s"])) {
                     $search = $_GET["s"];
 
-                    $query->where("description", "LIKE", "%$search%");
+                    $query->where("notes", "LIKE", "%$search%");
+                    $query->or_where("name", "LIKE", "%$search%");
                 }
 
 
@@ -156,8 +157,10 @@ class PluginPhonebook extends Plugin
         try {
             $query = $DB->create_query("phonebook");
 
-            $query->where("id", "=", $_GET["id"]);
-            $query->limit(1);
+            if (isset($_GET["id"])) {
+                $query->where("id", "=", $_GET["id"]);
+                $query->limit(1);
+            }
 
             $pb_data = array();
 

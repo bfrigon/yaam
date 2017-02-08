@@ -140,6 +140,9 @@ class PluginSystemAdmin extends Plugin
         if (!(check_permission(PERM_EXEC_COMMANDS)))
             throw new Exception("You do not have the permissions to execute commands!");
 
+        $cmd_result = "";
+        $command = isset($_POST["command"]) ? $_POST["command"] : "";
+
         if (isset($_POST["command"])) {
 
             /* Send the command to the AMI */
@@ -147,7 +150,6 @@ class PluginSystemAdmin extends Plugin
                 "command" => $_POST["command"]
             ))[0];
 
-            $cmd_result = "";
             if (isset($result["data"])) {
                 $cmd_result = $result["data"];
             }

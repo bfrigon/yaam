@@ -19,15 +19,15 @@
         </div>
     </if>
 
-     <div class="box dialog small">
-        <form id="login" method="post">
+    <form id="login" method="post">
+        <dialog class="small">
             <field type="text" name="user" caption="Username" value="[[$f_user]]" />
             <field type="password" name="pass" caption="Password" value="" />
 
             <toolbar class="center v_spacing">
                 <item type="submit" name="login" caption="Login">Login</item>
             </toolbar>
-        </form>
-    </div>
+        </dialog>
+    </form>
 </body>
 </html>

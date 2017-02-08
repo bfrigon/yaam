@@ -150,12 +150,17 @@ class PluginUsers extends Plugin
         if (!(check_permission(PERM_USER_READ)))
             throw new Exception("You do not have the required permissions to view users profile!");
 
-
         $query = $DB->create_query("users");
 
         try {
-            $query->where("user", "=", $_GET["user"]);
-            $query->limit(1);
+
+            if (isset($_GET["user"])) {
+                $query->where("user", "=", $_GET["user"]);
+                $query->limit(1);
+
+            } else if ($action == "edit") {
+                throw new Exception("You did not select any user's profile to edit.");
+            }
 
 
             $user_data = array(
@@ -166,6 +171,7 @@ class PluginUsers extends Plugin
                 "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",
                 "vbox_user"    => isset($_POST["vbox_user"])    ? $_POST["vbox_user"] : "",
                 "did"          => isset($_POST["did"])          ? $_POST["did"] : "",
+                "prgroups"     => array()
             );
 
             /* Get the list of available permissions */
@@ -263,9 +269,7 @@ class PluginUsers extends Plugin
 
         $query = $DB->create_query("users");
 
-        $user = $_GET["user"];
-
-        if (!isset($user)) {
+        if (!(isset($_GET["user"]))) {
             $message = "You did not select any users to delete.";
             $url_ok = $this->get_tab_referrer();
 
@@ -273,6 +277,7 @@ class PluginUsers extends Plugin
             return;
         }
 
+        $user = $_GET["user"];
         if (is_array($user)) {
             $query->where_in("user", $user);
         } else {

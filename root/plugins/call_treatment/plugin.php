@@ -175,8 +175,13 @@ class PluginCallTreatment extends Plugin
         try {
             $query = $DB->create_query("call_treatment");
 
-            $query->where("id", "=", $_GET["id"]);
-            $query->limit(1);
+            if (isset($_GET["id"])) {
+                $query->where("id", "=", $_GET["id"]);
+                $query->limit(1);
+
+            } else if ($action == "edit") {
+                throw new Exception("You did not select any call treatment rules to edit!");
+            }
 
             $ct_data = array(
                 "extension"     => isset($_POST["extension"])   ? $_POST["extension"] : $_SESSION["extension"],
@@ -243,9 +248,7 @@ class PluginCallTreatment extends Plugin
 
         $query = $DB->create_query("call_treatment");
 
-        $id = $_GET["id"];
-
-        if (!isset($id)) {
+        if (!isset($_GET["id"])) {
             $message = "You did not select any call treatment rule(s) to delete.";
             $url_ok = $this->get_tab_referrer();
 
@@ -253,6 +256,7 @@ class PluginCallTreatment extends Plugin
             return;
         }
 
+        $id = $_GET["id"];
         if (is_array($id)) {
             $query->where_in("id", $id);
         } else {

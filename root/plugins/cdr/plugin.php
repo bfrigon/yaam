@@ -269,15 +269,20 @@ class PluginCdr extends Plugin
     {
         global $DB;
 
-        if (!(check_permission(PERM_CDR_WRITE_ROUTE)))
+        if (!(check_permission(PERM_CDR_WRITE_ROUTES)))
             throw new Exception("You do not have the required permissions to add/edit call routes!");
 
 
         try {
             $query = $DB->create_query("cdr_routes");
 
-            $query->where("id", "=", $_GET["id"]);
-            $query->limit(1);
+            if (isset($_GET["id"])) {
+                $query->where("id", "=", $_GET["id"]);
+                $query->limit(1);
+
+            } else if ($action == "edit") {
+                throw new Exception("You did not select any call routes to edit!");
+            }
 
             $rte_data = array(
                 "name"       => isset($_POST["name"])       ? $_POST["name"] : "",
@@ -334,14 +339,12 @@ class PluginCdr extends Plugin
 
         try {
 
-            if (!(check_permission(PERM_CDR_WRITE_ROUTE)))
+            if (!(check_permission(PERM_CDR_WRITE_ROUTES)))
                 throw new Exception("You do not have the required permissions to delete call routes!");
 
             $query = $DB->create_query("cdr_routes");
 
-            $id = $_GET["id"];
-
-            if (!isset($id)) {
+            if (!isset($_GET["id"])) {
                 $message = "You did not select any routes to delete.";
                 $url_ok = $this->get_tab_referrer();
 
@@ -349,6 +352,7 @@ class PluginCdr extends Plugin
                 return;
             }
 
+            $id = $_GET["id"];
             if (is_array($id)) {
                 $query->where_in("id", $id);
             } else {

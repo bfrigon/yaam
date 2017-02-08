@@ -122,11 +122,15 @@ class AJAM
         $packet_type = PACKET_HEADER;
 
         foreach ($lines as $line) {
-            list($key, $value) = explode(":", $line, 2);
-
-            $key = strtolower($key);
-            $value = trim($value);
-
+            /* Split the key and value */
+            $elements = explode(":", $line, 2);
+            if (count($elements) == 2) {
+                $key = strtolower($elements[0]);
+                $value = trim($elements[1]);
+            } else {
+                $key = "";
+                $value = "";
+            }
 
             /* If the line is empty, add the packet to the response and start a new one */
             if (empty($line)) {
