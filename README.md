@@ -3,13 +3,22 @@ Y.A.A.M
 
 (Yet Another Asterisk Manager)
 
-This is a web interface that i wrote to “manage” my Asterisk server. It is not meant at all to be an alternative to FreePbx and the like. It has very basic functionality : A call log viewer, voicemail manager, system log viewer and a few tools. You can’t add voicemail boxes, user extensions or modify the dialplan with this interface. It has a plugin system, so you can add or remove features you don’t need.
+This is a web interface for managing an Asterisk server. It is not meant at all to be an alternative to other GUI such as FreePBX. It is more like an assistant, for those who prefer to edit configuration files manually but needs a web interface for quick access to server logs, call logs, etc.
 
 ![Screenshot : Call-log](/screenshots/call_log_filters.jpg)
 
-TODO
-----
+Users are only allowed to view call logs, listen to voice message or edit phonebook records for their extension only. It is possible to give certain users permission to access to those functions for all users as well.
 
- - Add localization support to the template engine.  /template/fr/template.tpl  or /plugin/CDR/fr/template.tpl
- - Add first run setup wizard.
+![Screenshot : Edit users](/screenshots/edit_user.jpg)
 
+Y.A.A.M also has a plugin system, so you can add or remove features you don’t need.
+
+Available plugins
+-----------------
+
+ - Call log viewer
+ - Call treatment
+ - Voicemail (ODBC)
+ - Phone book
+ - Sys Admin (Log viewer, channel status, run CLI commands)
+ - Originate call
