@@ -33,14 +33,11 @@
                     [[error_msg]]
                 </div>
             </if>
-
         </div>
     </div>
     <div class="footer">
         Y.A.A.M (v[[#YAAM_VERSION]])
-        <p class="copyright">Execution time : <span id="exec_time"><var name="DEBUG_EXEC_TIME" format="%0.1f ms" /></span><p>
-        <p class="copyright">[[$DEBUGINFO_TEMPLATE_ENGINE]]</p>
-        </p>
+        <div class="copyright">[[$DEBUG_INFO_FOOTER]]</div>
     </div>
 </body>
 </html>

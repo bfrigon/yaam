@@ -43,8 +43,6 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 class TagProcessorBase
 {
 
-    protected $_unique_id = 0;
-    protected $_unique_base = "";
     protected $_engine = null;
 
     public $processors = null;
@@ -65,9 +63,6 @@ class TagProcessorBase
 
         $this->processors = &$engine->processors;
         $this->currency_format = &$engine->currency_format;
-
-        $this->_unique_base = hash("crc32b", $engine->template_file);
-        $this->_unique_id = 0;
     }
 
 
@@ -215,9 +210,8 @@ class TagProcessorBase
 
         foreach($tokens as $token) {
 
-            /* The first token is the variable name, following tokens contains modifier
-               functions, except for "if".  */
-            if ((substr($token, 0, 2) != "if") && empty($output)) {
+            /* The first token is the variable name, following tokens contains modifier */
+            if (empty($output)) {
 
                 /* Single variable */
                 if (substr($token, 0, 1) == "$") {
@@ -230,10 +224,17 @@ class TagProcessorBase
                             $variable .= (is_numeric($bracket) ? "[$bracket]" : "['$bracket']");
                         }
 
-                        $output = "(isset($variable) ? $variable : $unset_variable)";
+                        if (is_null($unset_variable))
+                            $output = $varaible;
+                        else
+                            $output = "(isset($variable) ? $variable : $unset_variable)";
 
                     } else {
-                        $output = "(isset($token) ? $token : $unset_variable)";
+
+                        if (is_null($unset_variable))
+                            $output = $token;
+                        else
+                            $output = "(isset($token) ? $token : $unset_variable)";
                     }
 
                 /* Constant */
@@ -249,7 +250,11 @@ class TagProcessorBase
                             if (strtolower($token) == "value") {
                                 $output = $data_source[1];
                             } else {
-                                $output = "(isset(\$$token) ? \$$token : $unset_variable)";
+
+                                if (is_null($unset_varaible))
+                                    $output = "\$$token";
+                                else
+                                    $output = "(isset(\$$token) ? \$$token : $unset_variable)";
                             }
 
                             break;
@@ -273,7 +278,12 @@ class TagProcessorBase
                                         break;
 
                                     default:
-                                        $output = "\$$token";
+
+                                        if (is_null($unset_varaible))
+                                            $output = "\$$token";
+                                        else
+                                            $output = "(isset(\$$token) ? \$$token : $unset_variable)";
+
                                         break;
                                 }
                             } else {
@@ -284,7 +294,12 @@ class TagProcessorBase
 
                         /* Single variable */
                         default:
-                            $output = "(isset(\$$token) ? \$$token : $unset_variable)";
+
+                            if (is_null($unset_variable))
+                                $output = "\$$token";
+                            else
+                                $output = "(isset(\$$token) ? \$$token : $unset_variable)";
+
                             break;
                     }
                 }
@@ -293,12 +308,6 @@ class TagProcessorBase
                 $params = explode(":", $token);
 
                 switch ($params[0]) {
-                    case 'if':
-
-
-                        $output = "(({$params[1]}) ? {$params[2]} : {$params[3]})";
-                        break;
-
                     case "lower":
                         $output = "strtolower($output)";
                         break;
@@ -423,7 +432,7 @@ class TagProcessorBase
      */
     protected function get_unique_varname()
     {
-        return "\$v" . $this->_unique_base . $this->_unique_id++;
+        return "\$v" . $this->_engine->unique_base . $this->_engine->unique_id++;
     }
 
 

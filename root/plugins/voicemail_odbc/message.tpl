@@ -9,8 +9,12 @@
     <field name="size" type="view" caption="Size" value="[[$msg_size | format_byte]]" />
 
     <toolbar>
-        <item type="button" href="[[$msg_url]]" caption="Download" icon="download" >Download</item>
+        <item type="button" href="[[$msg_url]]" title="Download message" icon="download" >Download</item>
         <item type="separator" />
+        <item type="button" name="play" href="#" icon="play" />
+        <item type="button" name="pause" href="#" icon="pause" />
+        <item type="button" href="#" icon="stop" />
+
 
     </toolbar>
 

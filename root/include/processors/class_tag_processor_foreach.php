@@ -57,7 +57,7 @@ class TagProcessorForeach extends TagProcessorBase
     public function process_tag($node_tag, $handle, $data_type=null, $data_source=null)
     {
         /* Get tag attributes */
-        $data_source = $this->process_tokens($node_tag->getAttribute("data-source"), $data_type, $data_source);
+        $data_source = $this->process_tokens($node_tag->getAttribute("data-source"), $data_type, $data_source, null);
         $data_type = $node_tag->getAttribute("data-type");
         $type = strtolower($node_tag->getAttribute("type"));
         $class = $node_tag->getAttribute("class");

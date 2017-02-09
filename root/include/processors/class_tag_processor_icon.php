@@ -100,7 +100,7 @@ class TagProcessorIcon extends TagProcessorBase
 
                     case "cancel":
                         if (is_null($this->plugin))
-                            $url_params["referrer"] = "\$_GET['referrer']";
+                            $url_params["referrer"] = "( isset(\$_REQUEST['referrer']) ? \$_REQUEST['referrer'] : '')";
                         else
                             $href = "<?php echo \$this->get_tab_referrer() ?>";
 
@@ -111,44 +111,43 @@ class TagProcessorIcon extends TagProcessorBase
                         $url_params["page"] = "1";
                         $href = $this->func_build_tab_url($url_params, true);
 
-                        $btn_class .= " <?php echo (\$current_page <= 1) ? 'disabled' : '' ?>";
+                        $btn_class .= " <?php echo (!isset(\$current_page) || \$current_page <= 1) ? 'disabled' : '' ?>";
                         break;
 
                     case "prev-page":
                         $url_params["page"] = "max(\$current_page - 1, 1)";
                         $href = $this->func_build_tab_url($url_params, true);
 
-                        $btn_class .= " <?php echo (\$current_page <= 1) ? 'disabled' : '' ?>";
+                        $btn_class .= " <?php echo (!isset(\$current_page) || \$current_page <= 1) ? 'disabled' : '' ?>";
                         break;
 
                     case "next-page":
-                        $url_params["page"] = "min(\$current_page + 1, \$total_pages)";
+                        $url_params["page"] = "((isset(\$current_page) && isset(\$total_pages)) ? min(\$current_page + 1, \$total_pages) : 1)";
                         $href = $this->func_build_tab_url($url_params, true);
 
-                        $btn_class .= " <?php echo (\$current_page >= \$total_pages) ? 'disabled' : '' ?>";
+                        $btn_class .= " <?php echo ((!isset(\$current_page) && !isset(\$total_pages)) || \$current_page >= \$total_pages) ? 'disabled' : '' ?>";
                         break;
 
                     case "last-page":
-                        $url_params["page"] = "\$total_pages";
+                        $url_params["page"] = "(isset(\$total_pages) ? \$total_pages : 1)";
                         $href = $this->func_build_tab_url($url_params, true);
 
-                        $btn_class .= " <?php echo (\$current_page >= \$total_pages) ? 'disabled' : '' ?>";
-                        break;
-
-                    case "select-none":
-                    case "select-all":
-                        $url_params["action"] = "'$action'";
-
-                        $href = $this->func_build_tab_url($url_params, true);
+                        $btn_class .= " <?php echo ((!isset(\$current_page) && !isset(\$total_pages)) || \$current_page >= \$total_pages) ? 'disabled' : '' ?>";
                         break;
 
                     default:
                         $url_params["action"] = "'$action'";
 
-                        if ($keep_referrer || is_null($this->plugin))
-                            $url_params["referrer"] = "\$_GET['referrer']";
-                        else
+                        if (is_null($this->plugin)) {
+
+                            $url_params["referrer"] = "(isset(\$_REQUEST['referrer']) ? \$_REQUEST['referrer'] : '')";
+                        } else if ($keep_referrer) {
+
+                            $url_params["referrer"] = "\$this->get_tab_referrer()";
+                        } else {
+
                             $url_params["referrer"] = "\$this->get_tab_url(true)";
+                        }
 
                         $href = $this->func_build_tab_url($url_params, $keep_uri, false);
                         break;

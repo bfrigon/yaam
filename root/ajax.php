@@ -40,12 +40,7 @@ try {
 
     $output = isset($_REQUEST["output"]) ? $_REQUEST["output"] : "";
     switch ($output) {
-        case "wav":
-            header("Content-Type: audio/x-wav");
-            break;
-
-        case "mp3":
-            header("Content-Type: audio/mpeg");
+        case "binary":
             break;
 
         case "html":
@@ -58,7 +53,7 @@ try {
 
         default:
             header("Content-Type: text/html");
-            throw new Exception("Invalid format");
+            throw new Exception("Invalid output format");
             break;
     }
 

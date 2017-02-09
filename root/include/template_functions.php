@@ -129,11 +129,23 @@ function format_time_seconds($seconds)
 }
 
 
-
+/*--------------------------------------------------------------------------
+ * format_unix_time() : Returns a formated date string.
+ *
+ * Arguments
+ * ---------
+ *  - date : Input date
+ *
+ * Returns : Formated value
+ */
 function format_unix_time($date)
 {
+    if (empty($date))
+        return "";
+
 
     $fmt = get_user_dateformat(DATE_FORMAT_DATETIME);
+
     return strftime($fmt, $date);
 }
 

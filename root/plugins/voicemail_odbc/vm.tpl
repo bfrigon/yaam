@@ -38,13 +38,13 @@
     </toolbar>
 
 
-    <datagrid class="expand" id="grid_vm" data-type="odbc" data-source="results">
+    <datagrid class="expand" id="grid_vm" data-type="odbc" data-source="results" min-rows="15">
         <caption>[[$vbox_user]]@[[$vbox_context]] - [[$current_folder_name]]([[$num_results]])</caption>
         <header>
-            <column style="width: 16px" type="checkbox"></column>
+            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
             <column style="width: 140px">Date</column>
-            <column style="width: 90px">From</column>
-            <column style="width: 140px">Name</column>
+            <column style="width: 120px">From</column>
+            <column style="width: 200px">Name</column>
             <column style="width: 60px">Duration</column>
             <column style="width: 60px">Size</column>
             <column style="width: 80px" type="actions"></column>
@@ -68,6 +68,7 @@
                 <icon action="view" icon="play" title="Listen" params="id=[[id]]" />
             </column>
         </row>
+        <if-empty>** No messages **</if-empty>
     </datagrid>
 </form>
 

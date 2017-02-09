@@ -57,7 +57,10 @@ class TemplateEngine extends TagProcessorBase
     private $_template_dir;
     private $_cache_dir;
 
-    public $template_file;
+    public $unique_base = '';
+    public $unique_id = 0;
+
+    public $template_file = '';
     public $currency_format = "%.3i $";
     public $processors = array();
     public $plugin = null;
@@ -103,6 +106,10 @@ class TemplateEngine extends TagProcessorBase
         $this->processors["form"] = new TagProcessorForm($this);
         $this->processors["action-list"] = new TagProcessorActionList($this);
         $this->processors["actions"] = $this->processors["action-list"];
+
+
+        $this->debug_force_recompile = get_global_config_item("general", "debug_template_force_recompile", false);
+        $this->debug_verbose = get_global_config_item("general", "debug_template_verbose", false);
     }
 
 
@@ -133,7 +140,7 @@ class TemplateEngine extends TagProcessorBase
                 throw new Exception("Can't load the template file ($template_file)");
 
             /* Force re-compiling the template if enabled */
-            if (FORCE_RECOMPILE_TEMPLATE)
+            if ($this->debug_force_recompile)
                 $template_mtime = time();
 
             if (($cache_mtime = @filemtime($cache_file)) !== False && $template_mtime < $cache_mtime)
@@ -166,11 +173,12 @@ class TemplateEngine extends TagProcessorBase
      */
     private function compile($template_file, $cache_file, $top_level=false)
     {
-        global $DEBUGINFO_TEMPLATE_ENGINE;
+        global $DEBUG_INFO_FOOTER;
 
         $compile_start = microtime(true);
 
         $this->template_file = $template_file;
+        $this->unique_base = hash("crc32b", $template_file);
 
         /* Open template file */
         $dom_input = new DOMDocument();
@@ -193,8 +201,10 @@ class TemplateEngine extends TagProcessorBase
 
         $compile_time = (microtime(true) - $compile_start) * 1000;
 
-        $DEBUGINFO_TEMPLATE_ENGINE .= sprintf("Compiled : %s to %s - compile time: %0.1f ms<br />",
-            $template_file, $cache_file, $compile_time);
+        if ($this->debug_verbose) {
+            $DEBUG_INFO_FOOTER .= sprintf("Compiled : %s to %s - compile time: %0.1f ms<br />",
+                $template_file, $cache_file, $compile_time);
+        }
 
         fclose($handle);
     }

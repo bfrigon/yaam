@@ -56,7 +56,7 @@ class PluginVoicemailOdbc extends Plugin
      *
      * Arguments :
      * ---------
-     *  None
+     *  - manager ; Plugin manager instance
      *
      * Return : None
      */
@@ -107,6 +107,15 @@ class PluginVoicemailOdbc extends Plugin
     }
 
 
+    /*--------------------------------------------------------------------------
+     * action_list_messages() : View mailbox messages.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
     function action_list_messages($template)
     {
         global $DB;
@@ -178,59 +187,99 @@ class PluginVoicemailOdbc extends Plugin
     }
 
 
+    /*--------------------------------------------------------------------------
+     * action_delete_message() : Delete a mailbox message
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
     function action_delete_message($template)
     {
         global $DB;
 
-        if (!(check_permission(PERM_VOICEMAIL)))
-            throw new Exception("You do not have the required permissions to access voicemail!");
-
-        if (!isset($_GET["confirm"])) {
-
-            require($template->load("dialog_delete.tpl", true));
-            return;
-        }
-
         try {
 
+            if (!(check_permission(PERM_VOICEMAIL)))
+                throw new Exception("You do not have the required permissions to access voicemail!");
 
-            $query = $DB->create_query("voicemessages");
+            $query = $DB->create_query($this->_table);
+
+            if (!isset($_REQUEST["id"]))
+                throw new Exception("You did not select any message(s) to delete");
+
             $id = $_REQUEST["id"];
-
-
             if (is_array($id)) {
                 $query->where_in("id", $id);
-
-            } else if (is_string($id)) {
-                $query->where("id", "=", $id);
-
             } else {
-                throw new Exception("Nothing to delete! No message ID or invalid parameter.");
+                $query->where("id", "=", $id);
             }
 
-            $query->run_query_delete();
 
-            /* Redirect to the previous location */
-            $this->redirect($this->get_tab_referrer());
-            return;
+            /* Restrict to user's mailbox if the user does not have permission to access all mailboxes */
+            if (!(check_permission(PERM_VOICEMAIL_ALL_USERS))) {
+                $query->where("mailboxcontext", "=", $_SESSION["vbox_context"]);
+                $query->where("mailboxuser", "=", $_SESSION["vbox_user"]);
+            }
+
+            if (isset($_GET["confirm"])) {
+
+                /* Delete the message(s) */
+                $query->run_query_delete();
+
+                /* Redirect to the previous location */
+                $this->redirect($this->get_tab_referrer());
+
+            } else {
+
+                /* Get the number of messages to delete */
+                $msg_count = $query->run_query_select_simple("count(*)");
+
+                if (intval($msg_count) == 0)
+                    throw new Exception("You did not select any message(s) to delete");
+
+                $results = $query->run_query_select("origtime,callerid");
+
+                /* Display the delete message dialog */
+                require($template->load("msg_delete.tpl"));
+
+                odbc_free_result($results);
+            }
 
         } catch (Exception $e) {
+            $message = $e->getmessage();
+            $url_ok = $this->get_tab_referrer();
 
-            print_message($e->getmessage(), true);
+            require($template->load("dialog_error.tpl", true));
         }
+
     }
 
 
+    /*--------------------------------------------------------------------------
+     * action_view_message() : View mailbox message details
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
     function action_view_message($template)
     {
         global $DB;
 
-        if (!(check_permission(PERM_VOICEMAIL)))
-            throw new Exception("You do not have the required permissions to access voicemail!");
-
         try {
+            if (!(check_permission(PERM_VOICEMAIL)))
+                throw new Exception("You do not have the required permissions to access voicemail!");
+
 
             $query = $DB->create_query($this->_table);
+
+            if (!(isset($_GET["id"])))
+                throw new Exception("You did not select any message!");
 
             $id = $_GET["id"];
             $columns = array(
@@ -249,9 +298,21 @@ class PluginVoicemailOdbc extends Plugin
 
             $res = $query->run_query_select($columns);
 
+            if (!(@odbc_fetch_row($res)))
+                throw new Exception("Message not found");
+
+
+
             $mailbox_user = odbc_result($res, "mailboxuser");
             $mailbox_context = odbc_result($res, "mailboxcontext");
             $mailbox = "$mailbox_user@$mailbox_context";
+
+            /* Check if the requested message ID belongs to the current logged user */
+            if ((!(check_permission(PERM_VOICEMAIL_ALL_USERS))) &&
+                (($_SESSION["vbox_context"] != $mailbox_context) || ($_SESSION["vbox_user"] != $mailbox_user))) {
+
+                throw new Exception("You do not have the required permissions to access other user's voicemail!");
+            }
 
             $msgdate = odbc_result($res, "origtime");
             $duration = odbc_result($res, "duration");
@@ -259,15 +320,17 @@ class PluginVoicemailOdbc extends Plugin
             $callerid = odbc_result($res, "callerid");
             list($caller_name, $caller_number) = $this->regex_clid($callerid);
 
-            $msg_url = "ajax.php?function={$this->name}/download&id=$id";
-            } catch (Exception $e) {
+            $msg_url = "ajax.php?function={$this->name}/download&id=$id&output=binary";
 
-            print_message($e->getmessage(), true);
+            require($template->load("message.tpl"));
+
+       } catch (Exception $e) {
+            $message = $e->getmessage();
+            $url_ok = $this->get_tab_referrer();
+
+            require($template->load("dialog_error.tpl", true));
         }
-
-        require($template->load("message.tpl"));
     }
-
 
 
     /*--------------------------------------------------------------------------
@@ -291,7 +354,6 @@ class PluginVoicemailOdbc extends Plugin
     }
 
 
-
     /*--------------------------------------------------------------------------
      * ajax_download() : Outputs the recording data of a given message ID
      *
@@ -304,13 +366,10 @@ class PluginVoicemailOdbc extends Plugin
      */
     function ajax_download()
     {
-
         global $DB;
 
         if (!(check_permission(PERM_VOICEMAIL)))
             throw new Exception("You do not have the required permissions to access voicemail!");
-
-
 
         if (!isset($_GET["id"]))
             throw new HTTPException(404, "message ID is missing");
@@ -377,8 +436,6 @@ class PluginVoicemailOdbc extends Plugin
 
             $columns = "recording";
         }
-
-
 
 
         /* Retreive the recording from the database */

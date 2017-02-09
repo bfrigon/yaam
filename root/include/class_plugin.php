@@ -134,12 +134,12 @@ class Plugin
      */
     function get_tab_referrer()
     {
-        if (isset($_GET["referrer"])) {
-            return $_GET["referrer"];
+        if (isset($_REQUEST["referrer"])) {
+            return $_REQUEST["referrer"];
 
         } else {
 
-            if (!(isset($_GET["path"])))
+            if (!(isset($_REQUEST["path"])))
                 return "";
 
             $uri = array("path" => $_GET["path"]);

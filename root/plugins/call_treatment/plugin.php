@@ -58,7 +58,7 @@ class PluginCallTreatment extends Plugin
      *
      * Arguments :
      * ---------
-     *  None
+     *  - manager : Plugin manager instance
      *
      * Return : None
      */
@@ -284,6 +284,10 @@ class PluginCallTreatment extends Plugin
             $query->where_in("id", $id);
         } else {
             $query->where("id", "=", $id);
+        }
+
+        if (!(check_permission(PERM_CT_RULES_ALL_USERS))) {
+            $query->where("extension", "=", intval($_SESSION["extension"]));
         }
 
         if (isset($_GET["confirm"])) {

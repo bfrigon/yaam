@@ -35,13 +35,11 @@
 
 require("include/common.php");
 
-$DEBUGINFO_TEMPLATE_ENGINE = "";
+$DEBUG_INFO_FOOTER = "";
 $DEBUG_TIME_START = microtime(true);
-$DEBUG_EXEC_TIME = 0;
 
 try
 {
-
     session_start();
 
     if (!isset($_SESSION['logged'])) {
@@ -63,8 +61,6 @@ try
     $error_msg = $e->getmessage();
 }
 
-$DEBUG_EXEC_TIME = (microtime(true) - $DEBUG_TIME_START) * 1000;
-
 /* Display the page template */
 $template = new TemplateEngine(null);
 require($template->load("index.tpl", true, true));
@@ -83,7 +79,7 @@ require($template->load("index.tpl", true, true));
  */
 function show_tab_content($path)
 {
-    global $DEBUG_TIME_START, $DEBUG_EXEC_TIME;
+    global $DEBUG_TIME_START, $DEBUG_INFO_FOOTER;
 
     try {
         global $PLUGINS;
@@ -95,7 +91,12 @@ function show_tab_content($path)
         $error_msg = $e->getmessage();
     }
 
-    $DEBUG_EXEC_TIME = (microtime(true) - $DEBUG_TIME_START) * 1000;
+    if (get_global_config_item("general", "debug_show_exectime", false)) {
+
+        $exec_time = (microtime(true) - $DEBUG_TIME_START) * 1000;
+
+        $DEBUG_INFO_FOOTER .= sprintf("<p class=\"copyright\">Execution time : %0.1d ms</p>", $exec_time);
+    }
 
     return $error_msg;
 }

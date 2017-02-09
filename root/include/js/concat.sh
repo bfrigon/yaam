@@ -11,6 +11,7 @@ echo "\n" >> $OUTPUT_FILE
 cat jquery/jquery-daterangepicker.min.js >> $OUTPUT_FILE
 echo "\n" >> $OUTPUT_FILE
 
-
+cat jquery/jquery.jplayer.min.js >> $OUTPUT_FILE
+echo "\n" >> $OUTPUT_FILE
 
 

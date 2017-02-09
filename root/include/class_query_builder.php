@@ -121,6 +121,31 @@ class QueryBuilder
 
 
     /*--------------------------------------------------------------------------
+     * run_query_select_simple() : Prepare and execute a SELECT query, then return
+     *                             the data contained in the specified column.
+     *
+     * Arguments
+     * ---------
+     *  - columns : Single column name.
+     *
+     * Returns : ODBC result identifier.
+     */
+    public function run_query_select_simple($column)
+    {
+        $results = $this->run_query_select($column);
+
+        if (!(@odbc_fetch_row($results)))
+            return null;
+
+        $value = odbc_result($results, $column);
+
+        odbc_free_result($results);
+
+        return $value;
+    }
+
+
+    /*--------------------------------------------------------------------------
      * run_query_delete() : Prepare and execute a DELETE query.
      *
      * Arguments
