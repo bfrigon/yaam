@@ -6,7 +6,6 @@
 
     <link id="css_theme" rel="stylesheet" type="text/css" href="themes/[[$_SESSION@ui_theme]]/theme.css?v=[[#YAAM_VERSION]]" />
     <script type="text/javascript" src="include/js/jquery-env.min.js?v=[[#YAAM_VERSION]]"></script>
-    <script type="text/javascript" src="include/js/jquery-custom-ui-dialog.js?v=[[#YAAM_VERSION]]"></script>
 </head>
 
 <body>

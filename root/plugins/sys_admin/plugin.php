@@ -1,16 +1,35 @@
 <?php
 //******************************************************************************
-// Systemlogs/plugin.php - System logs plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
-// Author  : Benoit Frigon <benoit@frigon.info>
+// Author  : Benoit Frigon <www.bfrigon.com>
 //
-// Copyright (c) Benoit Frigon
-// www.bfrigon.com
+// Contributors
+// ============
 //
-// This software is released under the terms of the GNU Lesser General Public
-// License v2.1.
-// A copy of which is available from http://www.gnu.org/copyleft/lesser.html
+//
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright (c) 2017 Benoit Frigon
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 //******************************************************************************
 
@@ -20,6 +39,7 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+/* --- Plugin permissions --- */
 define("PERM_LOGS_VIEW", "logs_view");
 define("PERM_EXEC_COMMANDS", "exec_commands");
 define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
@@ -27,6 +47,7 @@ define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
 
 class PluginSystemAdmin extends Plugin
 {
+
     public $dependencies = array("tools");
 
     private $_log_items = array();

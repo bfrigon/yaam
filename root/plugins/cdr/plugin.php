@@ -1,16 +1,35 @@
 <?php
 //******************************************************************************
-// Plugins/CDR/plugin.php - Call log plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
-// Author  : Benoit Frigon <benoit@frigon.info>
+// Author  : Benoit Frigon <www.bfrigon.com>
 //
-// Copyright (c) Benoit Frigon
-// www.bfrigon.com
+// Contributors
+// ============
 //
-// This software is released under the terms of the GNU Lesser General Public
-// License v2.1.
-// A copy of which is available from http://www.gnu.org/copyleft/lesser.html
+//
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright (c) 2017 Benoit Frigon
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 //******************************************************************************
 
@@ -19,6 +38,8 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
     exit();
 }
 
+
+/* --- Plugin permissions --- */
 define("PERM_CDR_VIEW", "cdr_view");
 define("PERM_CDR_VIEW_ALL_USERS", "cdr_view_all_users");
 define("PERM_CDR_READ_ROUTES", "cdr_read_routes");
@@ -27,6 +48,7 @@ define("PERM_CDR_WRITE_ROUTES", "cdr_write_routes");
 
 class PluginCdr extends Plugin
 {
+
     public $dependencies = array("tools");
 
     /*--------------------------------------------------------------------------

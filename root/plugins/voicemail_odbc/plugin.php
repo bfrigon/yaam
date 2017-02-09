@@ -1,16 +1,35 @@
 <?php
 //******************************************************************************
-// Plugins/Voicemail_odbc/plugin.php - Voicemail(ODBC) plugin
 //
 // Project : Asterisk Y.A.A.M (Yet another asterisk manager)
-// Author  : Benoit Frigon <benoit@frigon.info>
+// Author  : Benoit Frigon <www.bfrigon.com>
 //
-// Copyright (c) Benoit Frigon
-// www.bfrigon.com
+// Contributors
+// ============
 //
-// This software is released under the terms of the GNU Lesser General Public
-// License v2.1.
-// A copy of which is available from http://www.gnu.org/copyleft/lesser.html
+//
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright (c) 2017 Benoit Frigon
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 //
 //******************************************************************************
 
@@ -20,12 +39,14 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 }
 
 
+/* --- Plugin permissions --- */
 define("PERM_VOICEMAIL", "voicemail");
 define("PERM_VOICEMAIL_ALL_USERS", "voicemail_all_users");
 
 
 class PluginVoicemailOdbc extends Plugin
 {
+
     public $dependencies = array();
     public $conflicts = array("voicemail");
 
@@ -50,6 +71,8 @@ class PluginVoicemailOdbc extends Plugin
 
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = '25';
+
+        $this->_table = get_global_config_item("voicemail", "table", "voicemessages");
     }
 
 
@@ -115,7 +138,7 @@ class PluginVoicemailOdbc extends Plugin
         $current_folder = isset($_GET["folder"]) ? $_GET["folder"] : "inbox";
         $current_folder_name = $folders[$current_folder];
 
-        $query = $DB->create_query("voicemessages");
+        $query = $DB->create_query($this->_table);
 
         $columns = array(
             "id",
@@ -207,7 +230,7 @@ class PluginVoicemailOdbc extends Plugin
 
         try {
 
-            $query = $DB->create_query("voicemessages");
+            $query = $DB->create_query($this->_table);
 
             $id = $_GET["id"];
             $columns = array(
@@ -236,7 +259,7 @@ class PluginVoicemailOdbc extends Plugin
             $callerid = odbc_result($res, "callerid");
             list($caller_name, $caller_number) = $this->regex_clid($callerid);
 
-            $msg_url = "ajax.php?function=VoicemailOdbc/download&id=$id";
+            $msg_url = "ajax.php?function={$this->name}/download&id=$id";
             } catch (Exception $e) {
 
             print_message($e->getmessage(), true);
@@ -288,11 +311,8 @@ class PluginVoicemailOdbc extends Plugin
             throw new Exception("You do not have the required permissions to access voicemail!");
 
 
-        $query = $DB->create_query("voicemessages");
 
-        $id = $_GET["id"];
-
-        if (!isset($id))
+        if (!isset($_GET["id"]))
             throw new HTTPException(404, "message ID is missing");
 
         /* Get recording info */
@@ -303,6 +323,9 @@ class PluginVoicemailOdbc extends Plugin
             "mailboxuser"
         );
 
+        $query = $DB->create_query($this->_table);
+
+        $id = $_GET["id"];
         $query->where("id", "=", $id);
 
         $res = $query->run_query_select($columns);
