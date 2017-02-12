@@ -1,8 +1,8 @@
 <form id="routes_frm">
-    <toolbar id="routes_toolbar">
+    <toolbar id="toolbar_routes">
 
         <item type="label">Find :</item>
-        <item type="text" name="s" width="150px" title="Filter routes by name"></item>
+        <item id="txt_routes_search" type="text" name="s" title="Filter routes by name"></item>
 
         <item type="submit" icon="search" title="Search"></item>
         <item type="button" action="clear" icon="clear" title="Clear filters"></item>
@@ -25,12 +25,12 @@
 
     <datagrid class="expand" id="routes_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column style="width: 290px">Route name</column>
-            <column style="width: 100px">Cost (per min.)</column>
-            <column style="width: 100px">Min. duration (sec) </column>
-            <column style="width: 100px">Increment (sec)</column>
-            <column style="width: 80px" type="actions"></column>
+            <column id="col_routes_check"><input class="select-all" type="checkbox" /></column>
+            <column id="col_routes_name">Route name</column>
+            <column id="col_routes_cost">Cost (per min.)</column>
+            <column id="col_routes_min">Min. duration (sec) </column>
+            <column id="col_routes_inc">Increment (sec)</column>
+            <column id="col_routes_actions" type="actions"></column>
         </header>
 
         <row>

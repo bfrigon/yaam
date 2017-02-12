@@ -49,7 +49,18 @@ define("PERM_USER_SET_PERMISSION", "user_set_permission");
 class PluginUsers extends Plugin
 {
 
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
     public $dependencies = array();
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+    );
+
+
 
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.

@@ -1,15 +1,12 @@
-<form id="frm_cdr_search" method="get">
-    <toolbar id="toolbar_cdr_filters">
+<form id="frm_cdr" method="get">
+    <toolbar id="toolbar_cdr">
         <item type="label">Date :</item>
-        <group id="cdr_date_filter">
-            <item type="date" id="cdr_d_from" name="d_from" width="90px" placeholder="[[format_date]]" title="Filter calls by date"/>
-            <item type="label">To</item>
-            <item type="date" id="cdr_d_to" name="d_to" width="90px" placeholder="[[format_date]]" title="Filter calls by date" />
-        </group>
-        <item type="separator"></item>
+        <item type="date" id="cdr_d_from" name="d_from" placeholder="[[format_date]]" title="Filter calls by date"/>
+        <item type="label">To</item>
+        <item type="date" id="cdr_d_to" name="d_to" placeholder="[[format_date]]" title="Filter calls by date" />
 
         <item type="label">Find :</item>
-        <item type="text" name="s" width="150px" title="Filter calls by number or name"></item>
+        <item id="txt_cdr_search" type="text" name="s" title="Filter calls by number or name"></item>
 
         <item type="submit" action="search" icon="search" title="Search"></item>
         <item type="button" action="clear" icon="clear" title="Clear filters"></item>
@@ -28,14 +25,14 @@
 </form>
 <datagrid class="expand" data-type="odbc" data-source="results" min-rows="25">
     <header>
-        <column style="width: 16px" type="icon"></column>
-        <column style="width: 120px">Date</column>
-        <column style="width: 120px">From</column>
-        <column style="width: 160px">Name</column>
-        <column style="width: 120px">Destination</column>
-        <column style="width: 40px">Duration</column>
-        <column style="width: 40px">Billed</column>
-        <column style="width: 40px">Cost</column>
+        <column id="col_cdr_icon" type="icon"></column>
+        <column id="col_cdr_date">Date</column>
+        <column id="col_cdr_from">From</column>
+        <column id="col_cdr_name">Name</column>
+        <column id="col_cdr_dest">Destination</column>
+        <column id="col_cdr_duration">Duration</column>
+        <column id="col_cdr_billed">Billed</column>
+        <column id="col_cdr_cost">Cost</column>
     </header>
 
     <row>

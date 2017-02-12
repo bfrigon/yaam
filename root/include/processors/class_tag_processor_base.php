@@ -135,11 +135,7 @@ class TagProcessorBase
                                     if ($process_top_level == false)
                                         break;
 
-                                    $html = $node->ownerDocument->saveXML($child);
-
-                                    $html = $this->process_shortcode($html, $data_type, $data_source);
-                                    fwrite($handle, $html);
-                                    break;
+                                    /* fall-through */
 
                                 case "html":
                                 case "body":
@@ -356,9 +352,9 @@ class TagProcessorBase
                     case "money_format":
                     case "format_money":
                         if (isset($params[1])) {
-                            $output = "money_format('{$params[1]}', $output)";
+                            $output = "money_format('{$params[1]}', floatval($output))";
                         } else {
-                            $output = "money_format('" . $this->currency_format . "', $output)";
+                            $output = "money_format('" . $this->currency_format . "', floatval($output))";
                         }
 
                         break;
@@ -537,5 +533,23 @@ class TagProcessorBase
         }
 
         return $output;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * throw_compile_exception() : Throw a compile exception
+     *
+     * Arguments
+     * ---------
+     *  - message : Reason for the exception.
+     *
+     * Returns : Nothing
+     */
+    protected function throw_compile_exception($node, $message)
+    {
+        $file = $this->template_file;
+        $line = $node->getLineNo();
+
+        throw new Exception("Template compile error in '$file' at line $line<p>$message</p>");
     }
 }

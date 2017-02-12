@@ -47,8 +47,18 @@ define("PERM_VOICEMAIL_ALL_USERS", "voicemail_all_users");
 class PluginVoicemailOdbc extends Plugin
 {
 
-    public $dependencies = array();
+    /* List of plugins incompatible with this one */
     public $conflicts = array("voicemail");
+
+    /* Other plugins required */
+    public $dependencies = array();
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+        "js"  => "player.js"
+    );
+
 
 
     /*--------------------------------------------------------------------------
@@ -392,12 +402,12 @@ class PluginVoicemailOdbc extends Plugin
         if (odbc_fetch_row($res, 1) == false)
             throw new HTTPException(404, "message not found.");
 
-        $file_size = intval(odbc_result($res, "size"));
-        $file_name = sprintf("msg%04d.wav", intval(odbc_result($res, "msgnum")));
-        $msg_vbox_context = odbc_result($res, "mailboxcontext");
-        $msg_vbox_user = odbc_result($res, "mailboxuser");
+        $file_size = intval(@odbc_result($res, "size"));
+        $file_name = sprintf("msg%04d.wav", intval(@odbc_result($res, "msgnum")));
+        $msg_vbox_context = @odbc_result($res, "mailboxcontext");
+        $msg_vbox_user = @odbc_result($res, "mailboxuser");
 
-        odbc_free_result($res);
+        @odbc_free_result($res);
 
 
         /* Check if the requested message ID belongs to the current logged user */
@@ -407,19 +417,26 @@ class PluginVoicemailOdbc extends Plugin
             throw new HTTPException(403);
         }
 
-        header("Content-Type: audio/x-wav");
+        header("Content-Type: audio/wav");
         header("Content-Disposition: attachment; filename=$file_name");
 
         if (isset($_SERVER["HTTP_RANGE"])) {
 
-            $range = explode("-", substr($_SERVER["HTTP_RANGE"], 6));
-            $start = intval($range[0]);
-            $end = intval($range[1]);
-            $seg_length = $end + 1 - $start;
+            $range = explode("-", substr($_SERVER["HTTP_RANGE"], 6), 2);
 
-            if ($end == 0)
+            if (isset($range[1])) {
+                $start = intval($range[0]);
+                $end = intval($range[1]);
+
+                if ($end == 0)
+                   $end = $file_size - 1;
+
+            } else {
+                $start = intval($range[0]);
                 $end = $file_size - 1;
+            }
 
+            $seg_length = ($end - $start) + 1;
 
             header("HTTP/1.1 206 Partial Content");
 
@@ -427,7 +444,7 @@ class PluginVoicemailOdbc extends Plugin
             header("Content-Range: bytes $start-$end/$file_size");
             header("Content-Length: $seg_length");
 
-
+            $start++;
             $columns = "SUBSTRING(recording, $start, $seg_length) as recording";
 
 
@@ -441,11 +458,11 @@ class PluginVoicemailOdbc extends Plugin
         /* Retreive the recording from the database */
         $res = $query->run_query_select($columns);
 
-        odbc_binmode ($res, ODBC_BINMODE_PASSTHRU);
-        odbc_longreadlen ($res, 0);
+        @odbc_binmode($res, ODBC_BINMODE_PASSTHRU);
+        @odbc_longreadlen($res, 0);
 
-        odbc_result($res, "recording");
+        @odbc_result($res, "recording");
 
-        odbc_free_result($res);
+        @odbc_free_result($res);
     }
 }

@@ -1,14 +1,45 @@
-<?php
-    if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
-        header("Location:../index.php");
-        exit();
-    }
-?>
-<script type="text/javascript">
-    $(document).ready(function() {
+//******************************************************************************
+//
+// Project : Asterisk Y.A.A.M (Yet another asterisk manager)
+// Author  : Benoit Frigon <www.bfrigon.com>
+//
+// Contributors
+// ============
+//
+//
+//
+// -----------------------------------------------------------------------------
+//
+// Copyright (c) 2017 Benoit Frigon
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
+//******************************************************************************
 
-        $('#cdr_date_filter').dateRangePicker({
-            format: '<?php echo $format_date ?>',
+$(document).ready(function() {
+
+    date_format = $('#cdr_d_from').attr("placeholder");
+
+
+    $('#cdr_d_from,#cdr_d_to').each(function() {
+        $(this).dateRangePicker({
+            format: date_format,
             autoClose: true,
             separator : ' to ',
             showShortcuts: true,
@@ -82,4 +113,4 @@
             });
         });
     });
-</script>
+});

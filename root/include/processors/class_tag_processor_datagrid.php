@@ -73,6 +73,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         $data_type = strtolower($node_tag->getAttribute("data-type"));
         $min_rows = $node_tag->getAttribute("min-rows");
         $class = $node_tag->getAttribute("class");
+        $id = $node_tag->getAttribute("id");
 
         /* Required attributes */
         if (empty($data_source))
@@ -84,7 +85,12 @@ class TagProcessorDatagrid extends TagProcessorBase
         if (substr($data_source, 0, 1) != "$")
             $data_source = "\$$data_source";
 
-        fwrite($handle, "<table id=\"\" class=\"grid $class\">\n");
+        fwrite($handle, "<table");
+
+        if (!empty($id))
+            fwrite($handle, " id=\"$id\"");
+
+        fwrite($handle, " class=\"grid $class\">\n");
 
         /* Generate caption tag */
         if (!empty($node_caption)) {
@@ -219,17 +225,20 @@ class TagProcessorDatagrid extends TagProcessorBase
         $columns = $node_row->childNodes;
         foreach ($columns as $node_column) {
 
-            $style = $node_column->getAttribute("style");
             $type = $node_column->getAttribute("type");
+            $id = $node_column->getAttribute("id");
 
             if ($node_column->hasAttribute("if"))
                 $this->processors["if"]->process_tag($node_column, $handle, $data_type, $data_source);
 
 
-            fwrite($handle, "<$cell_type style=\"$style\"");
+            fwrite($handle, "<$cell_type ");
 
             if (!empty($type))
                 fwrite($handle, " class=\"column-$type\"");
+
+            if (!empty($id))
+                fwrite($handle, " id=\"$id\"");
 
             fwrite($handle, ">");
 

@@ -1,7 +1,7 @@
 <form id="frm_users">
-    <toolbar>
+    <toolbar id="toolbar_users">
         <item type="label">Find :</item>
-        <item type="text" name="s"  width="170px"title="Search user"></item>
+        <item id="txt_users_search" type="text" name="s" title="Search user"></item>
 
         <item type="submit" icon="search" title="Search user"></item>
         <item type="button" action="clear" icon="clear" title="Clear search query"></item>
@@ -23,13 +23,13 @@
 
     <datagrid class="expand" id="users" data-type="odbc" data-source="results">
         <header>
-            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column style="width: 100px">Username</column>
-            <column style="width: 160px">Full name</column>
-            <column style="width: 80px">Extension</column>
-            <column style="width: 110px">DID</column>
-            <column style="width: 110px">Voicemail box</column>
-            <column style="width: 80px" type="actions"></column>
+            <column id="col_users_check"><input type="checkbox" id="select-all" /></column>
+            <column id="col_users_username">Username</column>
+            <column id="col_users_fullname">Full name</column>
+            <column id="col_users_ext">Extension</column>
+            <column id="col_users_did">DID</column>
+            <column id="col_users_vbox">Voicemail box</column>
+            <column id="col_users_actions" type="actions"></column>
         </header>
 
         <row>

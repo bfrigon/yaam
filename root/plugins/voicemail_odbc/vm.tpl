@@ -17,7 +17,7 @@
 <form id="frm_vm" method="post" keep-uri="folder">
     <toolbar>
         <item type="label">Folder :</item>
-        <item type="list" width="120px" icon="folder" data-type="dict" data-source="folders">
+        <item id="txt_vm_search" type="list" icon="folder" data-type="dict" data-source="folders">
             <caption>[[$current_folder_name]]</caption>
             <row>
                 <item type="button" params="folder=[[key]]" keep-uri>[[value]]</item>
@@ -41,17 +41,17 @@
     <datagrid class="expand" id="grid_vm" data-type="odbc" data-source="results" min-rows="15">
         <caption>[[$vbox_user]]@[[$vbox_context]] - [[$current_folder_name]]([[$num_results]])</caption>
         <header>
-            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column style="width: 140px">Date</column>
-            <column style="width: 120px">From</column>
-            <column style="width: 200px">Name</column>
-            <column style="width: 60px">Duration</column>
-            <column style="width: 60px">Size</column>
-            <column style="width: 80px" type="actions"></column>
+            <column id="col_vm_check"><input class="select-all" type="checkbox" /></column>
+            <column id="col_vm_date">Date</column>
+            <column id="col_vm_from">From</column>
+            <column id="col_vm_name">Name</column>
+            <column id="col_vm_duration">Duration</column>
+            <column id="col_vm_size">Size</column>
+            <column id="col_vm_actions" type="actions"></column>
         </header>
 
         <row>
-            <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column><input class="select-all-item" type="checkbox" name="id[]" value="[[id]]" /></column>
             <column>[[origtime | format_unix_time]]</column>
 
             <column>

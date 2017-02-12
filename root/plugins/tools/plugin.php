@@ -47,6 +47,17 @@ define("PERM_ORIGINATE_FROM_OTHER_EXT", "originate_from_other_ext");
 class PluginTools extends Plugin
 {
 
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
+    public $dependencies = array();
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array();
+
+
+
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
      *
@@ -206,7 +217,8 @@ class PluginTools extends Plugin
         }
 
         require($template->load("originate.tpl"));
-        require("{$this->dir}/js_originate.php");
+
+        $template->include_script("originate.js");
     }
 
 

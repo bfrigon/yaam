@@ -48,9 +48,21 @@ define("PERM_CT_RULES_ALL_USERS", "ct_rules_all_users");
 class PluginCallTreatment extends Plugin
 {
 
+     /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
     public $dependencies = array("tools");
 
-    private $_action_list = array();
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+    );
+
+
+
+    private $_ct_actions = array();  /* call treatment actions */
+
 
 
     /*--------------------------------------------------------------------------
@@ -83,7 +95,7 @@ class PluginCallTreatment extends Plugin
         ));
 
 
-        $this->_action_list = get_global_config_item("call_treatment", "actions");
+        $this->_ct_actions = get_global_config_item("call_treatment", "actions");
     }
 
 
@@ -171,8 +183,8 @@ class PluginCallTreatment extends Plugin
      */
     function get_action_desc($name)
     {
-        if (isset($this->_action_list[$name]))
-            return $this->_action_list[$name];
+        if (isset($this->_ct_actions[$name]))
+            return $this->_ct_actions[$name];
         else
             return "Unknown";
     }
@@ -248,7 +260,7 @@ class PluginCallTreatment extends Plugin
             print_message($e->getmessage(), true);
         }
 
-        $action_list = $this->_action_list;
+        $action_list = $this->_ct_actions;
         require($template->load("ct_addedit.tpl"));
     }
 

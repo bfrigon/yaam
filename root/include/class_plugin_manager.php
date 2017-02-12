@@ -130,6 +130,24 @@ class PluginManager
 
 
     /*--------------------------------------------------------------------------
+     * get_plugin() : Get the specified plugin class instance.
+     *
+     * Arguments
+     * ---------
+     *  - name : plugin name.
+     *
+     * Returns : Plugin class.
+     */
+    function get_plugin($name)
+    {
+        if (!(isset($this->plugins[$name])))
+            return null;
+
+        return $this->plugins[$name];
+    }
+
+
+    /*--------------------------------------------------------------------------
      * plugin_exists() : Check if a plugin exists.
      *
      * Arguments

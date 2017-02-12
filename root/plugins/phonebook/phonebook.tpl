@@ -2,7 +2,7 @@
     <toolbar id="phonebook_toolbar">
 
         <item type="label">Find :</item>
-        <item type="text" name="s" width="150px" title="Filter phone book records by description"></item>
+        <item id="txt_phonebook_search" type="text" name="s" title="Filter phone book records by description"></item>
 
         <item type="submit" icon="search" title="Search phone book records"></item>
         <item type="button" action="clear" icon="clear" title="Clear search query"></item>
@@ -25,13 +25,13 @@
 
     <datagrid class="expand" id="ct_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column style="width: 100px">Speed dial</column>
-            <column if="perm" if-value="phonebook_all_users" style="width: 80px">Owner (ext.)</column>
-            <column style="width: 140px">Name</column>
-            <column style="width: 120px">Number</column>
-            <column style="width: 240px">Notes</column>
-            <column style="width: 100px" type="actions"></column>
+            <column id="col_phonebook_sel"><input type="checkbox" /></column>
+            <column id="col_phonebook_speed_dial">Speed dial</column>
+            <column id="col_phonebook_owner" if="perm" if-value="phonebook_all_users">Owner (ext.)</column>
+            <column id="col_phonebook_name">Name</column>
+            <column id="col_phonebook_number">Number</column>
+            <column id="col_phonebook_notes">Notes</column>
+            <column id="col_phonebook_actions" type="actions"></column>
         </header>
 
         <row>

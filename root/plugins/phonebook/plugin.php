@@ -49,6 +49,19 @@ define("PERM_PHONEBOOK_ALL_USERS", "phonebook_all_users");
 class PluginPhonebook extends Plugin
 {
 
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
+    public $dependencies = array();
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+    );
+
+
+
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
      *
@@ -263,15 +276,15 @@ class PluginPhonebook extends Plugin
 
         $query = $DB->create_query("phonebook");
 
-        $id = $_GET["id"];
 
-        if (!isset($id)) {
+        if (!(isset($_GET["id"]))) {
             $message = "You did not select any phone book record(s) to delete.";
             $url_ok = $this->get_tab_referrer();
 
             require($template->load("dialog_message.tpl", true));
             return;
         }
+        $id = $_GET["id"];
 
         if (is_array($id)) {
             $query->where_in("id", $id);
@@ -301,6 +314,16 @@ class PluginPhonebook extends Plugin
     }
 
 
+    /*--------------------------------------------------------------------------
+     * is_editable() : Callback for the template. Determine if the current record is
+     *                 editable by the user.
+     *
+     * Arguments :
+     * ---------
+     *  - extension : Extention to which belongs the current record.
+     *
+     * Return : None
+     */
     function is_editable($extension)
     {
         if (check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))

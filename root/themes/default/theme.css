@@ -171,6 +171,8 @@ body {
 .float-right { float: right; }
 .float-left { float: left; }
 
+.error {color: red;}
+.warning {color: #8A4B08;}
 
 
 /* -------------------------------------------------------------------------------------------
@@ -675,16 +677,6 @@ body {
 .box.viewer {
     background-color : #F2EEE7;
     color: #555;
-    height: 480px;
-}
-
-.box .error {
-    color: red;
-    font-weight: bold;
-}
-
-.box .warning {
-    color: #8A4B08;
 }
 
 .code {
@@ -694,6 +686,9 @@ body {
 
 }
 
+.box.dialog .toolbar {
+    margin-top: 10px;
+}
 
 
 /* -------------------------------------------------------------------------------------------
@@ -774,105 +769,110 @@ a.tooltip:hover span {
    Toolbar
 */
 div.toolbar.box {
-    position: relative;
     margin-bottom: 5px;
-    padding: 4px;
-}
-
-div.toolbar > ul {
-    float: left;
-    height: 25px;
-
-    list-style: none;
-    list-style-type: none;
-    margin: 0px;
     padding: 0px;
 }
 
-div.toolbar > ul > li {
-    float: left;
+div.toolbar .content {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 5px 3px;
+}
+
+div.toolbar .item {
+    display: table-cell;
     position: relative;
-    margin-right: 3px;
+    padding: 0;
+    vertical-align: top;
 }
 
-div.toolbar > ul > li.text {
-    line-height: 25px;
-    height: 25px;
+div.toolbar .item.view,
+div.toolbar .item.label {
+    vertical-align: middle;
 }
 
-div.toolbar > ul > li > a,
-div.toolbar > ul > li > button {
+div.toolbar .item.view {
+    border: 1px solid #B2ACA1;
+    background-color: #ddd;
+    color: black;
+    padding: 3px;
+}
+
+div.toolbar .item > a,
+div.toolbar .item > button {
     display: block;
-    line-height: 17px;
+    margin: 0;
     padding: 3px 6px;
     background-color: #F2EEE7;
     border: 1px solid #8a8a8a;
     color: black;
     text-decoration: none;
+    line-height: 18px;
 
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
     border-radius: 3px;
 }
 
-div.toolbar > ul > li > button {
+div.toolbar .item > button {
     cursor: pointer;
+    font-size: 1em;
 }
 
-div.toolbar > ul img[class*="icon16"] {
-    margin-right: 4px;
+div.toolbar .item img[class*="icon16"] {
+    margin: 0px 4px 0px 0px;
 }
 
-div.toolbar > ul .icon-only img[class*="icon16"],
-div.toolbar > ul .icon-only img[class*="icon12"] {
-    margin-right: 0px;
+div.toolbar .item .icon-only img[class*="icon16"],
+div.toolbar .item .icon-only img[class*="icon12"] {
+    margin: 0px;
 }
 
-
-div.toolbar > ul > li > a.disabled,
-div.toolbar > ul > li > button.disabled {
+div.toolbar .item > a.disabled,
+div.toolbar .item > button.disabled {
     background-color: #e6e4db;
     border: 1px solid #8a8a8a;
     color: gray;
 }
 
-div.toolbar > ul li a.disabled img[class*="icon12"],
-div.toolbar > ul li button.disabled img[class*="icon12"],
-div.toolbar > ul li a.disabled img[class*="icon16"],
-div.toolbar > ul li button.disabled img[class*="icon16"] {
+div.toolbar .item a.disabled img[class*="icon12"],
+div.toolbar .item a.disabled img[class*="icon16"],
+div.toolbar .item button.disabled img[class*="icon12"],
+div.toolbar .item button.disabled img[class*="icon16"] {
     opacity: 0.3;
 }
 
-div.toolbar > ul > li > a:hover,
-div.toolbar > ul > li > button:hover,
-div.toolbar > ul > li > button:focus {
+div.toolbar .item > a:hover,
+div.toolbar .item > button:hover,
+div.toolbar .item > button:focus {
     background-color: #FFF0D1;
     border-color: #CCA352;
 }
 
-div.toolbar > ul > li > a:active,
-div.toolbar > ul > li.selected > a,
-div.toolbar > ul > li.dropdown a:focus,
-div.toolbar > ul > li button:active {
+div.toolbar .item > a:active,
+div.toolbar .item.selected > a,
+div.toolbar .item.dropdown a:focus,
+div.toolbar .item button:active {
 
     background-color: #CCA352;
     border-color: #8a8a8a;
     color: white;
 }
 
-div.toolbar > ul > li button::-moz-focus-inner {
+div.toolbar .item button::-moz-focus-inner {
     border: none;
 }
 
 
-div.toolbar > ul input[type="text"] {
+div.toolbar .item input[type="text"] {
     padding: 3px;
-    float: left;
     background-color : #FFF8ED;
     border: 1px solid #8a8a8a;
     color: black;
-    line-height: 17px;
-    height: 17px;
+    line-height: 18px;
+    height: 18px;
+    font-size: 1em;
+
 
     -moz-border-radius: 3px;
     -webkit-border-radius: 3px;
@@ -880,12 +880,11 @@ div.toolbar > ul input[type="text"] {
 
 }
 
-div.toolbar > ul > li.separator {
-    margin: 0 10px 0 7px;
+div.toolbar .item.separator {
     padding: 0;
+    background-color: #B2ACA1;
     width: 2px;
-    height: 24px;
-    background-color: #B2ACA1
+
 }
 
 
@@ -894,7 +893,7 @@ div.toolbar > ul > li.separator {
    Toolbar dropdown menu
    ====================================
 */
-div.toolbar > ul > li > ul button {
+div.toolbar .item .dropdown-list button {
     background-color: #F2EEE7;
     border: 0;
     width: 100%;
@@ -907,34 +906,33 @@ div.toolbar > ul > li > ul button {
     cursor: pointer;
 }
 
-div.toolbar > ul > li > ul button::-moz-focus-inner {
+div.toolbar .item .dropdown-list button::-moz-focus-inner {
     border: none;
 }
 
 
-div.toolbar > ul > li.dropdown > a {
+div.toolbar .item.dropdown > a {
     padding-right: 16px;
     background-image: url(images/dropdown.png);
     background-repeat: no-repeat;
     background-position: right 0;
 }
 
-div.toolbar > ul > li.dropdown > a:focus {
+div.toolbar .item.dropdown > a:focus {
     background-position: right -24px;
 }
 
-div.toolbar > ul li.dropdown.disabled > a {
+div.toolbar .item.dropdown.disabled > a {
     background-position: right -48px;
 }
 
-div.toolbar > ul > li > ul {
+div.toolbar .item .dropdown-list {
     padding: 2px;
     margin: 0;
-    list-style: none;
     position: absolute;
 
     left: 0;
-    top: 24px;
+    top: 26px;
     min-width: 100%;
     display: none;
     background-color: #F2EEE7;
@@ -948,34 +946,39 @@ div.toolbar > ul > li > ul {
 
 }
 
-div.toolbar > ul ul li a {
+div.toolbar .item.dropdown .item a {
     display: block;
     white-space: nowrap;
-    line-height: 25px;
+    line-height: 22px;
     padding: 0px 10px;
     text-decoration: none;
     color: black;
+    border: 0;
 }
 
-div.toolbar > ul ul li a:hover,
-div.toolbar > ul ul li button:hover {
+div.toolbar .item.dropdown .item {
+    display: block;
+}
+
+div.toolbar .item .dropdown-list .item a:hover,
+div.toolbar .item .dropdown-list .item button:hover {
     background-color: #CCA352;
     border-color: #8a8a8a;
     color: white;
 }
 
-div.toolbar > ul > li > ul:hover,
-div.toolbar > ul > li > a:focus ~ ul,
-div.toolbar > ul > li > a:focus + img {
+div.toolbar .item > .dropdown-list:hover,
+div.toolbar .item > a:focus ~ .dropdown-list,
+div.toolbar .item > a:focus + img {
     display: block;
 }
 
-div.toolbar > ul > li > a:hover ~ ul {
+div.toolbar .item > a:hover ~ .dropdown-list {
     *display: block;
 }
 
 
-div.toolbar > ul img.close-dropdown {
+div.toolbar .content img.close-dropdown {
     display: block;
     position: absolute;
     left: 0;
@@ -987,17 +990,6 @@ div.toolbar > ul img.close-dropdown {
     z-index: 20000;
 }
 
-div.toolbar > ul .break {
-
-    border-top: 1px solid #B8B0A6;
-    border-bottom: 1px solid #F0EAE2;
-    margin-bottom: 4px;
-    width: 100%;
-    height: 0px;
-    clear: both;
-    overflow: hidden;
-}
-
 div.toolbar.center {
     clear: both;
     float: right;
@@ -1007,12 +999,11 @@ div.toolbar.center {
 
 }
 
-div.toolbar.center > ul {
+div.toolbar.center .content {
     position: relative;
     left: 50%;
 
 }
-
 
 div.toolbar .spacer {
     margin-left: 15px;
@@ -1117,24 +1108,6 @@ div.toolbar .spacer {
 
 
 
-/* -------------------------------------------------------------------------------------------
-   Logs
-*/
-
-
-.log-viewer {
-    background-color : #F2EEE7;
-    color: #555;
-    height: 480px;
-}
-
-.log-viewer .error {
-    color: red;
-}
-
-.log-viewer .warning {
-    color: #8A4B08;
-}
 
 
 
@@ -1219,7 +1192,7 @@ div.toolbar .spacer {
 
 
 /* -------------------------------------------------------------------------------------------
-   Date picket
+   Date picker
 */
 .date-picker {
     width: 170px;

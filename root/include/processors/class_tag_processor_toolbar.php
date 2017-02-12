@@ -66,12 +66,11 @@ class TagProcessorToolbar extends TagProcessorBase
             $class = "box";
 
 
-        fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><ul>");
+        fwrite($handle, "<div class=\"toolbar $class\" id=\"$id\"><div class=\"content\">");
 
         $this->process_toolbar_tag_childs($node_tag, $handle, $data_type, $data_source);
 
-        fwrite($handle, "</ul><div class=\"clear\"></div>");
-        fwrite($handle, "</div>");
+        fwrite($handle, "</div></div>");
 
         if ($node_tag->hasAttribute("if"))
             fwrite($handle, "<?php endif; ?>");
@@ -97,21 +96,6 @@ class TagProcessorToolbar extends TagProcessorBase
 
 
             switch ($node_item->nodeName) {
-                case "group":
-                    $id = $node_item->getAttribute("id");
-
-                    fwrite($handle, "</ul><ul");
-
-                    if (!empty($id))
-                        fwrite($handle, " id=\"$id\"");
-
-                    fwrite($handle, ">");
-
-
-                    $this->process_toolbar_tag_childs($node_item, $handle, $data_type, $data_source);
-
-                    fwrite($handle, "</ul><ul>");
-                    break;
 
                 /* Allow if tags */
                 case "if":
@@ -151,7 +135,9 @@ class TagProcessorToolbar extends TagProcessorBase
      */
     private function process_toolbar_items($node_item, $handle, $data_type=null, $data_source=null)
     {
+        $id = $node_item->getAttribute("id");
         $item_type = $node_item->getAttribute("type");
+
         switch ($item_type) {
 
             // -----------------------------------------------
@@ -160,11 +146,11 @@ class TagProcessorToolbar extends TagProcessorBase
             case "button":
                 $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
 
-                fwrite($handle, "<li class=\"$li_class\">");
+                fwrite($handle, "<div class=\"item $li_class\">");
 
                 $this->processors["icon"]->process_tag($node_item, $handle, $data_type, $data_source);
 
-                fwrite($handle, "</li>\r\n");
+                fwrite($handle, "</div>\r\n");
                 break;
 
             // -----------------------------------------------
@@ -172,7 +158,6 @@ class TagProcessorToolbar extends TagProcessorBase
             // -----------------------------------------------
             case "submit":
                 $icon = $node_item->getAttribute("icon");
-                $id = $node_item->getAttribute("id");
                 $name = $node_item->getAttribute("name");
                 $value = $node_item->getAttribute("value");
                 $action = $node_item->getAttribute("action");
@@ -183,7 +168,7 @@ class TagProcessorToolbar extends TagProcessorBase
                 $li_class = ($this->get_attribute_boolean($node_item, "disabled")) ? "disabled" : "";
 
 
-                fwrite($handle, "<li class=\"$li_class\">\n");
+                fwrite($handle, "<div class=\"item $li_class\">\n");
                 fwrite($handle, "<button class=\"$btn_class\" type=\"submit\"");
 
                 if (!empty($id))
@@ -215,7 +200,7 @@ class TagProcessorToolbar extends TagProcessorBase
                 }
 
                 fwrite($handle, $caption);
-                fwrite($handle, "</button></li>\n");
+                fwrite($handle, "</button></div>\n");
 
                 break;
 
@@ -229,7 +214,7 @@ class TagProcessorToolbar extends TagProcessorBase
                 $title = $this->get_attribute_shortcode($node_item, "title", "", $data_type, $data_source);
                 $placeholder = $this->get_attribute_shortcode($node_item, "placeholder", "", $data_type, $data_source);
 
-                fwrite($handle, "<li><input type=\"text\" name=\"$name\"");
+                fwrite($handle, "<div class=\"item\"><input type=\"text\" name=\"$name\"");
 
                 if ($item_type == "date")
                     fwrite($handle, " class=\"dateinput\"");
@@ -254,24 +239,31 @@ class TagProcessorToolbar extends TagProcessorBase
                 if ($node_item->hasAttribute("width"))
                     fwrite($handle, " style=\"width: " . $node_item->getAttribute("width") . ";\"");
 
-                fwrite($handle, " /></li>\n");
+                fwrite($handle, " /></div>\n");
                 break;
 
             // -----------------------------------------------
             //  separator
             // -----------------------------------------------
             case "separator":
-                fwrite($handle, "<li class=\"separator\"></li>");
+                fwrite($handle, "<div class=\"item separator\"></div>");
                 break;
 
             // -----------------------------------------------
             //  label
             // -----------------------------------------------
             case "label":
-                fwrite($handle, "<li class=\"text\">");
+            case "view":
+                fwrite($handle, "<div class=\"item $item_type\"");
+
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id\"");
+
+                fwrite($handle, ">");
+
                 $this->process_node($handle, $node_item, false, true);
 
-                fwrite($handle, "</li>");
+                fwrite($handle, "</div>");
                 break;
 
             // -----------------------------------------------
@@ -287,15 +279,15 @@ class TagProcessorToolbar extends TagProcessorBase
                 $params = array("page" => "$var_counter");
                 $href = $this->func_build_tab_url($params, true);
 
-                fwrite($handle, "<li class=\"dropdown\">\n");
+                fwrite($handle, "<div class=\"item dropdown\">\n");
                 fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\n");
                 fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
-                fwrite($handle, "<ul>\n");
+                fwrite($handle, "<div class=\"dropdown-list\">\n");
                 fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\n");
-                fwrite($handle, "<li><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></li>\n");
+                fwrite($handle, "<div class=\"item\"><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></div>\n");
                 fwrite($handle, "<?php } ?>\n");
-                fwrite($handle, "</ul></li>\n");
+                fwrite($handle, "</div></div>\n");
                 break;
 
             // -----------------------------------------------
@@ -309,7 +301,10 @@ class TagProcessorToolbar extends TagProcessorBase
                 $a_class = (!empty($icon) && empty($caption)) ? "icon-only" : "";
 
 
-                fwrite($handle, "<li class=\"dropdown\" ");
+                fwrite($handle, "<div class=\"item dropdown\" ");
+
+                if (!empty($id))
+                    fwrite($handle, " id=\"$id\"");
 
                 if ($node_item->hasAttribute("width"))
                     fwrite($handle, "style=\"width: " . $node_item->getAttribute('width') . ";\"");
@@ -328,7 +323,7 @@ class TagProcessorToolbar extends TagProcessorBase
                 fwrite($handle, $this->process_shortcode($caption));
                 fwrite($handle, "</a>\n<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
-                fwrite($handle, "<ul>\n");
+                fwrite($handle, "<div class=\"dropdown-list\">\n");
 
 
                 $node_row = $node_item->getElementsByTagName("row")->item(0);
@@ -396,7 +391,7 @@ class TagProcessorToolbar extends TagProcessorBase
                     $this->process_toolbar_tag_childs($node_item, $handle);
                 }
 
-                fwrite($handle, "</ul></li>\n");
+                fwrite($handle, "</div></div>\n");
                 break;
         }
 

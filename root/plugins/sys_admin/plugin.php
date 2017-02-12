@@ -48,9 +48,22 @@ define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
 class PluginSystemAdmin extends Plugin
 {
 
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
     public $dependencies = array("tools");
 
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+        "js"  => "highlight.js",
+    );
+
+
+
     private $_log_items = array();
+
 
 
     /*--------------------------------------------------------------------------
@@ -139,7 +152,6 @@ class PluginSystemAdmin extends Plugin
         $log_filename = "$log_dir/$log_file";
 
         require($template->load("systemlogs.tpl"));
-        require("{$this->dir}/js_highlight.php");
     }
 
 
@@ -176,7 +188,6 @@ class PluginSystemAdmin extends Plugin
             }
         }
 
-
         require($template->load("command.tpl"));
     }
 
@@ -207,7 +218,6 @@ class PluginSystemAdmin extends Plugin
 
 
         $channels = array_slice($channels, $row_start, $max_results);
-
 
         require($template->load("channels.tpl"));
     }

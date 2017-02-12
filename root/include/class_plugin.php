@@ -44,8 +44,16 @@ class Plugin
     public $manager = null;
     public $name = '';
     public $dir = '';
-    public $dependencies = array();
     public $tab_url = '';
+
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
+    public $dependencies = array();
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array();
 
 
     /*--------------------------------------------------------------------------

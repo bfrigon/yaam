@@ -147,7 +147,7 @@ class AJAM
                 $key = strtolower($elements[0]);
                 $value = trim($elements[1]);
             } else {
-                $key = "";
+                $key = strtolower($line);
                 $value = "";
             }
 

@@ -1,8 +1,8 @@
 <form id="ct_frm">
-    <toolbar id="ct_toolbar">
+    <toolbar id="toolbar_ct">
 
         <item type="label">Find :</item>
-        <item type="text" name="s" width="150px" title="Filter call treatments by description"></item>
+        <item id="txt_ct_search" type="text" name="s" title="Filter call treatments by description"></item>
 
         <item type="submit" icon="search" title="Search call treatment"></item>
         <item type="button" action="clear" icon="clear" title="Clear search query"></item>
@@ -23,20 +23,19 @@
     </toolbar>
 
 
-    <datagrid id="ct_grid" data-type="odbc" data-source="results" min-rows="15">
+    <datagrid id="ct_grid" class="expand" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column style="width: 16px"><input type="checkbox" id="select-all" /></column>
-            <column if="perm" if-value="ct_rules_all_users" style="width: 80px">Ext.</column>
-            <column style="width: 220px">Description</column>
-            <column style="width: 160px">Action</column>
-            <column style="width: 120px">Caller number</column>
-            <column style="width: 160px">Caller name</column>
-
-            <column style="width: 50px" type="actions"></column>
+            <column id="col_ct_check"><input class="slect-all" type="checkbox" /></column>
+            <column id="col_ct_ext" if="perm" if-value="ct_rules_all_users">Ext.</column>
+            <column id="col_ct_desc">Description</column>
+            <column id="col_ct_act">Action</column>
+            <column id="col_ct_number">Caller number</column>
+            <column id="col_ct_name">Caller name</column>
+            <column id="col_ct_actions" type="actions"></column>
         </header>
 
         <row>
-            <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column><input class="select-all-item" type="checkbox" name="id[]" value="[[id]]" /></column>
             <column if="perm" if-value="ct_rules_all_users">[[extension]]</column>
             <column>[[description]]</column>
 

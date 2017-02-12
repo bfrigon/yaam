@@ -211,19 +211,25 @@ class TemplateEngine extends TagProcessorBase
 
 
     /*--------------------------------------------------------------------------
-     * throw_compile_exception() : Throw a compile exception
+     * include_script(): Generate the script tag to add a javascript file to the
+     *                   output.
      *
      * Arguments
      * ---------
-     *  - message : Reason for the exception.
+     *  - filename : Filename of the script to include.
      *
-     * Returns : Nothing
+     * Returns : None
      */
-    private function throw_compile_exception($node, $message)
+    public function include_script($filename)
     {
-        $file = $this->template_file;
-        $line = $node->getLineNo();
 
-        throw new Exception("Template compile error in '$file' at line $line<p>$message</p>");
+        if (is_null($this->plugin)) {
+            $filename = "include/js/$filename";
+        } else {
+            $plugin_name = $this->plugin->name;
+            $filename = "plugins/$plugin_name/$filename";
+        }
+
+        echo "<script type=\"text/javascript\" src=\"$filename\"></script>";
     }
 }

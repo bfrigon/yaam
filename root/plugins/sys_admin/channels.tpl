@@ -12,12 +12,12 @@
 
 <grid class="expand" data-type="dict" data-source="channels" min-rows=15>
     <header>
-        <column style="width: 200px">Channel</column>
-        <column style="width: 120px">From</column>
-        <column style="width: 120px">Name</column>
-        <column style="width: 120px">To</column>
-        <column style="width: 60px">Duration</column>
-        <column style="width: 80px">State</column>
+        <column id="col_cstatus_channel">Channel</column>
+        <column id="col_cstatus_from">From</column>
+        <column id="col_cstatus_name">Name</column>
+        <column id="col_cstatus_to">To</column>
+        <column id="col_cstatus_duration">Duration</column>
+        <column id="col_cstatus_state">State</column>
     </header>
 
     <row>

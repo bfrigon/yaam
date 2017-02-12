@@ -1,0 +1,62 @@
+/*
+******************************************************************************
+
+ Project : Asterisk Y.A.A.M (Yet another asterisk manager)
+ Author  : Benoit Frigon <www.bfrigon.com>
+
+ Contributors
+ ============
+
+
+
+ -----------------------------------------------------------------------------
+
+ Copyright (c) 2017 Benoit Frigon
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+
+******************************************************************************
+*/
+
+
+/* CDR toolbar items */
+#cdr_d_from       { width: 90px; }
+#cdr_d_to         { width: 90px; }
+#txt_cdr_search   { width: 150px; }
+
+/* CDR routes toolbar items */
+#txt_routes_search { width: 150px; }
+
+/* CDR grid columns width */
+#col_cdr_icon     { width: 16px; }
+#col_cdr_date     { width: 120px; }
+#col_cdr_from     { width: 120px; }
+#col_cdr_name     { width: 160px; }
+#col_cdr_dest     { width: 120px; }
+#col_cdr_duration { width: 40px; }
+#col_cdr_billed   { width: 40px; }
+#col_cdr_cost     { width: 40px; }
+
+/* CDR routes grid columns width */
+#col_routes_check   { width: 16px; }
+#col_routes_name    { width: 290px; }
+#col_routes_cost    { width: 100px; }
+#col_routes_min     { width: 100px; }
+#col_routes_inc     { width: 100px; }
+#col_routes_actions { width: 80px; }

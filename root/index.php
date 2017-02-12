@@ -55,6 +55,35 @@ try
     $PLUGINS->load();
     $PLUGINS->sort_tabs();
 
+    $tabs = $PLUGINS->get_tabs();
+
+    if (!(empty($_GET["path"]))) {
+        $selected_path = $_GET["path"];
+    } else {
+
+        $first_tab = reset($tabs);
+        $selected_path = "{$first_tab['plugin']}.{$first_tab['id']}";
+    }
+
+    list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
+
+
+    $page_class = "";
+    if (isset($tabs[$selected_tab])) {
+
+        $parent_tab = $tabs[$selected_tab];
+
+        if (!(empty($parent_tab["childs"]))) {
+            $page_class = "has-childs";
+
+            if (empty($selected_page)) {
+                $selected_page = array_keys($parent_tab["childs"])[0];
+                $selected_path = sprintf("%s.%s.%s", $selected_plugin, $selected_tab, $selected_page);
+            }
+        }
+    }
+
+
 
 } catch (Exception $e) {
 
@@ -67,6 +96,58 @@ require($template->load("index.tpl", true, true));
 
 
 
+/*--------------------------------------------------------------------------
+ * autoinclude_plugin_files() : Template callback function. Include stylesheets
+ *                              and javscript files for the selected plugin.
+ *
+ * Arguments
+ * ---------
+ *  - path : Path to the tab content to display : [plugin_name].[parent_tab].[sub_tab]
+ *
+ * Returns : None
+ */
+function autoinclude_plugin_files($path)
+{
+    try {
+        global $PLUGINS;
+
+        $path = preg_replace("_.*(/|\\\\)_", "", $path);
+        $path_item = explode(".", $path, 3);
+
+        $plugin_name = $path_item[0];
+
+        $plugin = $PLUGINS->get_plugin($plugin_name);
+        if (is_null($plugin))
+            return;
+
+        if (!(isset($plugin->static_files)))
+            return;
+
+        $plugin_dir = $plugin->dir;
+        foreach ($plugin->static_files as $type => $file) {
+
+            $href = "plugins/$plugin_name/$file?v=" . YAAM_VERSION;
+
+            switch (strtolower($type)) {
+
+                case "css":
+                case "stylesheet":
+                    print "<link id=\"css_{$plugin_name}_theme\" rel=\"stylesheet\" type=\"text/css\" href=\"$href\" />";
+                    break;
+
+                case "js":
+                case "javascript":
+                case "script":
+                    print "<script type=\"text/javascript\" src=\"$href\"></script>";
+                    break;
+            }
+        }
+
+    } catch (Exception $e) {
+
+    }
+}
+
 
 /*--------------------------------------------------------------------------
  * show_tab_content() : Template callback function. Outputs the content of a tab.
@@ -75,7 +156,7 @@ require($template->load("index.tpl", true, true));
  * ---------
  *  - path : Path to the tab content to display : [plugin_name].[parent_tab].[sub_tab]
  *
- * Returns : None
+ * Returns : Error message if an error occured, empty string otherwise.
  */
 function show_tab_content($path)
 {
@@ -107,30 +188,19 @@ function show_tab_content($path)
  *
  * Arguments
  * ---------
- *  None
+ *  -
+ *  - selected_path : Path to the selected tab : [plugin_name].[parent_tab].[sub_tab]
  *
- * Returns : Array containing variables for the template
- *  - page_class    : Class name for the page content div
- *  - selected_path : Path to the selected tab
- *  - selected_tab  : Name of the selected tab
+ * Returns : None
  */
-function show_tabs()
+function show_tabs($selected_path)
 {
     global $PLUGINS;
 
     $tabs = $PLUGINS->get_tabs();
-    $selected_tab_haschilds = false;
 
-    $selected_path = $_GET["path"];
-    if (empty($selected_path)) {
-
-        $first_tab = reset($tabs);
-        $selected_path = "{$first_tab['plugin']}.{$first_tab['id']}";
-    }
-
-    list($selected_plugin, $selected_tab, $selected_page) = explode(".", $selected_path . ".." );
-
-
+    $path_item = explode(".", $selected_path, 3);
+    $selected_tab = $path_item[1];
 
     echo "<ul class=\"top-nav\" id=\"tabs\">";
 
@@ -143,16 +213,6 @@ function show_tabs()
         echo $parent_tab["caption"], "</a>";
 
         if (isset($parent_tab["childs"])) {
-
-            if ($selected_tab == $parent_id) {
-                $selected_tab_haschilds = true;
-
-                if (empty($selected_page)) {
-                    $selected_page = array_shift(array_keys($parent_tab["childs"]));
-                    $selected_path = sprintf("%s.%s.%s", $selected_plugin, $selected_tab, $selected_page);
-                }
-            }
-
             echo "<ul class=\"left-nav\">";
 
             foreach ($parent_tab["childs"] as $sub_id => $sub_tab) {
@@ -171,8 +231,5 @@ function show_tabs()
     }
 
     echo "</ul>";
-
-    $page_class = ($selected_tab_haschilds ? "has-childs" : "");
-    return array($page_class, $selected_path, $selected_tab);
 }
 

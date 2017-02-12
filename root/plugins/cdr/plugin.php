@@ -49,7 +49,19 @@ define("PERM_CDR_WRITE_ROUTES", "cdr_write_routes");
 class PluginCdr extends Plugin
 {
 
+    /* List of plugins incompatible with this one */
+    public $conflicts = array();
+
+    /* Other plugins required */
     public $dependencies = array("tools");
+
+    /* Files (css, javascript) to include in the html header */
+    public $static_files = array(
+        "css" => "layout.css",
+        "js" => "datepicker.js"
+    );
+
+
 
     /*--------------------------------------------------------------------------
      * on_load() : Called after the plugin has been initialized.
@@ -182,7 +194,6 @@ class PluginCdr extends Plugin
 
         /* Load the template */
         require($template->load("cdr.tpl"));
-        require("{$this->dir}/js_cdr.php");
 
         odbc_free_result($results);
     }

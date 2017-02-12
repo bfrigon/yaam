@@ -6,6 +6,8 @@
 
     <link id="css_theme" rel="stylesheet" type="text/css" href="themes/[[$_SESSION@ui_theme]]/theme.css?v=[[#YAAM_VERSION]]" />
     <script type="text/javascript" src="include/js/jquery-env.min.js?v=[[#YAAM_VERSION]]"></script>
+
+    <callback name="autoinclude_plugin_files" params="[[$selected_path]]" return="" />
 </head>
 
 <body>
@@ -13,7 +15,7 @@
 
     <div id="main">
         <div class="header">
-            <callback name="show_tabs" params="" return="page_class,selected_path,selected_tab" />
+            <callback name="show_tabs" params="[[$selected_path]]" return="" />
         </div>
 
         <div id="userinfo">
