@@ -25,7 +25,7 @@
 
     <datagrid class="expand" id="routes_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column id="col_routes_check"><input class="select-all" type="checkbox" /></column>
+            <column id="col_routes_check" type="select"></column>
             <column id="col_routes_name">Route name</column>
             <column id="col_routes_cost">Cost (per min.)</column>
             <column id="col_routes_min">Min. duration (sec) </column>
@@ -34,7 +34,7 @@
         </header>
 
         <row>
-            <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column type="select" name="id" value="[[id]]"></column>
             <column>[[name]]</column>
             <column>[[cost|format_money:%.4i]] $</column>
             <column>[[min]]</column>

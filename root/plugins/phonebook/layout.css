@@ -40,7 +40,6 @@
 
 
 /* Phonebook grid columns width */
-#col_phonebook_check      { width: 16px }
 #col_phonebook_speed_dial { width: 100px }
 #col_phonebook_owner      { width: 80px }
 #col_phonebook_name       { width: 140px }

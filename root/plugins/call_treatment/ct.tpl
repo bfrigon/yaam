@@ -25,7 +25,7 @@
 
     <datagrid id="ct_grid" class="expand" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column id="col_ct_check"><input class="slect-all" type="checkbox" /></column>
+            <column id="col_ct_check" type="select"></column>
             <column id="col_ct_ext" if="perm" if-value="ct_rules_all_users">Ext.</column>
             <column id="col_ct_desc">Description</column>
             <column id="col_ct_act">Action</column>
@@ -35,8 +35,10 @@
         </header>
 
         <row>
-            <column><input class="select-all-item" type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column type="select" name="id" value="[[id]]"></column>
+
             <column if="perm" if-value="ct_rules_all_users">[[extension]]</column>
+
             <column>[[description]]</column>
 
             <column>

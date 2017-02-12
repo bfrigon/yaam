@@ -23,7 +23,7 @@
 
     <datagrid class="expand" id="users" data-type="odbc" data-source="results">
         <header>
-            <column id="col_users_check"><input type="checkbox" id="select-all" /></column>
+            <column id="col_users_check" type="select"></column>
             <column id="col_users_username">Username</column>
             <column id="col_users_fullname">Full name</column>
             <column id="col_users_ext">Extension</column>
@@ -33,7 +33,7 @@
         </header>
 
         <row>
-            <column><input type="checkbox" name="user[]" value="[[user]]" /></column>
+            <column type="select" name="user" value="[[user]]"></column>
             <column>[[user]]</column>
             <column>[[fullname]]</column>
             <column>[[extension]]</column>

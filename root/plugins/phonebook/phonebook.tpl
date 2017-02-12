@@ -25,7 +25,7 @@
 
     <datagrid class="expand" id="ct_grid" data-type="odbc" data-source="results" min-rows="15">
         <header>
-            <column id="col_phonebook_sel"><input type="checkbox" /></column>
+            <column id="col_phonebook_sel" type="select"></column>
             <column id="col_phonebook_speed_dial">Speed dial</column>
             <column id="col_phonebook_owner" if="perm" if-value="phonebook_all_users">Owner (ext.)</column>
             <column id="col_phonebook_name">Name</column>
@@ -35,7 +35,7 @@
         </header>
 
         <row>
-            <column><input type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column type="select" name="id" value="[[id]]"></column>
 
             <column>
                 <if not type="empty" name="speed_dial">

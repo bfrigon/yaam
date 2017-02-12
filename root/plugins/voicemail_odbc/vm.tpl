@@ -41,7 +41,7 @@
     <datagrid class="expand" id="grid_vm" data-type="odbc" data-source="results" min-rows="15">
         <caption>[[$vbox_user]]@[[$vbox_context]] - [[$current_folder_name]]([[$num_results]])</caption>
         <header>
-            <column id="col_vm_check"><input class="select-all" type="checkbox" /></column>
+            <column id="col_vm_check" type="select"></column>
             <column id="col_vm_date">Date</column>
             <column id="col_vm_from">From</column>
             <column id="col_vm_name">Name</column>
@@ -51,7 +51,7 @@
         </header>
 
         <row>
-            <column><input class="select-all-item" type="checkbox" name="id[]" value="[[id]]" /></column>
+            <column type="select" name="id" value="[[id]]"></column>
             <column>[[origtime | format_unix_time]]</column>
 
             <column>

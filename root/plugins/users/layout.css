@@ -39,7 +39,6 @@
 #txt_users_search   { width: 170px; }
 
 /* Users grid columns width */
-#col_users_check    { width: 16px; }
 #col_users_username { width: 100px; }
 #col_users_fullname { width: 160px; }
 #col_users_ext      { width: 80px; }

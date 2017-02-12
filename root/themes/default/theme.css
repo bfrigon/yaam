@@ -1103,6 +1103,9 @@ div.toolbar .spacer {
     display: none;
 }
 
+.grid .column-select {
+    width: 16px;
+}
 
 
 

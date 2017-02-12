@@ -54,7 +54,6 @@
 #col_cdr_cost     { width: 40px; }
 
 /* CDR routes grid columns width */
-#col_routes_check   { width: 16px; }
 #col_routes_name    { width: 290px; }
 #col_routes_cost    { width: 100px; }
 #col_routes_min     { width: 100px; }

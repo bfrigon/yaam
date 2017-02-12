@@ -225,7 +225,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         $columns = $node_row->childNodes;
         foreach ($columns as $node_column) {
 
-            $type = $node_column->getAttribute("type");
+            $type = strtolower($node_column->getAttribute("type"));
             $id = $node_column->getAttribute("id");
 
             if ($node_column->hasAttribute("if"))
@@ -241,6 +241,21 @@ class TagProcessorDatagrid extends TagProcessorBase
                 fwrite($handle, " id=\"$id\"");
 
             fwrite($handle, ">");
+
+            if ($type == "select") {
+                $name = $node_column->getAttribute("name");
+                $value = $this->process_shortcode($node_column->getAttribute("value"), $data_type, $data_source);
+
+                $class = ($node_row->nodeName == "row") ? "select-all-item" : "select-all";
+
+                if (empty($name) && ($node_row->nodeName == "row"))
+                    $this->throw_compile_exception($node_column, "Columns of type 'select' for tbody rows requires a 'name' argument.");
+
+                if (empty($value) && ($node_row->nodeName == "row"))
+                    $this->throw_compile_exception($node_column, "Columns of type 'select' for tbody rows requires a 'value' argument.");
+
+                fwrite($handle, "<input class=\"$class\" type=\"checkbox\" name=\"{$name}[]\" value=\"$value\" />");
+            }
 
             $this->process_node($handle, $node_column, false, true, $data_type, $data_source);
 

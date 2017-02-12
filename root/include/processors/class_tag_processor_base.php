@@ -127,16 +127,13 @@ class TagProcessorBase
                                     $this->processors[$child->nodeName]->process_tag($child, $handle, $data_type, $data_source);
                                     break;
 
-                                case "script":
-                                    fwrite($handle, $child->ownerDocument->saveHTML($child));
-                                    break;
-
                                 case "head":
                                     if ($process_top_level == false)
                                         break;
 
                                     /* fall-through */
 
+                                case "script":
                                 case "html":
                                 case "body":
                                     $this->process_node($handle, $child, $process_top_level, true, $data_type, $data_source, $process_top_level);
