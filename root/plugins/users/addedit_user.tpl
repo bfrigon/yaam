@@ -1,4 +1,4 @@
-<form id="frm_add_user" method="post">
+<form id="frm_add_user" method="post" keep-referrer>
     <dialog>
         <if type="is" name="action" value="add"><h1>Add user</h1></if>
         <if type="is" name="action" value="edit"><h1>Edit user</h1></if>

@@ -64,10 +64,15 @@ class TagProcessorForm extends TagProcessorBase
 
             $node_tag->appendChild($element);
 
+            /* Add hidden field : refferer */
             $element = $node_tag->ownerDocument->createElement("input");
             $element->setAttribute("type", "hidden");
             $element->setAttribute("name", "referrer");
-            $element->setAttribute("value", "<?php echo \$this->get_tab_url(true) ?>");
+
+            if ($this->get_attribute_boolean($node_tag, "keep-referrer"))
+                $element->setAttribute("value", "<?php echo \$this->get_tab_referrer() ?>");
+            else
+                $element->setAttribute("value", "<?php echo \$this->get_tab_url(true) ?>");
 
             $node_tag->appendChild($element);
         }

@@ -196,7 +196,7 @@ class TagProcessorBase
     protected function process_tokens($tokens, $data_type=null, $data_source=null, $unset_variable="''")
     {
         if (empty(trim($tokens)))
-            return "";
+            return (is_null($unset_variable) ? '' : $unset_variable);
 
         /* Split the tokens */
         $tokens =  preg_split("/[\s|]+/", $tokens);

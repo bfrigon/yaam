@@ -1,4 +1,4 @@
-<form id="frm_addedit_route" method="post">
+<form id="frm_addedit_route" method="post" keep-referrer>
     <dialog>
         <if type="is" name="action" value="add"><h1>Add call route</h1></if>
         <if type="is" name="action" value="edit"><h1>Edit call route</h1></if>

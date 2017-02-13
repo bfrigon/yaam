@@ -36,7 +36,7 @@
 define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
-define("YAAM_VERSION", "0.3.322");
+define("YAAM_VERSION", "0.3.323");
 
 
 /* --- Date format type --- */

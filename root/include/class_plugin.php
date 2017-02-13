@@ -150,7 +150,7 @@ class Plugin
             if (!(isset($_REQUEST["path"])))
                 return "";
 
-            $uri = array("path" => $_GET["path"]);
+            $uri = array("path" => $_REQUEST["path"]);
 
             return ("?" . http_build_query($uri));
         }

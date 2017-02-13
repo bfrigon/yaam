@@ -202,7 +202,6 @@ class PluginUsers extends Plugin
                 "vbox_context" => isset($_POST["vbox_context"]) ? $_POST["vbox_context"] : "",
                 "vbox_user"    => isset($_POST["vbox_user"])    ? $_POST["vbox_user"] : "",
                 "did"          => isset($_POST["did"])          ? $_POST["did"] : "",
-                "prgroups"     => array()
             );
 
             /* Get the list of available permissions */
@@ -217,7 +216,7 @@ class PluginUsers extends Plugin
                 /* Build user permission list */
                 if (check_permission(PERM_USER_SET_PERMISSION)) {
 
-                    $pgroups = isset($_POST["pgroups"]) ? $_POST["pgroups"] : "";
+                    $pgroups = isset($_POST["pgroups"]) ? $_POST["pgroups"] : array();
 
                     $user_data["pgroups"] = implode(",", $_POST["pgroups"]);
                 }
@@ -263,7 +262,6 @@ class PluginUsers extends Plugin
 
                 /* Redirect to the previous location. */
                 $this->redirect($this->get_tab_referrer());
-                return;
 
             } else if ($action == "edit" || $action == "view") {
 
