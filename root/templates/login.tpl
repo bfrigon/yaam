@@ -14,9 +14,9 @@
     </div>
 
     <if not type="empty" name="error_msg">
-        <div class="box dialog error">
-            <p>[[error_msg]]</p>
-        </div>
+        <dialog type="error">
+            <message>[[error_msg]]</message>
+        </dialog>
     </if>
 
     <form id="login" method="post">
