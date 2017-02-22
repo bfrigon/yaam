@@ -116,7 +116,8 @@ function get_system_diskinfo()
 {
     $disk_info = array();
 
-    $mntpoints = get_global_config_item("sys_admin", "widget_disk_space", array("Root" => "/"));
+    $mntpoints = get_global_config_item("widget_sys_info", "disks", array("Root" => "/"));
+
     foreach ($mntpoints as $name => $mntpoint) {
 
             $total = disk_total_space($mntpoint);
@@ -137,7 +138,7 @@ function get_system_netinfo()
 {
     $net_info = array();
 
-    $interfaces = explode(",", get_global_config_item("sys_admin", "widget_network_interfaces", "eth0"));
+    $interfaces = explode(",", get_global_config_item("widget_sys_info", "network_interfaces", "eth0"));
 
     if ($fc = @file_get_contents('/proc/net/dev')) {
 
@@ -174,7 +175,7 @@ function get_service_status()
     $service_info = array();
 
 
-    $services = get_global_config_item("sys_admin", "widget_service_monitor", array());
+    $services = get_global_config_item("widget_service_monitor", "services", array());
 
     foreach ($services as $name => $service) {
         $pid = 0;

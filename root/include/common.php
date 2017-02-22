@@ -37,7 +37,7 @@ define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
 
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
-define("YAAM_VERSION", "0.3.330");
+define("YAAM_VERSION", "0.3.331");
 
 
 /* --- Date format type --- */
@@ -286,7 +286,11 @@ function init_session()
 
     /* Connect to the database */
     $dsn = get_global_config_item("odbc", "database");
-    $user = get_global_config_item("odbc", "user");
+
+    if (empty($dsn))
+        throw new Exception("Database connection name was not set in yaam.conf");
+
+    $user = get_global_config_item("odbc", "user", $dsn);
     $secret = get_global_config_item("odbc", "secret");
 
     $DB = new ODBCDatabase($dsn, $user, $secret);

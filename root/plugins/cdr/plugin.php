@@ -112,7 +112,7 @@ class PluginCdr extends Plugin
         $query->orderby_desc("calldate");
 
         /* if unanswered_calls is off, only show calls with disposition 'ANSWERED' */
-        if (!get_global_config_item("cdr", "unanswered_calls", False))
+        if (!get_global_config_item("cdr", "unanswered_calls", false))
             $query->where("disposition", "=", "answered");
 
         /* If user don't have permissions to view other user's cdr records, restrict the result to the user extension */

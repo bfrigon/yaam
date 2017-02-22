@@ -86,7 +86,7 @@ class PluginSystemAdmin extends Plugin
 
         $manager->register_tab($this, "on_show_log", "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
 
-        $log_items = get_global_config_item("sys_admin", "log_files", array());
+        $log_items = get_global_config_item("log_viewer", "groups", array());
 
 
         /* Create a sub tab for each items */
