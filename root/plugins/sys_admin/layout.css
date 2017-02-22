@@ -48,9 +48,10 @@
 }
 
 /* Channel status grid column width */
-#col_cstatus_channel  { width: 200px; }
+#col_cstatus_channel  { width: 220px; }
 #col_cstatus_from     { width: 120px; }
 #col_cstatus_name     { width: 120px; }
 #col_cstatus_to       { width: 120px; }
-#col_cstatus_duration { width: 60px; }
+#col_cstatus_duration { width: 50px; }
 #col_cstatus_state    { width: 80px; }
+

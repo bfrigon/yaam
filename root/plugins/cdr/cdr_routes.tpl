@@ -49,7 +49,7 @@
     </datagrid>
 </form>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d route(s) found. "><if-empty>No routes found!</if-empty></var><br />
     <var name="current_page, total_pages" format="Page %d of %d" />
 </p>

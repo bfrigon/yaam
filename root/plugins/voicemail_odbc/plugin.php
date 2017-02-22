@@ -79,6 +79,7 @@ class PluginVoicemailOdbc extends Plugin
             PERM_VOICEMAIL_ALL_USERS,
         ));
 
+
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = '25';
 
@@ -259,12 +260,8 @@ class PluginVoicemailOdbc extends Plugin
             }
 
         } catch (Exception $e) {
-            $message = $e->getmessage();
-            $url_ok = $this->get_tab_referrer();
-
-            require($template->load("dialog_error.tpl", true));
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
-
     }
 
 
@@ -334,11 +331,8 @@ class PluginVoicemailOdbc extends Plugin
 
             require($template->load("message.tpl"));
 
-       } catch (Exception $e) {
-            $message = $e->getmessage();
-            $url_ok = $this->get_tab_referrer();
-
-            require($template->load("dialog_error.tpl", true));
+        } catch (Exception $e) {
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
     }
 

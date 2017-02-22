@@ -77,7 +77,9 @@ try {
 
     /* Load the plugin containing the function */
     $manager = new PluginManager();
-    $plugin = $manager->load($plugin_name);
+    $manager->load();
+
+    $plugin = $manager->get_plugin($plugin_name);
 
     if (!method_exists($plugin, $ajax_function))
         throw new Exception("Cannot call ajax function in $plugin_name. No function named $ajax_function");
@@ -113,10 +115,6 @@ try {
     switch ($output) {
         case "json":
             echo json_encode(array("_error" => $error));
-            break;
-
-        case "html":
-            print_message($error, true);
             break;
 
         default:

@@ -63,6 +63,7 @@ class TagProcessorBase
 
         $this->processors = &$engine->processors;
         $this->currency_format = &$engine->currency_format;
+        $this->template_file = &$engine->template_file;
     }
 
 
@@ -182,14 +183,56 @@ class TagProcessorBase
 
 
     /*--------------------------------------------------------------------------
+     * process_variable() : Process variable syntax.
+     *
+     * Arguments
+     * ---------
+     *  - variable       : Variable syntax to process.
+     *  - unset_variable : Default value if variable is not set.
+     *
+     * Returns : The converted tokens.
+     */
+    private function process_variable($variable, $unset_variable="''")
+    {
+        if (is_numeric($variable))
+            return $variable;
+
+        if (substr($variable, 0, 1) != "$")
+            $variable = "\$$variable";
+
+        if (strpos($variable, "@") !== false) {
+            $brackets = explode("@", $variable);
+            $variable = $brackets[0];
+
+            foreach (array_slice($brackets,1) as $bracket) {
+                $variable .= (is_numeric($bracket) ? "[$bracket]" : "['$bracket']");
+            }
+
+            if (is_null($unset_variable))
+                return $variable;
+            else
+                return "(isset($variable) ? $variable : $unset_variable)";
+
+        } else {
+
+            if (is_null($unset_variable))
+                return $variable;
+            else
+                return "(isset($variable) ? $variable : $unset_variable)";
+        }
+    }
+
+
+    /*--------------------------------------------------------------------------
      * process_tokens() : Convert a list of tokens contained in a single
      *                    shortcode bracket [[...]]
      *
      * Arguments
      * ---------
-     *  - tokens      : List of tokens to process.
-     *  - data_type   : Type of the current data source (odbc, dict).
-     *  - data_source : Current data source object.
+     *  - tokens         : List of tokens to process.
+     *  - data_type      : Type of the current data source (odbc, dict).
+     *  - data_source    : Current data source object.
+     *  - unset_variable : Default value if variable is not set.
      *
      * Returns : The converted tokens.
      */
@@ -206,29 +249,10 @@ class TagProcessorBase
             /* The first token is the variable name, following tokens contains modifier */
             if (empty($output)) {
 
+
                 /* Single variable */
                 if (substr($token, 0, 1) == "$") {
-
-                    if (strpos($token, "@") !== false) {
-                        $brackets = explode("@", $token);
-                        $variable = $brackets[0];
-
-                        foreach (array_slice($brackets,1) as $bracket) {
-                            $variable .= (is_numeric($bracket) ? "[$bracket]" : "['$bracket']");
-                        }
-
-                        if (is_null($unset_variable))
-                            $output = $varaible;
-                        else
-                            $output = "(isset($variable) ? $variable : $unset_variable)";
-
-                    } else {
-
-                        if (is_null($unset_variable))
-                            $output = $token;
-                        else
-                            $output = "(isset($token) ? $token : $unset_variable)";
-                    }
+                    $output = $this->process_variable($token, $unset_variable);
 
                 /* Constant */
                 } else if (substr($token, 0, 1) == "#") {
@@ -236,18 +260,13 @@ class TagProcessorBase
 
                 } else {
 
-
                     switch ($data_type) {
                         /* Ordinary array */
                         case "array":
                             if (strtolower($token) == "value") {
                                 $output = $data_source[1];
                             } else {
-
-                                if (is_null($unset_varaible))
-                                    $output = "\$$token";
-                                else
-                                    $output = "(isset(\$$token) ? \$$token : $unset_variable)";
+                                $output = $this->process_variable($token, $unset_variable);
                             }
 
                             break;
@@ -261,6 +280,14 @@ class TagProcessorBase
                         case "dict":
                             if (count($data_source) == 3) {
 
+                                $brackets = null;
+                                if (strpos($token, "@") !== false) {
+                                    $brackets = explode("@", $token);
+                                    $token = $brackets[0];
+
+                                    $brackets = array_slice($brackets, 1);
+                                }
+
                                 switch (strtolower($token)) {
                                     case "key":
                                         $output = $data_source[1];
@@ -268,15 +295,22 @@ class TagProcessorBase
 
                                     case "value":
                                         $output = $data_source[2];
+
+
+                                        if (!(empty($brackets))) {
+
+                                            foreach ($brackets as $bracket) {
+                                                $output .= (is_numeric($bracket) ? "[$bracket]" : "['$bracket']");
+                                            }
+
+                                            if (!(is_null($unset_variable))) {
+                                                $output = "(isset($output) ? $output : $unset_variable)";
+                                            }
+                                        }
                                         break;
 
                                     default:
-
-                                        if (is_null($unset_varaible))
-                                            $output = "\$$token";
-                                        else
-                                            $output = "(isset(\$$token) ? \$$token : $unset_variable)";
-
+                                        $output = $this->process_variable($token, $unset_variable);
                                         break;
                                 }
                             } else {
@@ -287,12 +321,7 @@ class TagProcessorBase
 
                         /* Single variable */
                         default:
-
-                            if (is_null($unset_variable))
-                                $output = "\$$token";
-                            else
-                                $output = "(isset(\$$token) ? \$$token : $unset_variable)";
-
+                            $output = $this->process_variable($token, $unset_variable);
                             break;
                     }
                 }

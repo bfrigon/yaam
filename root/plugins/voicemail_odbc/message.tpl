@@ -20,7 +20,7 @@
         <item type="button" id="btn_vm_vol_up" href="#" icon="vol-up" />
     </toolbar>
 
-    <toolbar class="center v_spacing">
+    <toolbar class="center">
         <item type="button" action="cancel" icon="left">Back</item>
         <item type="separator" />
         <item type="button" id="btn_vm_download" href="[[$msg_url]]" title="Download message" icon="download" >Download</item>

@@ -35,8 +35,9 @@
 
 define("DOCUMENT_ROOT", dirname(__DIR__));
 define("SERVER_SCRIPT_DIR", dirname($_SERVER["SCRIPT_NAME"]));
+
 define("YAAM_CONFIG_FILE", "/etc/asterisk/yaam.conf");
-define("YAAM_VERSION", "0.3.323");
+define("YAAM_VERSION", "0.3.330");
 
 
 /* --- Date format type --- */
@@ -47,6 +48,12 @@ define("DATE_FORMAT_DATETIME", 2);
 
 /* --- Permissions --- */
 define("PERM_NONE", "");
+
+
+/* --- Message box types --- */
+define("MESSAGEBOX_ERROR", "error");
+define("MESSAGEBOX_WARNING", "warning");
+define("MESSAGEBOX_INFO", "info");
 
 
 /* --- Asterisk channel states --- */
@@ -292,31 +299,6 @@ function init_session()
 
     $MANAGER = new AJAM($user, $secret, $url);
     $MANAGER->login();
-}
-
-
-/*--------------------------------------------------------------------------
- * print_message() : Print a message box.
- *
- * Arguments
- * ---------
- *  - message : Message to print
- *  - error   : True if the message is an error
- *
- * Returns   : Nothing
- */
-function print_message($message, $error = false)
-{
-
-    $message = preg_replace("/\n/", "<br />", $message);
-
-    if ($error)
-        echo "<div class=\"box dialog error\">";
-    else
-        echo "<div class=\"box dialog info\">";
-
-    echo $message;
-    echo "</div>";
 }
 
 

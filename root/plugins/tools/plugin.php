@@ -121,8 +121,8 @@ class PluginTools extends Plugin
 
                 if ((!empty($_POST["old_pwd"])) || (!empty($_POST["pwd"])) || (!empty($_POST["pwd_check"]))) {
 
-                    $old_pwhash = hash(sha256, $_POST["old_pwd"]);
-                    $pwhash = hash(sha256, $_POST["pwd"]);
+                    $old_pwhash = hash("sha256", $_POST["old_pwd"]);
+                    $pwhash = hash("sha256", $_POST["pwd"]);
 
                     /* Validate new password */
                     if (empty($_POST["pwd"]))
@@ -132,7 +132,7 @@ class PluginTools extends Plugin
                         throw new Exception("The new password must have at least 6 characters");
 
                     if ($_POST["pwd"] != $_POST["pwd_check"])
-                        throw new Exception("The new password does not match");
+                        throw new Exception("The new password do not match");
 
                     /* Validate old password */
                     $old_pwhash_db = $DB->exec_query_simple(
@@ -156,18 +156,14 @@ class PluginTools extends Plugin
 
                 /* Save user config */
                 $_SESSION["date_format"] = $_POST["date_format"];
-                $_SESSION["ui_theme"] = $_POST["ui_theme"];
+                $_SESSION["ui_theme"] = empty($_POST["ui_theme"]) ? "default" : $_POST["ui_theme"];
                 save_user_config();
 
-                $message = "Your profile was updated.";
-                $url_ok = $this->get_tab_referrer();
-
-                require($template->load("dialog_message.tpl", true));
-                return;
+                $this->show_messagebox(MESSAGEBOX_INFO, "Your profile was updated", false);
             }
         } catch (Exception $e) {
 
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         /* Load template */
@@ -208,12 +204,17 @@ class PluginTools extends Plugin
                 $this->do_originate_call($ext, $number, $caller_num, $caller_name, $timeout);
 
                 $date = date(DATE_RFC2822);
-                print_message("Originate call succeded.<br />\"$ext\" -> \"$number\" on $date");
+
+                $this->show_messagebox(
+                    MESSAGEBOX_INFO,
+                    "Originate call succeded.\n\"$ext\" -> \"$number\" on $date",
+                    false
+                );
 
             }
         } catch (Exception $e) {
 
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         require($template->load("originate.tpl"));

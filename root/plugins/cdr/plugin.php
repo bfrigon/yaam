@@ -328,6 +328,8 @@ class PluginCdr extends Plugin
             if (isset($_POST["submit"])) {
 
                 /* Validate fields */
+                if (empty($rte_data["name"]))
+                    throw new Exception("Route name is empty!");
 
 
                 /* If all fields are valid, Insert the new call route in the database. */
@@ -349,8 +351,7 @@ class PluginCdr extends Plugin
             }
 
         } catch (Exception $e) {
-
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         require($template->load("cdr_routes_addedit.tpl"));
@@ -377,13 +378,8 @@ class PluginCdr extends Plugin
 
             $query = $DB->create_query("cdr_routes");
 
-            if (!isset($_GET["id"])) {
-                $message = "You did not select any routes to delete.";
-                $url_ok = $this->get_tab_referrer();
-
-                require($template->load("dialog_message.tpl", true));
-                return;
-            }
+            if (!isset($_GET["id"]))
+                throw new Exception("You did not select any routes to delete.");
 
             $id = $_GET["id"];
             if (is_array($id)) {
@@ -409,8 +405,7 @@ class PluginCdr extends Plugin
 
         } catch (Exception $e) {
 
-            print_message($e->getmessage(), true);
-
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
     }
 }

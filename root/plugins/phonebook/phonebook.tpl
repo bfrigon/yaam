@@ -42,6 +42,8 @@
                     [[$speed_dial_prefix]][[speed_dial]]
                     <icon if="empty" if-name="extension" icon="globe" />
                 </if>
+
+                <if type="empty" name="speed_dial">--</if>
             </column>
 
             <column if="perm" if-value="phonebook_all_users">
@@ -69,7 +71,7 @@
     </datagrid>
 </form>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d phone number(s) found. "><if-empty>No phone numbers found!</if-empty></var><br />
     <var name="current_page, total_pages" format="Page %d of %d" />
 </p>

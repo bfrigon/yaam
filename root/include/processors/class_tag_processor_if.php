@@ -59,7 +59,6 @@ class TagProcessorIf extends TagProcessorBase
     public function process_tag($node_tag, $handle, $data_type=null, $data_source=null, $close_tag=true)
     {
 
-
         /* stand-alone if tag */
         if ($node_tag->nodeName == "if") {
             $type = strtolower($node_tag->getAttribute("type"));
@@ -80,12 +79,12 @@ class TagProcessorIf extends TagProcessorBase
 
         switch ($type) {
             case "function":
-            case "boolean":
-            case "bool":
+            case "true":
+            case "false":
             case "isset":
             case "empty":
             case "is_null":
-            case "string":
+            case "equal":
                 if (empty($name) && $node_tag->nodeName == "if") {
                     $this->throw_compile_exception($node_tag, "The 'if' tag requires an 'if-name' attribute for '$type' type");
                 } else if (empty($name)) {
@@ -124,12 +123,13 @@ class TagProcessorIf extends TagProcessorBase
                 break;
 
             /* Check if variable Boolean */
-            case "boolean":
-            case "bool":
-                $op = ($node_tag->hasAttribute("not") ? "false" : "true");
-                $name = $this->process_tokens($name, $data_type, $data_source);
+            case "true":
+            case "false":
+                $unset_value = ($type == "true" ? "false" : "true");
+                $op = ($node_tag->hasAttribute("not") ? "!== $type" : "=== $type");
+                $name = $this->process_tokens($name, $data_type, $data_source, $unset_value);
 
-                fwrite($handle, "<?php if ($name === $op): ?>\n");
+                fwrite($handle, "<?php if ($name $op): ?>\n");
                 break;
 
             /* Check if variable exists */
@@ -137,18 +137,21 @@ class TagProcessorIf extends TagProcessorBase
             case "empty":
             case "is_null":
                 $op = ($node_tag->hasAttribute("not") ? "!" : "");
-                $name = $this->_engine->process_tokens($name, $data_type, $data_source);
+                $name = $this->_engine->process_tokens($name, $data_type, $data_source, null);
 
                 fwrite($handle, "<?php if ({$op}$type($name)): ?>\n");
                 break;
 
-            /* Compare string */
-            case "string":
+            /* Compare */
+            case "equal":
             default:
                 $op = ($node_tag->hasAttribute("not") ? "!=" : "==");
                 $name = $this->process_tokens($name, $data_type, $data_source);
 
-                fwrite($handle, "<?php if ($name $op \"$value\"): ?>\n");
+                if (!(is_numeric($value)))
+                    $value = "\"$value\"";
+
+                fwrite($handle, "<?php if ($name $op $value): ?>\n");
                 break;
         }
 

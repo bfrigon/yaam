@@ -41,6 +41,9 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 
 class Plugin
 {
+    private $_template = null;
+
+
     public $manager = null;
     public $name = '';
     public $dir = '';
@@ -185,5 +188,50 @@ class Plugin
             $params["path"] = $_GET["path"];
 
         return "?" . http_build_query($params);
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * get_template_engine() : Return the template engine instance for this plugin
+     *                         or create one if not done already.
+     *
+     * Arguments
+     * ---------
+     *  None
+     *
+     * Returns : The template engine instance.
+     */
+    function get_template_engine()
+    {
+        if (is_null($this->_template))
+            $this->_template = new TemplateEngine($this);
+
+        return $this->_template;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * show_messagebox() : Load and display the template for a message box
+     *
+     * Arguments
+     * ---------
+     *  - type        : Message box type
+     *  - message     : Message to display.
+     *  - has_buttons : Show dialog buttons.
+     *  - url_ok      : The url to redirect to when the OK button is pressed.
+     *
+     * Returns : None
+     */
+    function show_messagebox($msg_type, $message, $has_buttons=true, $url_ok=null)
+    {
+        $message = preg_replace("/\n/", "<br />", $message);
+
+        if ($has_buttons) {
+
+            if (is_null($url_ok))
+                $url_ok = (empty($url_ok) ? $this->get_tab_referrer() : $url_ok);
+        }
+
+        require($this->_template->load("messagebox.tpl", true));
     }
 }

@@ -218,7 +218,7 @@ class PluginUsers extends Plugin
 
                     $pgroups = isset($_POST["pgroups"]) ? $_POST["pgroups"] : array();
 
-                    $user_data["pgroups"] = implode(",", $_POST["pgroups"]);
+                    $user_data["pgroups"] = implode(",", $pgroups);
                 }
 
                 /* Validate fields */
@@ -272,8 +272,7 @@ class PluginUsers extends Plugin
             }
 
         } catch (Exception $e) {
-
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         require($template->load("addedit_user.tpl"));
@@ -293,40 +292,40 @@ class PluginUsers extends Plugin
     {
         global $DB;
 
-        if (!(check_permission(PERM_USER_WRITE)))
-            throw new Exception("You do not have the required permissions to delete users!");
+        try {
 
-        $query = $DB->create_query("users");
+            if (!(check_permission(PERM_USER_WRITE)))
+                throw new Exception("You do not have the required permissions to delete users!");
 
-        if (!(isset($_GET["user"]))) {
-            $message = "You did not select any users to delete.";
-            $url_ok = $this->get_tab_referrer();
+            $query = $DB->create_query("users");
 
-            require($template->load("dialog_message.tpl", true));
-            return;
-        }
+            if (!(isset($_GET["user"])))
+                throw new Exception("You did not select any users to delete.");
 
-        $user = $_GET["user"];
-        if (is_array($user)) {
-            $query->where_in("user", $user);
-        } else {
-            $query->where("user", "=", $user);
-        }
+            $user = $_GET["user"];
+            if (is_array($user)) {
+                $query->where_in("user", $user);
+            } else {
+                $query->where("user", "=", $user);
+            }
 
-        if (isset($_GET["confirm"])) {
-            $query->run_query_delete();
+            if (isset($_GET["confirm"])) {
+                $query->run_query_delete();
 
-            /* Redirect to the previous location */
-            $this->redirect($this->get_tab_referrer());
-            return;
+                /* Redirect to the previous location */
+                $this->redirect($this->get_tab_referrer());
+                return;
 
-        } else {
+            } else {
 
-            $results = $query->run_query_select("user,fullname");
+                $results = $query->run_query_select("user,fullname");
 
-            require($template->load("delete_user.tpl"));
+                require($template->load("delete_user.tpl"));
 
-            odbc_free_result($results);
+                odbc_free_result($results);
+            }
+        } catch (Exception $e) {
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
     }
 

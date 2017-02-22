@@ -17,7 +17,7 @@
         <column id="col_cstatus_name">Name</column>
         <column id="col_cstatus_to">To</column>
         <column id="col_cstatus_duration">Duration</column>
-        <column id="col_cstatus_state">State</column>
+        <column type="actions" id="col_cstatus_actions"></column>
     </header>
 
     <row>
@@ -26,13 +26,16 @@
         <column>[[calleridname | lower | ucwords]]</column>
         <column>[[dnid | format_phone]]</column>
         <column>[[seconds | format_time_seconds]]</column>
-        <column>[[channelstatedesc || ucfirst]]</column>
+
+        <column>
+            <icon action="hangup" icon="hangup" title="Hangup" params="channel=[[channel]]" />
+        </column>
     </row>
 
     <if-empty>** No active channels **</if-empty>
 </grid>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d active channels(s). " if-empty="No active channels." /><br />
-    <var name="current_page, total_pages" format="Page %d of %d" />
+    <var name="current_page, total_pages" format="Page %d of %d" if-empty="" />
 </p>

@@ -56,14 +56,13 @@ class TagProcessorVariable extends TagProcessorBase
     {
         $node_empty = $node_tag->getElementsByTagName("if-empty")->item(0);
 
-        $if_empty = $node_tag->getAttribute("if-empty");
         $format = $node_tag->getAttribute("format");
         $vars = explode(',', $node_tag->getAttribute("name"));
 
         if (!empty($format))
-            $instr = "<?php printf('$format',";
+            $instr = "<?php @printf('$format',";
         else
-            $instr = "<?php echo ";
+            $instr = "<?php @print ";
 
         foreach ($vars as $key => $var) {
 
@@ -79,13 +78,18 @@ class TagProcessorVariable extends TagProcessorBase
         if (empty($vars))
             $this->throw_compile_exception($node_tag, "The tag 'variable' requires at least one variable name.");
 
-        if (!empty($node_empty) || !empty($if_empty)) {
+        if (!empty($node_empty) || $node_tag->hasAttribute("if-empty")) {
             fwrite($handle, "<?php if(empty(" . implode(") || empty(", $vars) . ")): ?>");
 
-            if (!empty($node_empty))
+            if (!empty($node_empty)) {
+
                 $this->process_node($handle, $node_empty, false, false);
-            else
+            } else {
+
+                $if_empty = $node_tag->getAttribute("if-empty");
+
                 fwrite($handle, $if_empty);
+            }
 
             fwrite($handle, "<?php else: ?>");
         }
@@ -97,7 +101,8 @@ class TagProcessorVariable extends TagProcessorBase
         else
             fwrite($handle, " ?>");
 
-        if (!empty($node_empty) || !empty($if_empty))
+        if (!empty($node_empty) || $node_tag->hasAttribute("if-empty")) {
             fwrite($handle, "<?php endif; ?>");
+        }
     }
 }

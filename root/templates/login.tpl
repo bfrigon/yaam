@@ -15,7 +15,7 @@
 
     <if not type="empty" name="error_msg">
         <div class="box dialog error">
-            [[error_msg]]
+            <p>[[error_msg]]</p>
         </div>
     </if>
 
@@ -24,7 +24,7 @@
             <field type="text" name="user" caption="Username" value="[[$f_user]]" />
             <field type="password" name="pass" caption="Password" value="" />
 
-            <toolbar class="center v_spacing">
+            <toolbar class="center">
                 <item type="submit" name="login" caption="Login">Login</item>
             </toolbar>
         </dialog>

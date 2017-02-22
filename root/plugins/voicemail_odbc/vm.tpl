@@ -72,7 +72,7 @@
     </datagrid>
 </form>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d message(s)">
         <if-empty>No messages.</if-empty>
     </var>

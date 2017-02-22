@@ -239,6 +239,9 @@ class PluginCallTreatment extends Plugin
                     throw new Exception("You are not authorized to create rules for other extensions");
                 }
 
+                if (empty($ct_data["caller_num"]) && empty($ct_data["caller_name"]))
+                    throw new Exception("Match rules are empty.");
+
                 /* If all fields are valid, Insert the new call route in the database. */
                 if ($action == "add")
                     $query->run_query_insert($ct_data);
@@ -257,7 +260,7 @@ class PluginCallTreatment extends Plugin
 
         } catch (Exception $e) {
 
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         $action_list = $this->_ct_actions;
@@ -278,44 +281,43 @@ class PluginCallTreatment extends Plugin
     {
         global $DB;
 
-        if (!(check_permission(PERM_CT_WRITE_RULES)))
-            throw new Exception("You do not have the required permissions to delete call treatment rules!");
+        try {
+            if (!(check_permission(PERM_CT_WRITE_RULES)))
+                throw new Exception("You do not have the required permissions to delete call treatment rules!");
 
-        $query = $DB->create_query("call_treatment");
+            $query = $DB->create_query("call_treatment");
 
-        if (!isset($_GET["id"])) {
-            $message = "You did not select any call treatment rule(s) to delete.";
-            $url_ok = $this->get_tab_referrer();
+            if (!isset($_GET["id"]))
+                throw new Exception("You did not select any call treatment rule(s) to delete.");
 
-            require($template->load("dialog_message.tpl", true));
-            return;
-        }
+            $id = $_GET["id"];
+            if (is_array($id)) {
+                $query->where_in("id", $id);
+            } else {
+                $query->where("id", "=", $id);
+            }
 
-        $id = $_GET["id"];
-        if (is_array($id)) {
-            $query->where_in("id", $id);
-        } else {
-            $query->where("id", "=", $id);
-        }
+            if (!(check_permission(PERM_CT_RULES_ALL_USERS))) {
+                $query->where("extension", "=", intval($_SESSION["extension"]));
+            }
 
-        if (!(check_permission(PERM_CT_RULES_ALL_USERS))) {
-            $query->where("extension", "=", intval($_SESSION["extension"]));
-        }
+            if (isset($_GET["confirm"])) {
+                $query->run_query_delete();
 
-        if (isset($_GET["confirm"])) {
-            $query->run_query_delete();
+                /* Redirect to the previous location */
+                $this->redirect($this->get_tab_referrer());
+                return;
 
-            /* Redirect to the previous location */
-            $this->redirect($this->get_tab_referrer());
-            return;
+            } else {
 
-        } else {
+                $results = $query->run_query_select("description,caller_num,caller_name");
 
-            $results = $query->run_query_select("description,caller_num,caller_name");
+                require($template->load("ct_delete.tpl"));
 
-            require($template->load("ct_delete.tpl"));
-
-            odbc_free_result($results);
+                odbc_free_result($results);
+            }
+        } catch (Exception $e) {
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
     }
 }

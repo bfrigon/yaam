@@ -1,4 +1,5 @@
 var objProgressDialog;
+var objMessageList;
 var call_hangup = false
 var call_id = null;
 var timer_check_progress = null;
@@ -17,6 +18,8 @@ var timer_check_progress = null;
 function reset_progress_dialog()
 {
     objProgressDialog = $("#dialog_originate");
+    objMessageList = $("#dialog_originate .content");
+
 
     /* Create the status dialog if it does not exists */
     if (objProgressDialog.length == 0) {
@@ -24,14 +27,22 @@ function reset_progress_dialog()
         objProgressDialog = $("<div></div>");
 
         objProgressDialog.addClass("box dialog");
+        objProgressDialog.hide();
         objProgressDialog.attr("id","dialog_originate");
+
+        objMessageList = $("<div></div>");
+        objMessageList.addClass("content");
+        objProgressDialog.append(objMessageList);
+
 
         /* Adds it to the page */
         $(".page#tab_tools").prepend(objProgressDialog);
     }
 
-    objProgressDialog.empty();
-    objProgressDialog.show();
+    objMessageList.empty();
+
+    objProgressDialog.addClass("info");
+    objProgressDialog.removeClass("error");
 }
 
 
@@ -48,19 +59,16 @@ function reset_progress_dialog()
 function add_progress_message(message, error)
 {
     objMessage = $("<div></div>");
-
     objMessage.append(message);
 
     if (error) {
         objMessage.addClass("error");
-        objProgressDialog.addClass("error");
         objProgressDialog.removeClass("info");
-    } else {
-        objProgressDialog.addClass("info");
-        objProgressDialog.removeClass("error");
+        objProgressDialog.addClass("error");
     }
 
-    objProgressDialog.append(objMessage);
+    objMessageList.append(objMessage);
+    objProgressDialog.show();
 }
 
 

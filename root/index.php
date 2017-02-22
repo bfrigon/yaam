@@ -200,7 +200,7 @@ function show_tabs($selected_path)
     $tabs = $PLUGINS->get_tabs();
 
     $path_item = explode(".", $selected_path, 3);
-    $selected_tab = $path_item[1];
+    $selected_tab = (isset($path_item[1]) ? $path_item[1] : "");
 
     echo "<ul class=\"top-nav\" id=\"tabs\">";
 

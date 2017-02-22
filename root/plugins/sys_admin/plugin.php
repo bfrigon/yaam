@@ -42,8 +42,11 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 /* --- Plugin permissions --- */
 define("PERM_LOGS_VIEW", "logs_view");
 define("PERM_EXEC_COMMANDS", "exec_commands");
-define("PERM_CHANNEL_STATUS_VIEW", "channel_status_view");
+define("PERM_VIEW_SYSTEM_INFO", "view_system_info");
+define("PERM_CHANNEL_VIEW_ALL", "channel_view_all");
+define("PERM_CHANNEL_HANGUP_OTHER_USERS", "channel_hangup_other_users");
 
+require("sysinfo.php");
 
 class PluginSystemAdmin extends Plugin
 {
@@ -78,7 +81,7 @@ class PluginSystemAdmin extends Plugin
     function on_load(&$manager)
     {
         $manager->register_tab($this, "on_show_command", "command", "tools", "Run command", PERM_EXEC_COMMANDS);
-        $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_STATUS_VIEW);
+        $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_VIEW_ALL);
 
 
         $manager->register_tab($this, "on_show_log", "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
@@ -98,8 +101,16 @@ class PluginSystemAdmin extends Plugin
         $manager->declare_permissions($this, array(
             PERM_LOGS_VIEW,
             PERM_EXEC_COMMANDS,
-            PERM_CHANNEL_STATUS_VIEW,
+            PERM_CHANNEL_VIEW_ALL,
+            PERM_CHANNEL_HANGUP_OTHER_USERS,
         ));
+
+        $manager->register_widget($this, "sysstat", "show_widget_sysstat", PERM_VIEW_SYSTEM_INFO);
+        $manager->register_widget($this, "version", "show_widget_version", PERM_VIEW_SYSTEM_INFO, false);
+        $manager->register_widget($this, "services", "show_widget_services", PERM_VIEW_SYSTEM_INFO);
+
+        $manager->register_widget($this, "channels", "show_widget_channels", PERM_CHANNEL_VIEW_ALL);
+
     }
 
 
@@ -121,7 +132,7 @@ class PluginSystemAdmin extends Plugin
 
 
         if (count($this->_log_items) == 0)
-            throw new Exception("No log file categories was configured in yaam.conf");
+            throw new Exception("No log file categories were configured in yaam.conf");
 
         $path = explode(".", $tab_path);
 
@@ -171,7 +182,7 @@ class PluginSystemAdmin extends Plugin
         global $MANAGER;
 
         if (!(check_permission(PERM_EXEC_COMMANDS)))
-            throw new Exception("You do not have the permissions to execute commands!");
+            throw new Exception("You do not have the permissions to execute console commands!");
 
         $cmd_result = "";
         $command = isset($_POST["command"]) ? $_POST["command"] : "";
@@ -207,18 +218,166 @@ class PluginSystemAdmin extends Plugin
     {
         global $MANAGER;
 
+        switch ($action) {
+            case "hangup":
+                $this->action_hangup_channel($template);
+                break;
+
+            default:
+                try {
+
+                    if (!(check_permission(PERM_CHANNEL_VIEW_ALL)))
+                        throw new Exception("You do not have the required permissions to view channel status");
+
+                    $channels = $MANAGER->send("Status", array());
+                    if ($channels === false)
+                        throw new Exception("Error while sending command to the Asterisk manager.\n {$MANAGER->last_error}");
+
+                    $num_results = count($channels);
+
+                    /* Set pager variables for the template. */
+                    $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["rpp"])), 1);
+                    $total_pages = max(1, ceil($num_results / $max_results));
+                    $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
+                    $row_start = ($current_page - 1) * $max_results;
+
+
+                    $channels = array_slice($channels, $row_start, $max_results);
+                } catch (Exception $e) {
+                    $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
+                }
+
+                require($template->load("channels.tpl"));
+                break;
+        }
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * action_hangup_channel() : Send a channel hangup request.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
+    private function action_hangup_channel($template)
+    {
+        global $MANAGER;
+
+        try {
+
+            if (!(check_permission(PERM_CHANNEL_VIEW_ALL)))
+                throw new Exception("You do not have the required permissions to view channel status");
+
+            if (!(check_permission(PERM_CHANNEL_HANGUP_OTHER_USERS)))
+                throw new Exception("You do not have the required permissions to hangup channels!");
+
+            $channel = $_GET["channel"];
+
+            if (!(isset($_GET["confirm"]))) {
+                require($template->load("hangup_confirm.tpl"));
+                return;
+            }
+
+            $MANAGER->send("Hangup", array(
+                "channel" => $channel,
+            ));
+
+            $this->redirect($this->get_tab_referrer());
+
+        } catch (Exception $e) {
+
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
+        }
+
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * show_widget_channels() : Called when the content of the 'channels status'
+     * widget is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
+    public function show_widget_channels($template)
+    {
+        global $MANAGER;
+
         $channels = $MANAGER->send("Status", array());
         $num_results = count($channels);
 
-        /* Set pager variables for the template. */
-        $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["rpp"])), 1);
-        $total_pages = max(1, ceil($num_results / $max_results));
-        $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
-        $row_start = ($current_page - 1) * $max_results;
+        $channels = array_slice($channels, 0, 10);
+
+        require($template->load("widget_channels.tpl"));
+    }
 
 
-        $channels = array_slice($channels, $row_start, $max_results);
+    /*--------------------------------------------------------------------------
+     * show_widget_sysstat() : Called when the content of the 'system status'
+     * widget is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
+    public function show_widget_sysstat($template)
+    {
+        $server_time = date(DATE_RFC2822);
+        $system_uptime = get_system_uptime();
+        $system_load = get_system_load();
+        $meminfo = get_system_meminfo();
+        $disk_info = get_system_diskinfo();
+        $network_info = get_system_netinfo();
 
-        require($template->load("channels.tpl"));
+        require($template->load("widget_sysstat.tpl"));
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * show_widget_version() : Called when the content of the 'versions'
+     * widget is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
+    public function show_widget_version($template)
+    {
+        $os_ver = sprintf("%s %s",
+            php_uname("s"),
+            php_uname("r")
+        );
+
+        require($template->load("widget_version.tpl"));
+
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * show_widget_services() : Called when the content of the 'services status'
+     * widget is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *
+     * Return : None
+     */
+    public function show_widget_services($template)
+    {
+        $services = get_service_status();
+
+        require($template->load("widget_services.tpl"));
+
     }
 }

@@ -198,18 +198,6 @@ function dumpfile($filename)
  */
 function print_progressbar($caption, $value, $percentage=-1, $critical=false)
 {
-    echo "<div class=\"progress", ($critical ? " critical" : ""), "\">";
-
-    if ($percentage > -1)
-        echo "<span class=\"bar\" style=\"width: ", $percentage, "%;\"></span>";
-
-    echo "<span class=\"name\">$caption</span>";
-    echo "<span class=\"value\">$value";
-
-    if ($percentage > -1)
-        sprintf(" (%.1f %%)", $percentage);
-
-    echo "</span></div>";
 }
 
 

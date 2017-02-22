@@ -32,9 +32,9 @@
             <callback name="show_tab_content" params="[[$selected_path]]" return="error_msg" />
 
             <if not type="empty" name="error_msg">
-                <div class="box dialog error">
-                    [[error_msg]]
-                </div>
+                <dialog type="error">
+                    <message>[[error_msg]]</message>
+                </dialog>
             </if>
         </div>
     </div>

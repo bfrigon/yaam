@@ -45,6 +45,7 @@ class PluginManager
     public $tabs = array();
     public $actions = array();
     public $permissions = array();
+    public $widgets = array();
 
 
     /*--------------------------------------------------------------------------
@@ -229,8 +230,10 @@ class PluginManager
         /* Load the plugin that correspond to the requested path */
         $plugin = $this->load($path_item[0]);
 
+        if (!(isset($path_item[1])))
+            throw new Exception("Invalid path");
 
-        if (!isset($path_item[1]))
+        if (!(isset($this->tabs[$path_item[1]])))
             throw new Exception("Page not found ($path)");
 
         $tab = $this->tabs[$path_item[1]];
@@ -250,13 +253,15 @@ class PluginManager
         if (!empty($action))
             $plugin->tab_url["action"] = $action;
 
-
         /* Initialize the template engine */
-        $template = new TemplateEngine($plugin);
+        $template = $plugin->get_template_engine();
 
 
-        if (isset($tab["callback"]))
-            $plugin->$tab["callback"]($template, $path, $action);
+        $callback = array($plugin, $tab["callback"]);
+        if (!(is_callable($callback)))
+            throw new Exception("Invalid callback defined for plugin {$plugin->name} : '{$tab["callback"]}'");
+
+        call_user_func_array($callback, array($template, $path, $action));
     }
 
 
@@ -389,5 +394,38 @@ class PluginManager
     function get_tabs()
     {
         return $this->tabs;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * register_widget() : Register a widget to be displayed in the Status tab.
+     *
+     * Arguments
+     * ---------
+     *  - plugin   : Instance of the plugin registering the action.
+     *  - name     : Name of the widget.
+     *  - callback : Function to call when displaying the widget content.
+     *  - perm     : Required permission to display the widget.
+     *  - visible  : Define if widget is visible by default.
+     *
+     * Returns : Nothing
+     */
+    function register_widget(&$plugin, $name, $callback, $perm='', $visible=true)
+    {
+        /* Do not register the tab if the user don't have access to it. */
+        if (!(check_permission($perm)))
+            return;
+
+        $widget_name = "{$plugin->name}_$name";
+
+        $widget = array(
+            "plugin" => $plugin,
+            "name" => $widget_name,
+            "callback" => $callback,
+            "perm" => $perm,
+            "visible" => $visible,
+        );
+
+        $this->widgets[$widget_name] = $widget;
     }
 }

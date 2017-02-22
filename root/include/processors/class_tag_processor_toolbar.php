@@ -94,6 +94,9 @@ class TagProcessorToolbar extends TagProcessorBase
 
         foreach ($node_list->childNodes as $node_item) {
 
+            /* Only process nodes */
+            if ($node_item->nodeType != XML_ELEMENT_NODE)
+                continue;
 
             switch ($node_item->nodeName) {
 
@@ -280,13 +283,15 @@ class TagProcessorToolbar extends TagProcessorBase
                 $href = $this->func_build_tab_url($params, true);
 
                 fwrite($handle, "<div class=\"item dropdown\">\n");
-                fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo \$current_page; ?>$suffix</a>\n");
+                fwrite($handle, "<a tabindex=\"1\" href=\"#\">$prefix<?php echo (isset(\$current_page) ? \$current_page : 1); ?>$suffix</a>\n");
                 fwrite($handle, "<img class=\"close-dropdown\" src=\"images/blank.png\" alt=\"\" />\n");
 
                 fwrite($handle, "<div class=\"dropdown-list\">\n");
-                fwrite($handle, "<?php for($var_counter=max(1, \$current_page-$range); $var_counter<=min(\$current_page+$range, \$total_pages); $var_counter++) { ?>\n");
+                fwrite($handle, "<?php for($var_counter = max(1, (isset(\$current_page) ? \$current_page : 1) - $range);");
+                fwrite($handle, "$var_counter <= min((isset(\$current_page) ? \$current_page : 1) + $range, (isset(\$total_pages) ? \$total_pages : 1)); $var_counter++): ?>\n");
+
                 fwrite($handle, "<div class=\"item\"><a tabindex=\"1\" href=\"$href\" ?>$prefix<?php echo $var_counter; ?>$suffix</a></div>\n");
-                fwrite($handle, "<?php } ?>\n");
+                fwrite($handle, "<?php endfor; ?>\n");
                 fwrite($handle, "</div></div>\n");
                 break;
 

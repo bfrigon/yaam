@@ -1,8 +1,8 @@
 <form id="frm_add_user" method="post" keep-referrer>
     <dialog>
-        <if type="is" name="action" value="add"><h1>Add user</h1></if>
-        <if type="is" name="action" value="edit"><h1>Edit user</h1></if>
-        <if type="is" name="action" value="view"><h1>View user</h1></if>
+        <if type="is" name="action" value="add"><title>Add user</title></if>
+        <if type="is" name="action" value="edit"><title>Edit user</title></if>
+        <if type="is" name="action" value="view"><title>View user</title></if>
 
         <if type="is" name="action" value="add"><field name="user" type="text" caption="Username" value="[[$user_data@user]]" /></if>
         <if type="is" name="action" value="edit"><field name="user" type="view" caption="Username" value="[[$user_data@user]]" /></if>
@@ -17,33 +17,35 @@
             <field name="pgroups" type="listbox" caption="Permissions" data-type="array" data-source="perm_list" value="$user_data@pgroups" />
         </if>
 
-        <h2>Account settings</h2>
-        <field name="extension" type="text" caption="Extension" placeholder="(e.g. 100)" value="[[$user_data@extension]]">
-            <help>Extension number of the user in the dialplan (e.g. 100)</help>
-        </field>
+        <section title="Account settings">
+            <field name="extension" type="text" caption="Extension" placeholder="(e.g. 100)" value="[[$user_data@extension]]">
+                <help>Extension number of the user in the dialplan (e.g. 100)</help>
+            </field>
 
-        <field name="dial_string" type="text" caption="Dial string" placeholder="(e.g. SIP/phone100)" value="[[$user_data@dial_string]]">
-            <help>Dial string used to reach the user's phone. (e.g. SIP/phone100)</help>
-        </field>
+            <field name="dial_string" type="text" caption="Dial string" placeholder="(e.g. SIP/phone100)" value="[[$user_data@dial_string]]">
+                <help>Dial string used to reach the user's phone. (e.g. SIP/phone100)</help>
+            </field>
 
-        <field name="did" type="text" caption="DID number" placeholder="(e.g. 4501231234)" value="[[$user_data@did]]">
-            <help>The external phone number associated with this extension (e.g. 4501231234)</help>
-        </field>
+            <field name="did" type="text" caption="DID number" placeholder="(e.g. 4501231234)" value="[[$user_data@did]]">
+                <help>The external phone number associated with this extension (e.g. 4501231234)</help>
+            </field>
+        </section>
 
+        <section title="Voicemail">
+            <field name="vbox_context" type="text" caption="Context" placeholder="(e.g. local)" value="[[$user_data@vbox_context]]">
+                <help>Voicemail box context the user belongs to. (e.g. local)</help>
+            </field>
 
-        <h2>Voicemail</h2>
-        <field name="vbox_context" type="text" caption="Context" placeholder="(e.g. local)" value="[[$user_data@vbox_context]]">
-            <help>Voicemail box context the user belongs to. (e.g. local)</help>
-        </field>
+            <field name="vbox_user" type="text" caption="Mailbox" placeholder="(e.g. 100)" value="[[$user_data@vbox_user]]">
+                <help>Voicemail box id of the user. (e.g. 100).</help>
+            </field>
+        </section>
 
-        <field name="vbox_user" type="text" caption="Mailbox" placeholder="(e.g. 100)" value="[[$user_data@vbox_user]]">
-            <help>Voicemail box id of the user. (e.g. 100).</help>
-        </field>
+        <section title="Change password">
+            <field name="password" type="text" caption="New password" value="[[$user_data@password]]" />
+        </section>
 
-        <h2>Password</h2>
-        <field name="password" type="text" caption="Password" value="[[$user_data@password]]" />
-
-        <toolbar class="center v_spacing">
+        <toolbar class="center">
             <if type="perm" value="user_write">
                 <item type="submit" name="submit" icon="save">Save</item>
                 <item type="button" action="cancel" icon="cancel">Cancel</item>

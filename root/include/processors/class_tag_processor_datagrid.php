@@ -107,11 +107,17 @@ class TagProcessorDatagrid extends TagProcessorBase
 
         /* Generate grid header if present */
         if (!empty($node_header)) {
-            fwrite($handle, "<thead><tr>");
+            fwrite($handle, "<thead>\n<tr");
+
+            $class = $node_header->getAttribute("class");
+            if (!(empty($class)))
+                fwrite($handle, " class=\"$class\"");
+
+            fwrite($handle, ">\n");
 
             $this->process_tag_grid_row($node_header, $handle, $data_type, $data_source, $var_hidden_col);
 
-            fwrite($handle, "</tr></thead>\n");
+            fwrite($handle, "</tr>\n</thead>\n");
         }
 
         fwrite($handle, "<tbody>");
@@ -125,7 +131,7 @@ class TagProcessorDatagrid extends TagProcessorBase
 
             case "dict":
                 $var_array_row = $this->get_unique_varname();
-                fwrite($handle, "<?php foreach($data_source as $var_array_row): ?>\n");
+                fwrite($handle, "<?php if (is_array($data_source)): foreach($data_source as $var_array_row): ?>\n");
                 break;
 
             /* invalid data type */
@@ -134,9 +140,10 @@ class TagProcessorDatagrid extends TagProcessorBase
                 break;
         }
 
+        $class = $node_row->getAttribute("class");
 
         /* Insert grid rows */
-        fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+        fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
 
         switch ($data_type) {
             case "odbc":
@@ -158,15 +165,17 @@ class TagProcessorDatagrid extends TagProcessorBase
                 break;
 
             case "dict":
-                fwrite($handle, "<?php $var_row_count++; endforeach; ?>");
+                fwrite($handle, "<?php $var_row_count++; endforeach; endif; ?>");
                 break;
         }
 
 
         /* Insert if-empty row */
         if (!empty($node_empty)) {
+            $class = $node_empty->getAttribute("class");
+
             fwrite($handle, "<?php if ($var_row_count==0):?>");
-            fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
             fwrite($handle, "<td colspan=\"<?php echo ($num_columns-$var_hidden_col) ?>  \">");
 
             $this->process_node($handle, $node_empty, false, false);
@@ -177,8 +186,10 @@ class TagProcessorDatagrid extends TagProcessorBase
 
         /* Insert row filler code */
         if ($min_rows) {
+            $class = $node_row->getAttribute("class");
+
             fwrite($handle, "<?php while($var_row_count < $min_rows): ?>");
-            fwrite($handle, "<tr class=\"<?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
             fwrite($handle, "<?php echo str_repeat('<td>&nbsp;</td>', ($num_columns-$var_hidden_col)) ?>");
             fwrite($handle, "</tr><?php $var_row_count++; endwhile; ?>");
         }
@@ -188,7 +199,13 @@ class TagProcessorDatagrid extends TagProcessorBase
 
         /* Generate grid footer if present */
         if (!empty($node_footer)) {
-            fwrite($handle, "<tfoot><tr>\n");
+            fwrite($handle, "<tfoot><tr");
+
+            $class = $node_footer->getAttribute("class");
+            if (!(empty($class)))
+                fwrite($handle, " class=\"$class\"");
+
+            fwrite($handle, ">\n");
 
             $this->process_tag_grid_row($node_footer, $handle, $data_type, $data_source);
 
@@ -226,7 +243,11 @@ class TagProcessorDatagrid extends TagProcessorBase
         foreach ($columns as $node_column) {
 
             $type = strtolower($node_column->getAttribute("type"));
+            $class = $node_column->getAttribute("class");
             $id = $node_column->getAttribute("id");
+
+            if (!(empty($type)))
+                $class .= " column-$type";
 
             if ($node_column->hasAttribute("if"))
                 $this->processors["if"]->process_tag($node_column, $handle, $data_type, $data_source);
@@ -234,8 +255,8 @@ class TagProcessorDatagrid extends TagProcessorBase
 
             fwrite($handle, "<$cell_type ");
 
-            if (!empty($type))
-                fwrite($handle, " class=\"column-$type\"");
+            if (!empty($class))
+                fwrite($handle, " class=\"$class\"");
 
             if (!empty($id))
                 fwrite($handle, " id=\"$id\"");

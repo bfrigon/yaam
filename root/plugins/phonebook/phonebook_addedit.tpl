@@ -1,7 +1,7 @@
 <form id="frm_addedit_phone" method="post" keep-referrer>
     <dialog>
-        <if type="is" name="action" value="add"><h1>Add phone number</h1></if>
-        <if type="is" name="action" value="edit"><h1>Edit phone number</h1></if>
+        <if type="is" name="action" value="add"><title>Add phone number</title></if>
+        <if type="is" name="action" value="edit"><title>Edit phone number</title></if>
 
 
         <if type="perm" value="phonebook_all_users">
@@ -22,7 +22,7 @@
 
         <field name="notes" type="text" caption="Notes" value="[[$pb_data@notes]]" />
 
-        <toolbar class="center v_spacing">
+        <toolbar class="center">
             <item type="submit" name="submit" icon="save">Save</item>
             <item type="button" action="cancel" icon="cancel">Cancel</item>
         </toolbar>

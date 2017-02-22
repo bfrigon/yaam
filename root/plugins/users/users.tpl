@@ -54,7 +54,7 @@
     </datagrid>
 </form>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d user(s) found."><if-empty>No user found.</if-empty></var>
     <var name="current_page, total_pages" format="Page %d of %d"></var>
 </p>

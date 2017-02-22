@@ -77,7 +77,7 @@
     <if-empty>** No calls **</if-empty>
 </datagrid>
 
-<p class="v_spacing">
+<p>
     <var name="num_results" format="%d results(s) found. " if-empty="No results found" /><br />
     <var name="current_page, total_pages" format="Page %d of %d" />
 </p>

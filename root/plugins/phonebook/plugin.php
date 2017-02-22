@@ -126,6 +126,7 @@ class PluginPhonebook extends Plugin
 
                     $query->where("notes", "LIKE", "%$search%");
                     $query->or_where("name", "LIKE", "%$search%");
+                    $query->or_where("number", "LIKE", "%$search%");
                 }
 
 
@@ -248,7 +249,7 @@ class PluginPhonebook extends Plugin
 
         } catch (Exception $e) {
 
-            print_message($e->getmessage(), true);
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
         }
 
         /* Set template variables */
@@ -271,45 +272,47 @@ class PluginPhonebook extends Plugin
     {
         global $DB;
 
-        if (!(check_permission(PERM_PHONEBOOK_WRITE)))
-            throw new Exception("You do not have the required permissions to delete phone book records!");
+        try {
 
-        $query = $DB->create_query("phonebook");
+            if (!(check_permission(PERM_PHONEBOOK_WRITE)))
+                throw new Exception("You do not have the required permissions to delete phone book records!");
+
+            $query = $DB->create_query("phonebook");
 
 
-        if (!(isset($_GET["id"]))) {
-            $message = "You did not select any phone book record(s) to delete.";
-            $url_ok = $this->get_tab_referrer();
+            if (!(isset($_GET["id"])))
+                throw new Exception("You did not select any phone book record(s) to delete.");
 
-            require($template->load("dialog_message.tpl", true));
-            return;
-        }
-        $id = $_GET["id"];
+            $id = $_GET["id"];
 
-        if (is_array($id)) {
-            $query->where_in("id", $id);
-        } else {
-            $query->where("id", "=", $id);
-        }
+            if (is_array($id)) {
+                $query->where_in("id", $id);
+            } else {
+                $query->where("id", "=", $id);
+            }
 
-        if (!(check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))) {
-            $query->where("extension", "=", $_SESSION["extension"]);
-        }
+            if (!(check_permission(PERM_PHONEBOOK_WRITE_GLOBAL))) {
+                $query->where("extension", "=", $_SESSION["extension"]);
+            }
 
-        if (isset($_GET["confirm"])) {
-            $query->run_query_delete();
+            if (isset($_GET["confirm"])) {
+                $query->run_query_delete();
 
-            /* Redirect to the previous location */
-            $this->redirect($this->get_tab_referrer());
-            return;
+                /* Redirect to the previous location */
+                $this->redirect($this->get_tab_referrer());
+                return;
 
-        } else {
+            } else {
 
-            $results = $query->run_query_select("name,number");
+                $results = $query->run_query_select("name,number");
 
-            require($template->load("phonebook_delete.tpl"));
+                require($template->load("phonebook_delete.tpl"));
 
-            odbc_free_result($results);
+                odbc_free_result($results);
+            }
+        } catch (Exception $e) {
+
+            $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), true);
         }
     }
 
