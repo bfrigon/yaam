@@ -71,7 +71,7 @@ function format_byte($value)
  *
  * Returns : Formated phone number
  */
-function format_phone_number($number)
+function format_phone_number($number, $country="us")
 {
     if (strpos($number, "*") !== false)
         return $number;
@@ -181,23 +181,6 @@ function dumpfile($filename)
     } else {
         echo "Unable to open the file : '$filename'.";
     }
-}
-
-
-/*--------------------------------------------------------------------------
- * print_progressbar() : Print the code required to display a progress bar.
- *
- * Arguments
- * ---------
- *  - caption    : Caption of the progress bar
- *  - value      : Value
- *  - percentage : Percentage value
- *  - critical   : Show the value as critical.
- *
- * Returns : Nothing
- */
-function print_progressbar($caption, $value, $percentage=-1, $critical=false)
-{
 }
 
 

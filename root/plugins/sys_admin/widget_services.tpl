@@ -1,7 +1,7 @@
 <dialog type="widget">
-    <title>Services</title>
+    <title>Services status</title>
 
-    <foreach data-type="dict" data-source="services">
-        <field class="center" type="progress" critical="value@stopped" caption="[[key]]">[[value@state]]</field>
+    <foreach data-type="array" data-source="services">
+        <field class="center [[ row.class ]]" type="progress" caption="[[ key ]]">[[ row.state ]]</field>
     </foreach>
 </dialog>

@@ -127,7 +127,7 @@ class TagProcessorIf extends TagProcessorBase
             case "false":
                 $unset_value = ($type == "true" ? "false" : "true");
                 $op = ($node_tag->hasAttribute("not") ? "!== $type" : "=== $type");
-                $name = $this->process_tokens($name, $data_type, $data_source, $unset_value);
+                $name = $this->process_filters($name, $data_type, $data_source, $unset_value);
 
                 fwrite($handle, "<?php if ($name $op): ?>\n");
                 break;
@@ -137,7 +137,7 @@ class TagProcessorIf extends TagProcessorBase
             case "empty":
             case "is_null":
                 $op = ($node_tag->hasAttribute("not") ? "!" : "");
-                $name = $this->_engine->process_tokens($name, $data_type, $data_source, null);
+                $name = $this->_engine->process_filters($name, $data_type, $data_source, null);
 
                 fwrite($handle, "<?php if ({$op}$type($name)): ?>\n");
                 break;
@@ -146,7 +146,7 @@ class TagProcessorIf extends TagProcessorBase
             case "equal":
             default:
                 $op = ($node_tag->hasAttribute("not") ? "!=" : "==");
-                $name = $this->process_tokens($name, $data_type, $data_source);
+                $name = $this->process_filters($name, $data_type, $data_source);
 
                 if (!(is_numeric($value)))
                     $value = "\"$value\"";

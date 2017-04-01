@@ -86,7 +86,7 @@ class TagProcessorActionList extends TagProcessorBase
         foreach ($node_tag->getElementsByTagName("param") as $node_param) {
 
             $param_name = $node_param->getAttribute("name");
-            $param_value = $this->process_tokens($node_param->getAttribute("value"), $data_type, $data_source);
+            $param_value = $this->process_filters($node_param->getAttribute("value"), $data_type, $data_source);
 
             if (empty($param_name) || empty($param_value))
                 continue;

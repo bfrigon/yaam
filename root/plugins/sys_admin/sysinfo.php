@@ -52,6 +52,8 @@ function get_system_meminfo()
     if (!($fp = @fopen('/proc/meminfo', 'r')))
         return array();
 
+    $threshold = intval(get_global_config_item("widget_sysinfo", "threshold_memory", 90));
+
     $mem_total = 0;
     $mem_free = 0;
     $mem_buffers = 0;
@@ -108,7 +110,8 @@ function get_system_meminfo()
         "swap_total" => $mem_swap_total,
         "perc_swap_used" => $perc_swap_used,
 
-        "swap_critical" => ($perc_swap_used > 80),
+        "swap_critical" => ($perc_swap_used > $threshold),
+        "free_critical" => ($perc_used > $threshold),
     );
 }
 
@@ -117,6 +120,7 @@ function get_system_diskinfo()
     $disk_info = array();
 
     $mntpoints = get_global_config_item("widget_sys_info", "disks", array("Root" => "/"));
+    $threshold = intval(get_global_config_item("widget_sysinfo", "threshold_diskspace", 90));
 
     foreach ($mntpoints as $name => $mntpoint) {
 
@@ -128,6 +132,7 @@ function get_system_diskinfo()
                 "used" => $used,
                 "total" => $total,
                 "perc" => $perc,
+                "class" => ($perc < $threshold ? "normal" : "critical")
             );
     }
 
@@ -197,7 +202,7 @@ function get_service_status()
 
         $service_info[$name] = array(
             "state" => ($stopped) ? "Stopped" : "Running",
-            "stopped" => $stopped,
+            "class" => ($stopped) ? "critical" : "normal",
         );
     }
 

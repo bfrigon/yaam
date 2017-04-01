@@ -42,17 +42,19 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 class TagProcessorDatagrid extends TagProcessorBase
 {
 
-    /*--------------------------------------------------------------------------
+/*--------------------------------------------------------------------------
      * process_tag() : Process the template tag "datagrid"
      *
      * Arguments
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
+     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_source : Current data source object.
      *
      * Returns : None
      */
-    public function process_tag($node_tag, $handle)
+    public function process_tag($node_tag, $handle, $data_type=null, $data_source=null)
     {
         /* Get child nodes */
         $node_row = $node_tag->getElementsByTagName("row")->item(0);
@@ -72,7 +74,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         $data_source = $node_tag->getAttribute("data-source");
         $data_type = strtolower($node_tag->getAttribute("data-type"));
         $min_rows = $node_tag->getAttribute("min-rows");
-        $class = $node_tag->getAttribute("class");
+        $class = $this->get_attribute_shortcode($node_tag, "class", "", $data_type, $data_source);
         $id = $node_tag->getAttribute("id");
 
         /* Required attributes */
@@ -129,9 +131,9 @@ class TagProcessorDatagrid extends TagProcessorBase
                 fwrite($handle, "<?php while (@odbc_fetch_row($data_source)): ?>\n");
                 break;
 
-            case "dict":
+            case "array":
                 $var_array_row = $this->get_unique_varname();
-                fwrite($handle, "<?php if (is_array($data_source)): foreach($data_source as $var_array_row): ?>\n");
+                fwrite($handle, "<?php if (isset($data_source) && is_array($data_source)): reset($data_source); while(($var_array_row = current($data_source)) !== false): ?>\n");
                 break;
 
             /* invalid data type */
@@ -140,17 +142,21 @@ class TagProcessorDatagrid extends TagProcessorBase
                 break;
         }
 
-        $class = $node_row->getAttribute("class");
+        $class = "<?php echo !($var_row_count & 1) ? '':'alt' ?> ";
+
+        if ($node_row->hasAttribute("class"))
+            $class .= $node_row->getAttribute("class");
+
 
         /* Insert grid rows */
-        fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+        fwrite($handle, "<tr class=\"" . trim($class) . "\">");
 
         switch ($data_type) {
             case "odbc":
                 $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, $data_source, $var_hidden_col);
                 break;
 
-            case "dict":
+            case "array":
                 $num_columns = $this->process_tag_grid_row($node_row, $handle, $data_type, array($data_source, $var_array_row), $var_hidden_col);
                 break;
         }
@@ -164,8 +170,8 @@ class TagProcessorDatagrid extends TagProcessorBase
                 fwrite($handle, "<?php $var_row_count++; endwhile; ?>");
                 break;
 
-            case "dict":
-                fwrite($handle, "<?php $var_row_count++; endforeach; endif; ?>");
+            case "array":
+                fwrite($handle, "<?php $var_row_count++; next($data_source); endwhile; endif; ?>");
                 break;
         }
 
@@ -245,6 +251,7 @@ class TagProcessorDatagrid extends TagProcessorBase
             $type = strtolower($node_column->getAttribute("type"));
             $class = $node_column->getAttribute("class");
             $id = $node_column->getAttribute("id");
+            $colspan = $node_column->getAttribute("colspan");
 
             if (!(empty($type)))
                 $class .= " column-$type";
@@ -256,10 +263,13 @@ class TagProcessorDatagrid extends TagProcessorBase
             fwrite($handle, "<$cell_type ");
 
             if (!empty($class))
-                fwrite($handle, " class=\"$class\"");
+                fwrite($handle, " class=\"" . trim($class) . "\"");
 
             if (!empty($id))
                 fwrite($handle, " id=\"$id\"");
+
+            if (!empty($colspan))
+                fwrite($handle, " colspan=\"$colspan\"");
 
             fwrite($handle, ">");
 

@@ -285,10 +285,10 @@ function init_session()
     load_global_config();
 
     /* Connect to the database */
-    $dsn = get_global_config_item("odbc", "database");
+    $dsn = get_global_config_item("odbc", "datasource");
 
     if (empty($dsn))
-        throw new Exception("Database connection name was not set in yaam.conf");
+        throw new Exception("The ODBC datasource name was not set in yaam.conf");
 
     $user = get_global_config_item("odbc", "user", $dsn);
     $secret = get_global_config_item("odbc", "secret");

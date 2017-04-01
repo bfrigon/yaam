@@ -107,7 +107,6 @@ class TemplateEngine extends TagProcessorBase
         $this->processors["action-list"] = new TagProcessorActionList($this);
         $this->processors["actions"] = $this->processors["action-list"];
 
-
         $this->debug_force_recompile = get_global_config_item("general", "debug_template_force_recompile", false);
         $this->debug_verbose = get_global_config_item("general", "debug_template_verbose", false);
     }
@@ -182,8 +181,10 @@ class TemplateEngine extends TagProcessorBase
 
         /* Open template file */
         $dom_input = new DOMDocument();
+
         if (!(@$dom_input->loadHTMLFile($template_file)))
             throw new Exception("Template file not found ($template_file)");
+
 
         /* Open cache file */
         $handle = @fopen($cache_file, "w");

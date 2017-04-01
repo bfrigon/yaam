@@ -34,7 +34,8 @@
             <column id="col_ct_actions" type="actions"></column>
         </header>
 
-        <row>
+        <row clickable action="edit" params="id=[[id]]">
+
             <column type="select" name="id" value="[[id]]"></column>
 
             <column if="perm" if-value="ct_rules_all_users">[[extension]]</column>

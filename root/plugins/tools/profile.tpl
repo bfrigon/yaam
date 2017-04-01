@@ -1,13 +1,13 @@
 <form id="frm_edit_profile" method="post">
     <dialog>
-        <title>Edit profile - [[$_SESSION@user]]</title>
+        <title>Edit profile - [[$_SESSION.user]]</title>
 
-        <field name="user" type="view" caption="Username" value="[[$_SESSION@user]]" />
-        <field name="fullname" type="text" caption="Full name" value="[[$_SESSION@fullname]]" />
+        <field name="user" type="view" caption="Username" value="[[$_SESSION.user]]" />
+        <field name="fullname" type="text" caption="Full name" value="[[$_SESSION.fullname]]" />
 
         <section title="Options">
-            <field name="ui_theme" type="select" caption="Theme" value="[[$_SESSION@ui_theme]]" data-type="dict" data-source="list_themes" />
-            <field name="date_format" type="select" caption="Date format" value="[[$_SESSION@date_format]]" data-type="dict" data-source="list_date_formats" />
+            <field name="ui_theme" type="select" caption="Theme" value="[[$_SESSION.ui_theme]]" data-type="dict" data-source="list_themes" />
+            <field name="date_format" type="select" caption="Date format" value="[[$_SESSION.date_format]]" data-type="dict" data-source="list_date_formats" />
         </section>
 
         <section title="Change password">

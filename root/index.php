@@ -40,6 +40,9 @@ $DEBUG_TIME_START = microtime(true);
 
 try
 {
+    $PLUGINS = new PluginManager();
+    $selected_path = "";
+
     session_start();
 
     if (!isset($_SESSION['logged'])) {
@@ -51,7 +54,6 @@ try
     init_session();
 
     /* Load all plugins */
-    $PLUGINS = new PluginManager();
     $PLUGINS->load();
     $PLUGINS->sort_tabs();
 

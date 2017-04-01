@@ -277,7 +277,7 @@ class TagProcessorDialog extends TagProcessorBase
         $data_source = (is_null($data_source) ? trim($node_tag->getAttribute("data-source")) : $data_source);
         $column_key = $node_tag->getAttribute("column-key");
         $column_value = $node_tag->getAttribute("column-value");
-        $class = $node_tag->getAttribute("class");
+        $class =$this->get_attribute_shortcode($node_tag, "class", "", $data_type, $data_source, true);
         $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source, false);
         $id = $node_tag->getAttribute("id");
         $name = $node_tag->getAttribute("name");
@@ -373,7 +373,7 @@ class TagProcessorDialog extends TagProcessorBase
         $data_source = (is_null($data_source) ? trim($node_tag->getAttribute("data-source")) : $data_source);
         $column_key = $node_tag->getAttribute("column-key");
         $column_value = $node_tag->getAttribute("column-value");
-        $class = $node_tag->getAttribute("class");
+        $class =$this->get_attribute_shortcode($node_tag, "class", "", $data_type, $data_source, true);
         $name = $node_tag->getAttribute("name");
         $id = $node_tag->getAttribute("id");
 
@@ -403,7 +403,7 @@ class TagProcessorDialog extends TagProcessorBase
 
             /* Ordinary array */
             case "array":
-                $var_value = $this->process_tokens($node_tag->getAttribute("value"), $data_type, $data_source, null);
+                $var_value = $this->process_filters($node_tag->getAttribute("value"), $data_type, $data_source, null);
                 $var_checked = $this->get_unique_varname();
                 $var_item = $this->get_unique_varname();
 
@@ -436,7 +436,7 @@ class TagProcessorDialog extends TagProcessorBase
      */
     private function process_field_textbox($node_tag, $handle, $data_type=null, $data_source=null)
     {
-        $class = $node_tag->getAttribute("class");
+        $class =$this->get_attribute_shortcode($node_tag, "class", "", $data_type, $data_source, true);
         $name = $node_tag->getAttribute("name");
         $value = $this->get_attribute_shortcode($node_tag, "value", "", $data_type, $data_source, false);
         $type = $node_tag->getAttribute("type");
@@ -490,16 +490,16 @@ class TagProcessorDialog extends TagProcessorBase
      */
     private function process_field_progressbar($node_tag, $handle, $data_type=null, $data_source=null)
     {
-        $value = $this->process_tokens($node_tag->getAttribute("value"), $data_type, $data_source, 0);
-        $max = $this->process_tokens($node_tag->getAttribute("max"), $data_type, $data_source, 0);
+        $value = $this->process_filters($node_tag->getAttribute("value"), $data_type, $data_source, 0);
+        $max = $this->process_filters($node_tag->getAttribute("max"), $data_type, $data_source, 0);
         $text = $this->process_shortcode($node_tag->textContent, $data_type, $data_source);
         $critical = $node_tag->getAttribute("critical");
         $percent = (($value != "0" && $max != "0") ? "<?php echo $value * 100 / $max ?>" : "");
         $id = $node_tag->getAttribute("id");
-        $class = $node_tag->getAttribute("class");
+        $class =$this->get_attribute_shortcode($node_tag, "class", "", $data_type, $data_source, true);
 
         if (!(empty($critical))) {
-            $var_is_critical = $this->process_tokens($critical, $data_type, $data_source, "false");
+            $var_is_critical = $this->process_filters($critical, $data_type, $data_source, "false");
             $class .= " <?php echo (($var_is_critical) ? 'critical' : '') ?>";
         }
 

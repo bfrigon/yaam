@@ -102,14 +102,14 @@ class TagProcessorBase
 
         if ($node->hasChildNodes()) {
 
-            $child = $node->firstChild;
+            $node_child = $node->firstChild;
             do {
                 if ($recursive) {
 
-                    switch ($child->nodeType) {
+                    switch ($node_child->nodeType) {
                         case XML_ELEMENT_NODE:
 
-                            switch ($child->nodeName) {
+                            switch ($node_child->nodeName) {
 
                                 case "dialog":
                                 case "toolbar":
@@ -125,7 +125,7 @@ class TagProcessorBase
                                 case "form":
                                 case "action-list":
                                 case "actions":
-                                    $this->processors[$child->nodeName]->process_tag($child, $handle, $data_type, $data_source);
+                                    $this->processors[$node_child->nodeName]->process_tag($node_child, $handle, $data_type, $data_source);
                                     break;
 
                                 case "head":
@@ -137,44 +137,62 @@ class TagProcessorBase
                                 case "script":
                                 case "html":
                                 case "body":
-                                    $this->process_node($handle, $child, $process_top_level, true, $data_type, $data_source, $process_top_level);
+                                    $this->process_node($handle, $node_child, $process_top_level, true, $data_type, $data_source, $process_top_level);
                                     break;
 
                                 case "noparse":
-                                    $html = $node->ownerDocument->saveXML($child);
-                                    fwrite($handle, $html);
+                                case "raw":
+                                    foreach ($node_child->childNodes as $node_raw) {
+                                        $html = $node_raw->ownerDocument->saveXML($node_raw);
+                                        fwrite($handle, $html);
+                                    }
+                                    break;
+
+                                case "br":
+                                    fwrite($handle, "<br />");
                                     break;
 
                                 default:
-                                    $this->process_node($handle, $child, true, true, $data_type, $data_source, $process_top_level);
+                                    $this->process_node($handle, $node_child, true, true, $data_type, $data_source, $process_top_level);
                                     break;
                             }
                             break;
 
                         case XML_PI_NODE:
+                            fwrite($handle, $node_child->ownerDocument->saveXML($node_child));
+                            break;
+
                         case XML_COMMENT_NODE:
-                            fwrite($handle, $child->ownerDocument->saveHTML($child));
+                            $comment = explode(":", $node_child->textContent, 2);
+
+                            if ((trim(strtolower($comment[0])) != "syntax") || !(isset($comment[1])))
+                                break;
+
+                            $text = trim(htmlentities($comment[1]));
+
+                            fwrite($handle, "<div class=\"box viewer code\"><div class=\"content\">");
+                            fwrite($handle, $text);
+                            fwrite($handle, "</div></div>");
                             break;
 
                         case XML_TEXT_NODE:
-                            $html = $this->process_shortcode($child->ownerDocument->saveHTML($child), $data_type, $data_source);
+                            $html = $this->process_shortcode($node_child->ownerDocument->saveXML($node_child), $data_type, $data_source);
                             fwrite($handle, $html);
                             break;
 
                         case XML_DOCUMENT_TYPE_NODE:
                             if ($process_top_level)
-                                fwrite($handle, $child->ownerDocument->saveXML($child));
+                                fwrite($handle, $node_child->ownerDocument->saveXML($node_child));
 
                             break;
                     }
                 } else {
 
-
-                    $html = $this->process_shortcode($child->ownerDocument->saveXML($child), $data_type, $data_source);
+                    $html = $this->process_shortcode($node_child->ownerDocument->saveXML($node_child), $data_type, $data_source);
                     fwrite($handle, $html);
                 }
 
-            } while(($child = $child->nextSibling) != null);
+            } while(($node_child = $node_child->nextSibling) != null);
         }
 
         if ($outer)
@@ -190,7 +208,7 @@ class TagProcessorBase
      *  - variable       : Variable syntax to process.
      *  - unset_variable : Default value if variable is not set.
      *
-     * Returns : The converted tokens.
+     * Returns : The variable display code.
      */
     private function process_variable($variable, $unset_variable="''")
     {
@@ -200,8 +218,8 @@ class TagProcessorBase
         if (substr($variable, 0, 1) != "$")
             $variable = "\$$variable";
 
-        if (strpos($variable, "@") !== false) {
-            $brackets = explode("@", $variable);
+        if (strpos($variable, ".") !== false) {
+            $brackets = explode(".", $variable);
             $variable = $brackets[0];
 
             foreach (array_slice($brackets,1) as $bracket) {
@@ -224,112 +242,206 @@ class TagProcessorBase
 
 
     /*--------------------------------------------------------------------------
-     * process_tokens() : Convert a list of tokens contained in a single
-     *                    shortcode bracket [[...]]
+     * split_filters() : Split filters and their parameters
      *
      * Arguments
      * ---------
-     *  - tokens         : List of tokens to process.
+     *  - input          : List of filters to process.
+     *
+     * Returns : The filter list in an array.
+     */
+    private function split_filters($input)
+    {
+        $filters = array();
+        $filter = array();
+        $string_delimiter = "";
+        $segment = "";
+
+        foreach (preg_split("/(\\\\\"|\\\\'|'|\"|:|\\|)/", $input, null, PREG_SPLIT_DELIM_CAPTURE) as $text) {
+            switch ($text) {
+
+                /* Filter delimiter */
+                case "|":
+                    /* Include the '|' character if currently inside a string */
+                    if (!(empty($string_delimiter))) {
+                        $segment = "$segment|";
+                        continue;
+                    }
+
+                    $filter[] = $segment;
+                    $segment = "";
+
+                    $filters[] = $filter;
+                    $filter = array();
+                    break;
+
+
+                /* Parameter delimiter */
+                case ":":
+                    /* Include the ':' character if currently inside a string */
+                    if (!(empty($string_delimiter))) {
+                        $segment = "$segment:";
+                        continue;
+                    }
+
+                    $filter[] = $segment;
+                    $segment = "";
+
+                    break;
+
+                /* String delimiter */
+                case '"':
+                case "'":
+                    /* Open a string */
+                    if (empty($string_delimiter)) {
+                        $string_delimiter = $text;
+                        continue;
+                    }
+
+                    /* Make it part of the string if different from the delimiter */
+                    if ($string_delimiter != $text) {
+                        $segment .= $text;
+                        continue;
+                    }
+
+                    /* Close the string */
+                    $string_delimiter = "";
+                    break;
+
+                /* Remove slashes for single and double quotes */
+                case "\\'":
+                case "\\\"":
+                    $text = substr($text, 1);
+                    /* Fall-throught */
+
+
+                /* text */
+                default:
+                    /* Trim segments if outside of a string */
+                    if (empty($string_delimiter)) {
+                        $segment .= trim($text);
+                    } else {
+                        $segment .= $text;
+                    }
+
+                    break;
+            }
+        }
+
+        $filter[] = $segment;
+        $filters[] = $filter;
+
+        return $filters;
+    }
+
+
+    /*--------------------------------------------------------------------------
+     * process_filters() : Convert a list of filters contained in a single
+     *                     shortcode bracket [[...]]
+     *
+     * Arguments
+     * ---------
+     *  - input          : List of filters to process.
      *  - data_type      : Type of the current data source (odbc, dict).
      *  - data_source    : Current data source object.
      *  - unset_variable : Default value if variable is not set.
      *
-     * Returns : The converted tokens.
+     * Returns : The converted filters code.
      */
-    protected function process_tokens($tokens, $data_type=null, $data_source=null, $unset_variable="''")
+    protected function process_filters($input, $data_type=null, $data_source=null, $unset_variable="''")
     {
-        if (empty(trim($tokens)))
+        $input = trim($input);
+
+        if (empty($input))
             return (is_null($unset_variable) ? '' : $unset_variable);
 
-        /* Split the tokens */
-        $tokens =  preg_split("/[\s|]+/", $tokens);
+        foreach($this->split_filters($input) as $filter) {
 
-        foreach($tokens as $token) {
-
-            /* The first token is the variable name, following tokens contains modifier */
+            /* The first one in the list is the variable name */
             if (empty($output)) {
 
-
                 /* Single variable */
-                if (substr($token, 0, 1) == "$") {
-                    $output = $this->process_variable($token, $unset_variable);
+                if (substr($filter[0], 0, 1) == "$") {
+                    $output = $this->process_variable($filter[0], $unset_variable);
 
                 /* Constant */
-                } else if (substr($token, 0, 1) == "#") {
-                    $output = substr($token, 1);
+                } else if (substr($filter[0], 0, 1) == "#") {
+                    $output = substr($filter[0], 1);
 
                 } else {
 
                     switch ($data_type) {
-                        /* Ordinary array */
-                        case "array":
-                            if (strtolower($token) == "value") {
-                                $output = $data_source[1];
-                            } else {
-                                $output = $this->process_variable($token, $unset_variable);
-                            }
-
-                            break;
-
                         /* ODBC resultset */
                         case "odbc":
-                            $output = "@odbc_result($data_source, '$token')";
+                            $output = "@odbc_result($data_source, '{$filter[0]}')";
                             break;
 
                         /* Dictionary array */
-                        case "dict":
-                            if (count($data_source) == 3) {
+                        case "array":
 
-                                $brackets = null;
-                                if (strpos($token, "@") !== false) {
-                                    $brackets = explode("@", $token);
-                                    $token = $brackets[0];
+                            $brackets = null;
+                            if (strpos($filter[0], ".") !== false) {
+                                $brackets = explode(".", $filter[0]);
+                                $filter[0] = $brackets[0];
 
-                                    $brackets = array_slice($brackets, 1);
-                                }
+                                $brackets = array_slice($brackets, 1);
+                            }
 
-                                switch (strtolower($token)) {
-                                    case "key":
-                                        $output = $data_source[1];
-                                        break;
+                            switch (strtolower($filter[0])) {
+                                case "key":
+                                    $output = ((count($data_source) == 3) ? $data_source[1] : "key({$data_source[0]})");
+                                    break;
 
-                                    case "value":
-                                        $output = $data_source[2];
+                                case "value":
+                                case "row":
+                                case "":
+                                    $output = ((count($data_source) == 3) ? $data_source[2] : $data_source[1]);
 
-
-                                        if (!(empty($brackets))) {
-
-                                            foreach ($brackets as $bracket) {
-                                                $output .= (is_numeric($bracket) ? "[$bracket]" : "['$bracket']");
-                                            }
-
-                                            if (!(is_null($unset_variable))) {
-                                                $output = "(isset($output) ? $output : $unset_variable)";
-                                            }
+                                    if (!(empty($brackets))) {
+                                        foreach ($brackets as $bracket) {
+                                            $output .= "['$bracket']";
                                         }
-                                        break;
+                                    }
 
-                                    default:
-                                        $output = $this->process_variable($token, $unset_variable);
-                                        break;
-                                }
-                            } else {
+                                    if (!(is_null($unset_variable))) {
+                                        $output = "(isset($output) ? $output : $unset_variable)";
+                                    }
+                                    break;
 
-                                $output = $data_source[1] . "['$token']";
+                                default:
+                                    $output = $this->process_variable($filter[0], $unset_variable);
+                                    break;
                             }
                             break;
 
                         /* Single variable */
                         default:
-                            $output = $this->process_variable($token, $unset_variable);
+                            $output = $this->process_variable($filter[0], $unset_variable);
                             break;
                     }
                 }
             } else {
 
-                $params = explode(":", $token);
 
-                switch ($params[0]) {
+                switch ($filter[0]) {
+                    case "if":
+                        $var_true = (isset($filter[1]) ? addslashes($filter[1]) : "");
+                        $var_false = (isset($filter[2]) ? addslashes($filter[2]) :  "");
+
+                        $output = "($output ? '$var_true' : '$var_false')";
+                        break;
+
+                    case "pluralize":
+                        $var_true = (isset($filter[1]) ? addslashes($filter[1]) : "");
+                        $var_false = (isset($filter[2]) ? addslashes($filter[2]) : "");
+
+                        $output = "((intval($output) > 1) ? '$var_true' : '$var_false')";
+                        break;
+
+                    case "count":
+                        $output = "intval(count($output))";
+                        break;
+
                     case "lower":
                         $output = "strtolower($output)";
                         break;
@@ -346,15 +458,51 @@ class TagProcessorBase
                         $output = "ucwords($output)";
                         break;
 
+                    case "wrap":
+                        $num = (isset($filter[1]) ? intval($filter[1]) : 50);
+                        $output = "wordwrap($output, $num, '<br/>')";
+                        break;
+
+                    case "ellipses":
+                        $num = (isset($filter[1]) ? intval($filter[1]) : 50);
+                        $output = "(strlen($output) > $num) ? substr($output, 0, $num) . '&hellip;' : $output";
+                        break;
+
+                    case "length":
+                        $output = "intval(strlen($output))";
+                        break;
+
                     case "var_dump":
                         $output = "var_dump($output)";
+                        break;
+
+                    case "limit":
+                        $num = (isset($filter[1]) ? intval($filter[1]) : 1);
+                        $output = "array_slice($output, 0, $num)";
+                        break;
+
+                    case "to_indexed":
+                        $output = "array_values($output)";
+                        break;
+
+                    case "first":
+                        $output = "reset($output)";
+                        break;
+
+                    case "last":
+                        $output = "end($output)";
+                        break;
+
+                    case "index":
+                        $index = (isset($filter[1]) ? intval($filter[1]) : 0);
+                        $output = "{$output}[$index]";
                         break;
 
                     case "explode":
                         $sep = " ";
 
-                        if (!empty($params[1])) {
-                            $sep = $params[1];
+                        if (!empty($filter[1])) {
+                            $sep = $filter[1];
                         }
 
                         $output = "explode('" . addslashes($sep) . "', $output)";
@@ -363,8 +511,8 @@ class TagProcessorBase
                     case "format_phone":
                         $output = "format_phone_number($output";
 
-                        if (isset($params[1]) && strtolower($params[1]) == "false")
-                            $output .= ", false";
+                        if (isset($filter[1]))
+                            $output .= ", '" . addslashes($filter[1]) . "'";
 
                         $output .= ")";
 
@@ -377,10 +525,10 @@ class TagProcessorBase
 
                     case "money_format":
                     case "format_money":
-                        if (isset($params[1])) {
-                            $output = "money_format('{$params[1]}', floatval($output))";
+                        if (isset($filter[1])) {
+                            $output = "money_format('{$filter[1]}', floatval($output))";
                         } else {
-                            $output = "money_format('" . $this->currency_format . "', floatval($output))";
+                            $output = "money_format('{$this->currency_format}', floatval($output))";
                         }
 
                         break;
@@ -396,6 +544,7 @@ class TagProcessorBase
                     case "format_byte":
                         $output = "format_byte($output)";
                         break;
+
                }
             }
         }
@@ -424,15 +573,15 @@ class TagProcessorBase
             if (($end = strpos($text, "]]", $offset)) === false)
                 break;
 
-            $tokens = trim(substr($text, $offset + 2, $end - $offset - 2));
+            $filters = trim(substr($text, $offset + 2, $end - $offset - 2));
 
-            $output = $this->process_tokens($tokens, $data_type, $data_source);
+            $output = $this->process_filters($filters, $data_type, $data_source, null);
 
             if (empty($output))
                 continue;
 
             if ($wrap)
-                $output = "<?php echo $output ?>";
+                $output = "<?php @print $output ?>";
 
             $text = substr_replace($text, $output, $offset, $end - $offset + 2);
             $offset = $offset + strlen($output);

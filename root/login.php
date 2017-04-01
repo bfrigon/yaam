@@ -36,7 +36,10 @@
 require("include/common.php");
 
 $error_msg = "";
+$f_user = "";
+
 try {
+
     /* Destroy current session if logout is requested */
     if (isset($_REQUEST["logout"])) {
         session_start();

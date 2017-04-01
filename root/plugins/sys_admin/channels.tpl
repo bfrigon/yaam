@@ -10,7 +10,7 @@
     <item type="button" action="refresh" icon="reload" title="Refresh channel status">Refresh</item>
 </toolbar>
 
-<grid class="expand" data-type="dict" data-source="channels" min-rows=15>
+<grid class="expand" data-type="array" data-source="channels" min-rows=15>
     <header>
         <column id="col_cstatus_channel">Channel</column>
         <column id="col_cstatus_from">From</column>
@@ -21,14 +21,14 @@
     </header>
 
     <row>
-        <column>[[channel]]</column>
-        <column>[[calleridnum | format_phone]]</column>
-        <column>[[calleridname | lower | ucwords]]</column>
-        <column>[[dnid | format_phone]]</column>
-        <column>[[seconds | format_time_seconds]]</column>
+        <column>[[ row.channel | ellipses:40 ]]</column>
+        <column>[[ row.calleridnum | format_phone ]]</column>
+        <column>[[ row.calleridname | lower | ucwords ]]</column>
+        <column>[[ row.dnid | format_phone ]]</column>
+        <column>[[ row.seconds | format_time_seconds ]]</column>
 
         <column>
-            <icon action="hangup" icon="hangup" title="Hangup" params="channel=[[channel]]" />
+            <icon action="hangup" icon="hangup" title="Hangup" params="channel=[[ row.channel ]]" />
         </column>
     </row>
 

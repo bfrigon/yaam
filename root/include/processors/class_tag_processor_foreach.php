@@ -58,7 +58,7 @@ class TagProcessorForeach extends TagProcessorBase
     public function process_tag($node_tag, $handle, $data_type=null, $data_source=null, $process_child_callback=null)
     {
         /* Get tag attributes */
-        $data_source = $this->process_tokens($node_tag->getAttribute("data-source"), $data_type, $data_source, null);
+        $data_source = $this->process_filters($node_tag->getAttribute("data-source"), $data_type, $data_source, null);
         $data_type = $node_tag->getAttribute("data-type");
         $type = strtolower($node_tag->getAttribute("type"));
         $class = $node_tag->getAttribute("class");
@@ -88,19 +88,19 @@ class TagProcessorForeach extends TagProcessorBase
         /* Insert rows iteration code */
         switch ($data_type) {
 
-            /* hashtable array */
-            case "dict":
-                $var_value = $this->get_unique_varname();
-                $var_key = $this->get_unique_varname();
+            /* Array */
+            case "array":
+                $var_array_row = $this->get_unique_varname();
 
-                fwrite($handle, "<?php foreach( (isset($data_source) ? $data_source : array()) as $var_key => $var_value): ?>\n$prefix_html\n");
+                fwrite($handle, "<?php if (is_array($data_source)): reset($data_source); while(($var_array_row = current($data_source)) !== false): ?>\n");
+                fwrite($handle, $prefix_html);
 
                 if (is_null($process_child_callback))
-                    $this->process_node($handle, $node_tag, false, true, $data_type, array($data_source, $var_key, $var_value));
+                    $this->process_node($handle, $node_tag, false, true, $data_type, array($data_source, $var_array_row));
                 else
-                    call_user_func_array($process_child_callback, array($node_tag, $handle, $data_type, array($data_source, $var_key, $var_value)));
+                    call_user_func_array($process_child_callback, array($node_tag, $handle, $data_type, array($data_source, $var_array_row)));
 
-                fwrite($handle, "$suffix_html<?php endforeach; ?>");
+                fwrite($handle, "<?php next($data_source); endwhile; endif; ?>");
                 break;
 
             /* ODBC query result */
@@ -114,20 +114,6 @@ class TagProcessorForeach extends TagProcessorBase
                     call_user_func_array($process_child_callback, array($node_tag, $handle, $data_type, $data_source));
 
                 fwrite($handle, "$suffix_html<?php endwhile; ?>");
-                break;
-
-            /* Ordinary array */
-            case "array":
-                $var_value = $this->get_unique_varname();
-                fwrite($handle, "<?php foreach( (isset($data_source) ? $data_source : array()) as $var_value): ?>\n$prefix_html\n");
-
-                if (is_null($process_child_callback))
-                    $this->process_node($handle, $node_tag, false, true, $data_type, array($data_source, $var_value));
-                else
-                    call_user_func_array($process_child_callback, array($node_tag, $handle, $data_type, array($data_source, $var_value)));
-
-
-                fwrite($handle, "$suffix_html<?php endforeach; ?>");
                 break;
 
             /* Invalid data type */

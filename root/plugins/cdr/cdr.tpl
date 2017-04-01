@@ -24,7 +24,7 @@
     </toolbar>
 </form>
 <datagrid class="expand" data-type="odbc" data-source="results" min-rows="25">
-    <header>
+    <header class="center">
         <column id="col_cdr_icon" type="icon"></column>
         <column id="col_cdr_date">Date</column>
         <column id="col_cdr_from">From</column>
@@ -58,9 +58,9 @@
                 <param name="number" value="dst" />
             </action-list>
         </column>
-        <column>[[duration | format_time_seconds]]</column>
-        <column>[[billsec | format_time_seconds]]</column>
-        <column>[[cost | format_money]]</column>
+        <column class="center">[[duration | format_time_seconds]]</column>
+        <column class="center">[[billsec | format_time_seconds]]</column>
+        <column class="center">[[cost | format_money]]</column>
     </row>
 
     <footer>
@@ -69,9 +69,9 @@
         <column></column>
         <column></column>
         <column></column>
-        <column>[[$total_duration | format_seconds]]</column>
-        <column>[[$total_billsec | format_seconds]]</column>
-        <column>[[$total_cost | format_money]]</column>
+        <column class="center">[[$total_duration | format_seconds]]</column>
+        <column class="center">[[$total_billsec | format_seconds]]</column>
+        <column class="center">[[$total_cost | format_money]]</column>
     </footer>
 
     <if-empty>** No calls **</if-empty>

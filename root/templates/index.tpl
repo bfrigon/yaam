@@ -4,7 +4,7 @@
     <title>Asterisk Manager</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/[[$_SESSION@ui_theme]]/theme.css?v=[[#YAAM_VERSION]]" />
+    <link id="css_theme" rel="stylesheet" type="text/css" href="themes/[[$_SESSION.ui_theme]]/theme.css?v=[[#YAAM_VERSION]]" />
     <script type="text/javascript" src="include/js/jquery-env.min.js?v=[[#YAAM_VERSION]]"></script>
     <script type="text/javascript" src="include/js/index.js?v=[[#YAAM_VERSION]]"></script>
 
@@ -20,8 +20,8 @@
         </div>
 
         <div id="userinfo">
-            Logged as: [[$_SESSION@user]]&nbsp;
-            (<span id="userinfo_fullname">[[$_SESSION@fullname]]</span>)&nbsp;-&nbsp;
+            Logged as: [[$_SESSION.user]]&nbsp;
+            (<span id="userinfo_fullname">[[$_SESSION.fullname]]</span>)&nbsp;-&nbsp;
             <icon href="?path=tools.tools.profile" icon="edit" icon-size="12">Edit profile</icon> |
             <icon href="login.php?logout=true" icon="right" icon-size="12">Logout</icon>
         </div>
