@@ -38,7 +38,13 @@
             <column>[[fullname]]</column>
             <column>[[extension]]</column>
             <column>[[did | format_phone]]</column>
-            <column>[[vbox_context]] @ [[vbox_user]]</column>
+            <column>[[vbox_context]] @ [[vbox_user]]
+                <action-list type="icon" icon-size="16" class="float-right" name="vm_tools">
+                    <param name="context" value="vbox_context" />
+                    <param name="user" value="vbox_user" />
+                </action>
+
+            </column>
             <column type="actions">
                 <if type="perm" value="user_write">
                     <icon action="edit" icon="edit" title="Edit user profile" params="user=[[user]]" />

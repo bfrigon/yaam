@@ -72,15 +72,15 @@ class PluginCdr extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
         if (!isset($_SESSION["rpp"]))
             $_SESSION["rpp"] = "25";
 
-        $manager->register_tab($this, "on_show_cdr", "cdr", null, "Call log", PERM_CDR_VIEW);
-        $manager->register_tab($this, "on_show_routes", "cdr_routes", "tools", "Call routes", PERM_CDR_READ_ROUTES);
+        $plugins->register_tab($this, "on_show_cdr", "cdr", null, "Call log", PERM_CDR_VIEW);
+        $plugins->register_tab($this, "on_show_routes", "cdr_routes", "tools", "Call routes", PERM_CDR_READ_ROUTES);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_CDR_VIEW,
             PERM_CDR_VIEW_ALL_USERS,
             PERM_CDR_READ_ROUTES,

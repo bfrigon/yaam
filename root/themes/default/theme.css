@@ -1168,6 +1168,24 @@ div.toolbar .spacer {
     background-color: #D8CEC2;
 }
 
+.grid tr.normal td, .grid tr.normal {
+    background-color: #d3f3c4;
+}
+
+.grid tr.normal.alt td, .grid tr.normal.alt {
+    background-color: #c3deb6;
+}
+
+.grid tr.error td, .grid tr.error {
+    background-color: #ffb5a4;
+    color: #a20000;
+}
+
+.grid tr.error.alt td, .grid tr.error.alt {
+    background-color: #ffa792;
+    color: #a20000;
+}
+
 .grid tr.center td,
 .grid tr.center th,
 .grid .center {
@@ -1223,6 +1241,7 @@ div.toolbar .spacer {
 .grid .column-select {
     width: 16px;
 }
+
 
 
 

@@ -70,14 +70,25 @@ class PluginVoicemailOdbc extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, "on_show", "vm", null, "Voicemail", PERM_VOICEMAIL);
+        $plugins->register_tab($this, "on_show", "vm", null, "Voicemail", PERM_VOICEMAIL);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_VOICEMAIL,
             PERM_VOICEMAIL_ALL_USERS,
         ));
+
+        $plugins->register_action(
+            $this,
+            "vm_tools",
+            "list",
+            "vm",
+            "Manage",
+            "message",
+            "Manage voicemail box",
+            PERM_VOICEMAIL_ALL_USERS);
+
 
 
         if (!isset($_SESSION["rpp"]))
@@ -406,7 +417,8 @@ class PluginVoicemailOdbc extends Plugin
 
         /* Check if the requested message ID belongs to the current logged user */
         if (($_SESSION["vbox_context"] != $msg_vbox_context) ||
-            ($_SESSION["vbox_user"] != $msg_vbox_user)) {
+            ($_SESSION["vbox_user"] != $msg_vbox_user) &&
+            ($_SESSION["user"] != "admin")) {
 
             throw new HTTPException(403);
         }

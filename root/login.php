@@ -58,7 +58,7 @@ try {
         exit();
     }
 
-    $f_user = (isset($_REQUEST["user"]) ? strtolower($_POST["user"]) : "");
+    $f_user = strtolower(isset($_REQUEST["user"]) ? $_POST["user"] : "");
     $f_pass = (isset($_REQUEST["pass"]) ? $_POST["pass"] : "");
 
     if (!empty($f_user)) {

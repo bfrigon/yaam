@@ -55,12 +55,12 @@ class PluginDashboard extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
 
-        $manager->register_tab($this, "on_show", "status", null, "Status", PERM_VIEW_DASHBOARD, 1);
+        $plugins->register_tab($this, "on_show", "status", null, "Status", PERM_VIEW_DASHBOARD, 1);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_VIEW_DASHBOARD
         ));
     }

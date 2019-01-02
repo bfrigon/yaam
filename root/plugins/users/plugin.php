@@ -44,6 +44,8 @@ if(realpath(__FILE__) == realpath($_SERVER["SCRIPT_FILENAME"])) {
 define("PERM_USER_READ", "user_read");
 define("PERM_USER_WRITE", "user_write");
 define("PERM_USER_SET_PERMISSION", "user_set_permission");
+define("PERM_GROUP_READ", "group_read");
+define("PERM_GROUP_WRITE", "group_write");
 
 
 class PluginUsers extends Plugin
@@ -71,14 +73,14 @@ class PluginUsers extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, null, "users", null, "Users", PERM_USER_READ, 150);
-        $manager->register_tab($this, "on_show_users", "list", "users", "Users", PERM_USER_READ);
-        $manager->register_tab($this, "on_show_pgroups", "pgroups", "users", "Permission groups", PERM_USER_SET_PERMISSION);
+        $plugins->register_tab($this, null, "users", null, "Users", PERM_USER_READ, 150);
+        $plugins->register_tab($this, "on_show_users", "list", "users", "Users", PERM_USER_READ);
+        $plugins->register_tab($this, "on_show_pgroups", "pgroups", "users", "Permission groups", PERM_USER_SET_PERMISSION);
 
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_USER_READ,
             PERM_USER_WRITE,
             PERM_USER_SET_PERMISSION,
@@ -269,7 +271,11 @@ class PluginUsers extends Plugin
                 $user_data = odbc_fetch_array($res);
 
                 $user_data["pgroups"] = array_map("trim", explode(",", strtolower($user_data["pgroups"])));
+
+            } else if ($action == "add") {
+                $user_data["user"] = "";
             }
+
 
         } catch (Exception $e) {
             $this->show_messagebox(MESSAGEBOX_ERROR, $e->getmessage(), false);
@@ -343,9 +349,65 @@ class PluginUsers extends Plugin
      */
     function on_show_pgroups($template, $tab_path, $action)
     {
-        global $PLUGINS;
+        global $DB;
 
-        print_r($PLUGINS->get_permissions_list());
+        switch ($action) {
+
+            case "add":
+            case "edit":
+            case "view":
+                $this->action_group_addedit($template, $action);
+                break;
+
+            case "delete":
+                $this->action_group_delete($template);
+                break;
+
+            default:
+
+                if (!(check_permission(PERM_GROUP_READ)))
+                    throw new Exception("You do not have the required permissions to view the permission group table!");
+
+                $query = $DB->create_query("groups");
+
+                /* Set search filters */
+                if (isset($_GET["s"])) {
+                    $search = $_GET["s"];
+
+                    $query->group_where_begin();
+                    $query->or_where(
+                        array("name", "description"),
+                        "LIKE",
+                        "%$search%"
+                    );
+                    $query->group_where_close();
+                }
+
+                /* Get the number of users matching the filters. */
+                $results = $query->run_query_select("COUNT(*) as row_count");
+                $num_results = odbc_result($results, "row_count");
+
+                odbc_free_result($results);
+
+                /* Set pager variables for the template. */
+                $max_results = max((isset($_GET["max"]) ? intval($_GET["max"]) : intval($_SESSION["rpp"])), 1);
+                $total_pages = max(1, ceil($num_results / $max_results));
+                $current_page = max((isset($_GET["page"]) ? intval($_GET["page"]) : 1), 1);
+                $row_start = ($current_page - 1) * $max_results;
+
+                $query->limit = $max_results;
+                $query->offset = $row_start;
+
+                /* Select the users matching the filters. */
+                $results = $query->run_query_select("*");
+
+
+
+                require($template->load("groups.tpl"));
+
+                odbc_free_result($results);
+                break;
+        }
 
     }
 }

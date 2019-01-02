@@ -4,7 +4,7 @@
         <if type="is" name="action" value="edit"><title>Edit call treatment rule</title></if>
 
         <field name="description" type="text" caption="Description" value="[[$ct_data.description]]" />
-        <field name="ct_action" type="select" caption="Action" value="[[$ct_data.action]]" data-type="dict" data-source="action_list" />
+        <field name="ct_action" type="select" caption="Action" value="[[$ct_data.action]]" data-type="array" data-source="action_list" />
 
         <section title="Match rules">
             <if type="perm" value="ct_rules_all_users">

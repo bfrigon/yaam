@@ -71,11 +71,11 @@ class PluginPhonebook extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, "on_show_phonebook", "phonebook", null, "Phone book", PERM_PHONEBOOK_READ, 140);
+        $plugins->register_tab($this, "on_show_phonebook", "phonebook", null, "Phone book", PERM_PHONEBOOK_READ, 140);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_PHONEBOOK_READ,
             PERM_PHONEBOOK_WRITE,
             PERM_PHONEBOOK_WRITE_GLOBAL,

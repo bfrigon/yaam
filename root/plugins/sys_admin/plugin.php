@@ -45,6 +45,7 @@ define("PERM_EXEC_COMMANDS", "exec_commands");
 define("PERM_VIEW_SYSTEM_INFO", "view_system_info");
 define("PERM_CHANNEL_VIEW_ALL", "channel_view_all");
 define("PERM_CHANNEL_HANGUP_OTHER_USERS", "channel_hangup_other_users");
+define("PERM_PEERS_STATUS", "peers_status");
 
 require("sysinfo.php");
 
@@ -78,16 +79,27 @@ class PluginSystemAdmin extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, "on_show_command", "command", "tools", "Run command", PERM_EXEC_COMMANDS);
-        $manager->register_tab($this, "on_show_channels", "channels", "tools", "Channel status", PERM_CHANNEL_VIEW_ALL);
+        $plugins->declare_permissions($this, array(
+            PERM_LOGS_VIEW,
+            PERM_EXEC_COMMANDS,
+            PERM_CHANNEL_VIEW_ALL,
+            PERM_CHANNEL_HANGUP_OTHER_USERS,
+            PERM_PEERS_STATUS,
+        ));
 
 
-        $manager->register_tab($this, "on_show_log", "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
+        /* Register diagnostic tab */
+        $plugins->register_tab($this, null, "diag", null, "Diagnostic", "");
+        $plugins->register_tab($this, "on_show_command", "command", "diag", "Run command", PERM_EXEC_COMMANDS);
+        $plugins->register_tab($this, "on_show_channels", "channels", "diag", "Channel status", PERM_CHANNEL_VIEW_ALL);
+        $plugins->register_tab($this, "on_show_peers", "peers", "diag", "Peer status", PERM_PEERS_STATUS);
 
+
+        /* Register log viewer tab */
+        $plugins->register_tab($this, "on_show_log", "logs", NULL, "System logs", PERM_LOGS_VIEW,2);
         $log_items = get_global_config_item("log_viewer", "groups", array());
-
 
         /* Create a sub tab for each items */
         foreach($log_items as $name => $files) {
@@ -95,21 +107,15 @@ class PluginSystemAdmin extends Plugin
             $tab_name = strtolower(preg_replace("/[^a-zA-Z0-9]+/", "", $name));
             $this->_log_items[$tab_name] = $files;
 
-            $manager->register_tab($this, "on_show_log", $tab_name, "logs", $name, PERM_LOGS_VIEW);
+            $plugins->register_tab($this, "on_show_log", $tab_name, "logs", $name, PERM_LOGS_VIEW);
         }
 
-        $manager->declare_permissions($this, array(
-            PERM_LOGS_VIEW,
-            PERM_EXEC_COMMANDS,
-            PERM_CHANNEL_VIEW_ALL,
-            PERM_CHANNEL_HANGUP_OTHER_USERS,
-        ));
 
-        $manager->register_widget($this, "sysstat", "show_widget_sysstat", PERM_VIEW_SYSTEM_INFO);
-        $manager->register_widget($this, "version", "show_widget_version", PERM_VIEW_SYSTEM_INFO, false);
-        $manager->register_widget($this, "services", "show_widget_services", PERM_VIEW_SYSTEM_INFO);
-
-        $manager->register_widget($this, "channels", "show_widget_channels", PERM_CHANNEL_VIEW_ALL);
+        /* Register widgets */
+        $plugins->register_widget($this, "sysstat", "show_widget_sysstat", PERM_VIEW_SYSTEM_INFO);
+        $plugins->register_widget($this, "version", "show_widget_version", PERM_VIEW_SYSTEM_INFO, false);
+        $plugins->register_widget($this, "services", "show_widget_services", PERM_VIEW_SYSTEM_INFO);
+        $plugins->register_widget($this, "channels", "show_widget_channels", PERM_CHANNEL_VIEW_ALL);
 
     }
 
@@ -179,7 +185,7 @@ class PluginSystemAdmin extends Plugin
      */
     function on_show_command($template, $tab_path, $action)
     {
-        global $MANAGER;
+        global $_AMI;
 
         if (!(check_permission(PERM_EXEC_COMMANDS)))
             throw new Exception("You do not have the permissions to execute console commands!");
@@ -190,7 +196,7 @@ class PluginSystemAdmin extends Plugin
         if (isset($_POST["command"])) {
 
             /* Send the command to the AMI */
-            $result = $MANAGER->send("command", array(
+            $result = $_AMI->send("command", array(
                 "command" => $_POST["command"]
             ))[0];
 
@@ -216,7 +222,7 @@ class PluginSystemAdmin extends Plugin
      */
     public function on_show_channels($template, $tab_path, $action)
     {
-        global $MANAGER;
+        global $_AMI;
 
         switch ($action) {
             case "hangup":
@@ -229,9 +235,9 @@ class PluginSystemAdmin extends Plugin
                     if (!(check_permission(PERM_CHANNEL_VIEW_ALL)))
                         throw new Exception("You do not have the required permissions to view channel status");
 
-                    $channels = $MANAGER->send("Status", array());
+                    $channels = $_AMI->send("Status", array());
                     if ($channels === false)
-                        throw new Exception("Error while sending command to the Asterisk manager.\n {$MANAGER->last_error}");
+                        throw new Exception("Error while sending command to the Asterisk manager.\n {$_AMI->last_error}");
 
                     $num_results = count($channels);
 
@@ -264,7 +270,7 @@ class PluginSystemAdmin extends Plugin
      */
     private function action_hangup_channel($template)
     {
-        global $MANAGER;
+        global $_AMI;
 
         try {
 
@@ -281,7 +287,7 @@ class PluginSystemAdmin extends Plugin
                 return;
             }
 
-            $MANAGER->send("Hangup", array(
+            $_AMI->send("Hangup", array(
                 "channel" => $channel,
             ));
 
@@ -294,6 +300,48 @@ class PluginSystemAdmin extends Plugin
 
     }
 
+    /*--------------------------------------------------------------------------
+     * on_show_channels() : Called when the 'channel status' tab content is requested.
+     *
+     * Arguments :
+     * ---------
+     *  - template : Instance of the template engine.
+     *  - tab_path : Path to the current tab.
+     *  - action   : Requested action.
+     *
+     * Return : None
+     */
+    public function on_show_peers($template, $tab_path, $action)
+    {
+        global $_AMI;
+
+        $protocols = array("IAX", "SIP");
+        $peers = array();
+
+        foreach ($protocols as $protocol) {
+
+            $list = $_AMI->send("${protocol}peers", array());
+
+            if (!(is_array($list)))
+                continue;
+
+
+            foreach ($list as $peer) {
+                $status = strtolower($peer["status"]);
+
+                if ($status == "unmonitored")
+                    continue;
+
+                $peer["cssclass"] = (substr($status, 0, 2) != "ok" ? "error" : "normal");
+                $peers[] = $peer;
+
+            }
+        }
+
+        $num_results = count($peers);
+
+        require($template->load("peers.tpl"));
+    }
 
     /*--------------------------------------------------------------------------
      * show_widget_channels() : Called when the content of the 'channels status'
@@ -307,9 +355,9 @@ class PluginSystemAdmin extends Plugin
      */
     public function show_widget_channels($template)
     {
-        global $MANAGER;
+        global $_AMI;
 
-        $channels = $MANAGER->send("Status", array());
+        $channels = $_AMI->send("Status", array());
         $num_results = count($channels);
 
         $channels = array_slice($channels, 0, 10);
@@ -353,10 +401,15 @@ class PluginSystemAdmin extends Plugin
      */
     public function show_widget_version($template)
     {
+        global $_AMI;
+
         $os_ver = sprintf("%s %s",
             php_uname("s"),
             php_uname("r")
         );
+
+        $response = $_AMI->send("CoreSettings", array());
+        $asterisk_ver = @$response[0]["asteriskversion"];
 
         require($template->load("widget_version.tpl"));
 

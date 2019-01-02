@@ -49,7 +49,7 @@ class TagProcessorForm extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None

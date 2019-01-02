@@ -76,10 +76,10 @@ try {
     $ajax_function = "ajax_" . $path[count($path) - 1];
 
     /* Load the plugin containing the function */
-    $manager = new PluginManager();
-    $manager->load();
+    $plugins = new PluginManager();
+    $plugins->load();
 
-    $plugin = $manager->get_plugin($plugin_name);
+    $plugin = $plugins->get_plugin($plugin_name);
 
     if (!method_exists($plugin, $ajax_function))
         throw new Exception("Cannot call ajax function in $plugin_name. No function named $ajax_function");

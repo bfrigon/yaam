@@ -49,7 +49,7 @@ class TagProcessorForeach extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object.
      *  - process_child_callback : Function used to process child elements, if null,
      *                             the default one is used (process_node)

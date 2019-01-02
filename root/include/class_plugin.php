@@ -44,7 +44,7 @@ class Plugin
     private $_template = null;
 
 
-    public $manager = null;
+    public $plugins = null;
     public $name = '';
     public $dir = '';
     public $tab_url = '';
@@ -69,9 +69,9 @@ class Plugin
      *
      * Returns : Nothing
      */
-    function Plugin($name, &$manager)
+    function Plugin($name, &$plugins)
     {
-        $this->manager = &$manager;
+        $this->manager = &$plugins;
 
         $this->name = $name;
         $this->dir = DOCUMENT_ROOT . "/plugins/$name";
@@ -92,7 +92,7 @@ class Plugin
      *
      * Returns : Nothing
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
 
     }

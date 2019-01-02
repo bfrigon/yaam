@@ -74,11 +74,11 @@ class PluginCallTreatment extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, "on_show_ct", "ct", "tools", "Call treatment", PERM_CT_READ_RULES);
+        $plugins->register_tab($this, "on_show_ct", "ct", "tools", "Call treatment", PERM_CT_READ_RULES);
 
-        $manager->register_action(
+        $plugins->register_action(
             $this,
             "phone_number_tools",
             "add",
@@ -88,7 +88,7 @@ class PluginCallTreatment extends Plugin
             "Create a call treatment rule for this number",
             PERM_CT_WRITE_RULES);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_CT_WRITE_RULES,
             PERM_CT_READ_RULES,
             PERM_CT_RULES_ALL_USERS,

@@ -49,7 +49,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -84,7 +84,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_list   : The node containing "item" tags.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -183,7 +183,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -266,7 +266,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -308,18 +308,17 @@ class TagProcessorDialog extends TagProcessorBase
         /* Insert rows iteration code */
         switch ($data_type) {
 
-            /* hashtable array */
-            case "dict":
-                $var_value = $this->get_unique_varname();
-                $var_key = $this->get_unique_varname();
+            /* array */
+            case "array":
+                $var_array_row = $this->get_unique_varname();
 
-                fwrite($handle, "<?php foreach( (isset($data_source) ? $data_source : array()) as $var_key => $var_value): ?>\n");
+                fwrite($handle, "<?php if (is_array($data_source)): reset($data_source); while(($var_array_row = current($data_source)) !== false): ?>\n");
 
-                fwrite($handle, "<option value=\"<?php echo $var_key ?>\"");
-                fwrite($handle, " <?php echo ($var_key == $value) ? 'selected' : '' ?> >");
-                fwrite($handle, "<?php echo $var_value ?></option>\n");
+                fwrite($handle, "<option value=\"<?php echo key($data_source) ?>\"");
+                fwrite($handle, " <?php echo (key($data_source) == $value) ? 'selected' : '' ?> >");
+                fwrite($handle, "<?php echo $var_array_row ?></option>\n");
 
-                fwrite($handle, "<?php endforeach; ?>\n");
+                fwrite($handle, "<?php next($data_source); endwhile; endif; ?>");
                 break;
 
             /* ODBC query result */
@@ -331,19 +330,6 @@ class TagProcessorDialog extends TagProcessorBase
                 fwrite($handle, "<?php echo @odbc_result($$data_source, '$column_value') ?></option>\n");
 
                 fwrite($handle, "<?php endwhile; ?>\n");
-                break;
-
-            /* Ordinary array */
-            case "array":
-                $var_value = $this->get_unique_varname();
-                $var_index = $this->get_unique_varname();
-                fwrite($handle, "<?php $var_index=0; foreach( (isset($data_source) ? $data_source : array()) as $var_value): ?>\n");
-
-                fwrite($handle, "<option value=\"<?php echo $var_index ?>\"");
-                fwrite($handle, " <?php echo ($var_index == intval(\"$value\")) ? 'selected' : '' ?> >");
-                fwrite($handle, "<?php echo $var_value ?></option>\n");
-
-                fwrite($handle, "<?php $var_index++; endforeach; ?>\n");
                 break;
 
             /* Invalid data type */
@@ -362,7 +348,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -401,7 +387,7 @@ class TagProcessorDialog extends TagProcessorBase
         switch ($data_type) {
 
 
-            /* Ordinary array */
+            /* array */
             case "array":
                 $var_value = $this->process_filters($node_tag->getAttribute("value"), $data_type, $data_source, null);
                 $var_checked = $this->get_unique_varname();
@@ -429,7 +415,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -483,7 +469,7 @@ class TagProcessorDialog extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None

@@ -49,7 +49,7 @@ class TagProcessorDatagrid extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -111,7 +111,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         if (!empty($node_header)) {
             fwrite($handle, "<thead>\n<tr");
 
-            $class = $node_header->getAttribute("class");
+            $class = $this->get_attribute_shortcode($node_row, "class", "", null, null);
             if (!(empty($class)))
                 fwrite($handle, " class=\"$class\"");
 
@@ -142,13 +142,20 @@ class TagProcessorDatagrid extends TagProcessorBase
                 break;
         }
 
-        $class = "<?php echo !($var_row_count & 1) ? '':'alt' ?> ";
-
-        if ($node_row->hasAttribute("class"))
-            $class .= $node_row->getAttribute("class");
-
-
         /* Insert grid rows */
+        $class = "<?php echo !($var_row_count & 1) ? '':'alt' ?> ";
+        if ($node_row->hasAttribute("class")) {
+            switch ($data_type) {
+                case "odbc":
+                    $class .= $this->get_attribute_shortcode($node_row, "class", "", $data_type, $data_source);
+                    break;
+
+                case "array":
+                    $class .= $this->get_attribute_shortcode($node_row, "class", "", $data_type, array($data_source, $var_array_row));
+                    break;
+            }
+        }
+
         fwrite($handle, "<tr class=\"" . trim($class) . "\">");
 
         switch ($data_type) {
@@ -164,7 +171,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         fwrite($handle, "</tr>");
 
 
-        /* Close rows iteration code */
+        /* Insert rows closing iteration code */
         switch ($data_type) {
             case "odbc":
                 fwrite($handle, "<?php $var_row_count++; endwhile; ?>");
@@ -178,7 +185,7 @@ class TagProcessorDatagrid extends TagProcessorBase
 
         /* Insert if-empty row */
         if (!empty($node_empty)) {
-            $class = $node_empty->getAttribute("class");
+            $class = $this->get_attribute_shortcode($node_row, "class", "", null, null);
 
             fwrite($handle, "<?php if ($var_row_count==0):?>");
             fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
@@ -192,10 +199,13 @@ class TagProcessorDatagrid extends TagProcessorBase
 
         /* Insert row filler code */
         if ($min_rows) {
-            $class = $node_row->getAttribute("class");
+            $class = "<?php print !($var_row_count & 1) ? '':'alt' ?>";
+
+            if ($node_row->hasAttribute("class"))
+                $class .= " " . $this->get_attribute_shortcode($node_row, "class", "", null, null);
 
             fwrite($handle, "<?php while($var_row_count < $min_rows): ?>");
-            fwrite($handle, "<tr class=\"$class <?php echo !($var_row_count & 1) ? '':'alt' ?>\">");
+            fwrite($handle, "<tr class=\"$class\">");
             fwrite($handle, "<?php echo str_repeat('<td>&nbsp;</td>', ($num_columns-$var_hidden_col)) ?>");
             fwrite($handle, "</tr><?php $var_row_count++; endwhile; ?>");
         }
@@ -232,7 +242,7 @@ class TagProcessorDatagrid extends TagProcessorBase
      * ---------
      *  - node_row       : Node to process.
      *  - handle         : File handle to the template output.
-     *  - data_type      : Type of the current data source (odbc, dict).
+     *  - data_type      : Type of the current data source (odbc, array).
      *  - data_source    : Current data source object.
      *  - var_hidden_col : Variable name for the total of hidden columns.
      *
@@ -249,7 +259,7 @@ class TagProcessorDatagrid extends TagProcessorBase
         foreach ($columns as $node_column) {
 
             $type = strtolower($node_column->getAttribute("type"));
-            $class = $node_column->getAttribute("class");
+            $class = $this->get_attribute_shortcode($node_column, "class", "", $data_type, $data_source);
             $id = $node_column->getAttribute("id");
             $colspan = $node_column->getAttribute("colspan");
 

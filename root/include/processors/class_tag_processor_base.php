@@ -76,7 +76,7 @@ class TagProcessorBase
      *  - node              : Node to process.
      *  - outer             : Include the node in the output. If false, only process child nodes.
      *  - recursive         : Process all child nodes recursivly.
-     *  - data_type         : Type of the Current data source (odbc, dict).
+     *  - data_type         : Type of the Current data source (odbc, array).
      *  - data_source       : Current data source object.
      *  - process_top_level : Process top-level elements <doctype>, <html>, <head>, <body>
      *
@@ -342,7 +342,7 @@ class TagProcessorBase
      * Arguments
      * ---------
      *  - input          : List of filters to process.
-     *  - data_type      : Type of the current data source (odbc, dict).
+     *  - data_type      : Type of the current data source (odbc, array).
      *  - data_source    : Current data source object.
      *  - unset_variable : Default value if variable is not set.
      *
@@ -559,7 +559,7 @@ class TagProcessorBase
      * Arguments
      * ---------
      *  - text        : The text containing the shortcodes.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *  - wrap        : Wrap each shortcode element within php tags. <?php echo ... ?>
      *
@@ -615,7 +615,7 @@ class TagProcessorBase
      *  - node        : The node to get the attribute from.
      *  - name        : Attribute name
      *  - default     : Default value if attribute does not exists.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object
      *  - wrap        : Wrap the return value within php tags. <?php echo ... ?>
      *

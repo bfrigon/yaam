@@ -65,12 +65,12 @@ class PluginTemplateTest extends Plugin
      *
      * Return : None
      */
-    function on_load(&$manager)
+    function on_load(&$plugins)
     {
-        $manager->register_tab($this, null, "template", null, "Template test", PERM_TEMPLATE_TEST);
-        $manager->register_tab($this, "on_show_filters", "filters", "template", "Filters", PERM_TEMPLATE_TEST);
-        $manager->register_tab($this, "on_show_datagrid", "datagrid", "template", "Datagrid tag", PERM_TEMPLATE_TEST);
-        $manager->register_tab($this, "on_show_foreach", "foreach", "template", "Foreach tag", PERM_TEMPLATE_TEST);
+        $plugins->register_tab($this, null, "template", null, "Template test", PERM_TEMPLATE_TEST);
+        $plugins->register_tab($this, "on_show_filters", "filters", "template", "Filters", PERM_TEMPLATE_TEST);
+        $plugins->register_tab($this, "on_show_datagrid", "datagrid", "template", "Datagrid tag", PERM_TEMPLATE_TEST);
+        $plugins->register_tab($this, "on_show_foreach", "foreach", "template", "Foreach tag", PERM_TEMPLATE_TEST);
 
     }
 

@@ -279,7 +279,7 @@ function check_permission($req_perm)
  */
 function init_session()
 {
-    global $CONFIG, $DB, $MANAGER;
+    global $CONFIG, $DB, $_AMI;
 
     /* Load configuration */
     load_global_config();
@@ -301,8 +301,8 @@ function init_session()
     $user = get_global_config_item("ajam", "user", "");
     $secret = get_global_config_item("ajam", "secret", "");
 
-    $MANAGER = new AJAM($user, $secret, $url);
-    $MANAGER->login();
+    $_AMI = new AJAM($user, $secret, $url);
+    $_AMI->login();
 }
 
 

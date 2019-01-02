@@ -17,7 +17,7 @@
 <form id="frm_vm" method="post" keep-uri="folder">
     <toolbar>
         <item type="label">Folder :</item>
-        <item id="txt_vm_search" type="list" icon="folder" data-type="dict" data-source="folders">
+        <item id="txt_vm_search" type="list" icon="folder" data-type="array" data-source="folders">
             <caption>[[$current_folder_name]]</caption>
             <row>
                 <item type="button" params="folder=[[key]]" keep-uri>[[value]]</item>

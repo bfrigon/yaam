@@ -49,7 +49,7 @@ class TagProcessorToolbar extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -84,7 +84,7 @@ class TagProcessorToolbar extends TagProcessorBase
      * ---------
      *  - node_list   : The node containing "item" tags.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -131,7 +131,7 @@ class TagProcessorToolbar extends TagProcessorBase
      * ---------
      *  - node_list   : The node containing "item" tags.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None
@@ -349,18 +349,6 @@ class TagProcessorToolbar extends TagProcessorBase
 
                     switch ($data_type) {
 
-                        /* hashtable array */
-                        case "dict":
-                            $var_value = $this->get_unique_varname();
-                            $var_key = $this->get_unique_varname();
-
-                            fwrite($handle, "<?php foreach( (isset($data_source) ? $data_source : array()) as $var_key => $var_value): ?>\n");
-
-                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, array($data_source, $var_key, $var_value));
-
-                            fwrite($handle, "<?php endforeach; ?>\n");
-                            break;
-
                         /* ODBC query result */
                         case "odbc":
 
@@ -374,12 +362,13 @@ class TagProcessorToolbar extends TagProcessorBase
 
                         /* Ordinary array */
                         case "array":
-                            $var_value = $this->get_unique_varname();
-                            fwrite($handle, "<?php foreach( (isset($data_source) ? $data_source : array()) as $var_value): ?>\n");
+                            $var_array_row = $this->get_unique_varname();
 
-                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, array($data_source, $var_value));
+                            fwrite($handle, "<?php if (is_array($data_source)): reset($data_source); while(($var_array_row = current($data_source)) !== false): ?>\n");
 
-                            fwrite($handle, "<?php endforeach; ?>\n");
+                            $this->process_toolbar_tag_childs($node_row, $handle, $data_type, array($data_source, $var_array_row));
+
+                            fwrite($handle, "<?php next($data_source); endwhile; endif; ?>");
                             break;
 
                         /* Invalid data type */

@@ -49,7 +49,7 @@ class TagProcessorIf extends TagProcessorBase
      * ---------
      *  - node_tag    : Node to process.
      *  - handle      : File handle to the template output.
-     *  - data_type   : Type of the Current data source (odbc, dict).
+     *  - data_type   : Type of the Current data source (odbc, array).
      *  - data_source : Current data source object.
      *  - close_tag   : If true, processes the child nodes and closes the if
      *                  statement, otherwize, it leave it open.

@@ -67,14 +67,14 @@ class PluginTools extends Plugin
      *
      * Return : None
      */
-    public function on_load(&$manager)
+    public function on_load(&$plugins)
     {
 
-        $manager->register_tab($this, null, "tools", null, "Tools", PERM_NONE, 200);
-        $manager->register_tab($this, "on_show_profile", "profile", "tools", "Edit profile", PERM_NONE);
-        $manager->register_tab($this, "on_show_originate", "originate", "tools", "Click-2-dial", PERM_ORIGINATE_CALL);
+        $plugins->register_tab($this, null, "tools", null, "Tools", PERM_NONE, 200);
+        $plugins->register_tab($this, "on_show_profile", "profile", "tools", "Edit profile", PERM_NONE);
+        $plugins->register_tab($this, "on_show_originate", "originate", "tools", "Click-2-dial", PERM_ORIGINATE_CALL);
 
-        $manager->register_action(
+        $plugins->register_action(
             $this,
             "phone_number_tools",
             "dial",
@@ -84,7 +84,7 @@ class PluginTools extends Plugin
             "Call this number",
             PERM_ORIGINATE_CALL);
 
-        $manager->declare_permissions($this, array(
+        $plugins->declare_permissions($this, array(
             PERM_ORIGINATE_CALL,
             PERM_ORIGINATE_FROM_OTHER_EXT,
         ));
@@ -240,7 +240,7 @@ class PluginTools extends Plugin
      */
     private function do_originate_call($from_ext, $number, $caller_num="", $caller_name="", $timeout=30, $unique_id=null)
     {
-        global $MANAGER;
+        global $_AMI;
 
         if (empty($from_ext))
             throw new exception("Missing the extension to originate the call from!");
@@ -275,8 +275,8 @@ class PluginTools extends Plugin
             if (!(is_null($unique_id)))
                 $params["ChannelId"] = sprintf("%s%d", $unique_id, $i++);
 
-            if ($MANAGER->send("Originate", $params) === false) {
-                throw new Exception("Failed to originate call on Ext. $ext. " . $MANAGER->last_error);
+            if ($_AMI->send("Originate", $params) === false) {
+                throw new Exception("Failed to originate call on Ext. $ext. " . $_AMI->last_error);
             }
         }
     }
@@ -295,7 +295,7 @@ class PluginTools extends Plugin
      */
     public function ajax_originate()
     {
-        global $MANAGER;
+        global $_AMI;
 
         try {
             $ext = (isset($_POST["ext"])) ? $_POST["ext"] : $_SESSION["extension"];
@@ -303,7 +303,7 @@ class PluginTools extends Plugin
             $caller_num = (isset($_POST["caller_num"])) ? $_POST["caller_num"] : "";
             $caller_name = (isset($_POST["caller_name"])) ? $_POST["caller_name"] : "";
             $timeout = intval(get_global_config_item("click2dial", "timeout", 30));
-            $unique_id = (isset($_POST["uniqueid"]) ? $_POST["uniqueid"] : $MANAGER->gen_unique_id());
+            $unique_id = (isset($_POST["uniqueid"]) ? $_POST["uniqueid"] : $_AMI->gen_unique_id());
 
 
 
@@ -331,7 +331,7 @@ class PluginTools extends Plugin
                     $response["message"] = "";
                     $response["status"] = "ringing";
 
-                    $channels = $MANAGER->send("status", array());
+                    $channels = $_AMI->send("status", array());
                     foreach ($channels as $channel) {
 
                         /* Filter out channels that were not originated from this request */
@@ -367,7 +367,7 @@ class PluginTools extends Plugin
                 case "hangup":
                     $response["status"] = "ok";
 
-                    $channels = $MANAGER->send("status", array());
+                    $channels = $_AMI->send("status", array());
                     foreach($channels as $channel) {
 
                         /* Filter out channels that were not originated from this request */
@@ -380,7 +380,7 @@ class PluginTools extends Plugin
                         /* Hangup remaining channels that were not picked up */
                         if ($chan_state != AST_CHANNEL_STATE_UP && $chan_state != AST_CHANNEL_STATE_OFF_HOOK) {
 
-                            $request = $MANAGER->send("hangup", array(
+                            $request = $_AMI->send("hangup", array(
                                 "channel" => $chan_name,
                             ));
 

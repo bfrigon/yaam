@@ -50,7 +50,7 @@ class TagProcessorCallback extends TagProcessorBase
      * ---------
      *  - node_tag : The tag to process.
      *  - handle   : File handle to the template output.
-     *  - data_type   : Type of the current data source (odbc, dict).
+     *  - data_type   : Type of the current data source (odbc, array).
      *  - data_source : Current data source object.
      *
      * Returns : None

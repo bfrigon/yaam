@@ -5,6 +5,8 @@
 
 cache
 
+*.code-workspace
+
 # vim cache files
 *.swp
 *.swo
